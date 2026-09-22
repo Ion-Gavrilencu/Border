@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Administrare from "./pages/Administrare";
 
 import { AuthProvider } from "./context/AuthContext";
 
@@ -28,6 +29,10 @@ function App() {
                 path="/dashboard"
                 element={<Dashboard />}
               />
+                <Route
+                  path="/admin"
+                  element={<Administrare />}
+                />
             </Route>
           </Route>
         </Routes>
