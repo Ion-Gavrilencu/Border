@@ -67,10 +67,12 @@ const handleLogout = async () => {
 
         <div className="sidebar-bottom">
 
-          <NavLink to="/admin">
-            <Settings size={20} />
-            <span>Administrare</span>
-          </NavLink>
+          {user?.role === "ADMIN" && (
+  <NavLink to="/admin">
+    <Settings size={20} />
+    <span>Administrare</span>
+  </NavLink>
+)}
 
           <button className="logout-button" onClick={handleLogout}>
             <LogOut size={20} />

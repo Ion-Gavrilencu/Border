@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import "./Administrare.css";
 
 function Administrare() {
   const [users, setUsers] = useState([]);
@@ -87,6 +88,33 @@ function Administrare() {
   }
 };
 
+const handleDeleteUser = async (userId) => {
+  const confirmed = window.confirm(
+    "Ești sigur că vrei să ștergi acest utilizator?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    const response = await api.delete(`/users/${userId}`);
+
+    setUsers((currentUsers) =>
+      currentUsers.filter((user) => user.id !== userId)
+    );
+
+    console.log(response.data.message);
+  } catch (error) {
+    console.error("Eroare ștergere utilizator:", error);
+
+    alert(
+      error.response?.data?.message ||
+        "Utilizatorul nu a putut fi șters."
+    );
+  }
+};
+
   if (loading) {
     return <div>Se încarcă utilizatorii...</div>;
   }
@@ -96,14 +124,15 @@ function Administrare() {
   }
 
   return (
-    <div>
-      <h1>Administrare utilizatori</h1>
+  <div className="admin-page">
+    <h1>Administrare utilizatori</h1>
 
-      <p>
-        Gestionarea conturilor și a drepturilor utilizatorilor.
-      </p>
+    <p className="admin-description">
+      Gestionarea conturilor și a drepturilor utilizatorilor.
+    </p>
 
-      <table>
+      <div className="admin-table-wrapper">
+  <table className="admin-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -112,6 +141,7 @@ function Administrare() {
             <th>Email</th>
             <th>Rol</th>
             <th>Status</th>
+            <th>Acțiuni</th>
           </tr>
         </thead>
 
@@ -150,6 +180,7 @@ function Administrare() {
               <td>
   <button
   type="button"
+  className="admin-status-button"
   onClick={() =>
     handleStatusChange(
       user.id,
@@ -162,17 +193,29 @@ function Administrare() {
     : "Activează"}
 </button>
 
-  <span>
+  <span className="admin-status">
     {" "}
     {user.is_active ? "Activ" : "Inactiv"}
   </span>
+</td>
+<td>
+  <button
+    type="button"
+    className="admin-delete"
+    onClick={() => handleDeleteUser(user.id)}
+  >
+    Șterge
+  </button>
 </td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
+
+ 
   
 }
 
