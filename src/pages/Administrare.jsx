@@ -7,6 +7,7 @@ function Administrare() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const loadUsers = async () => {
     try {
@@ -20,8 +21,7 @@ function Administrare() {
       console.error("Eroare utilizatori:", error);
 
       setError(
-        error.response?.data?.message ||
-          "Nu s-au putut încărca utilizatorii."
+        error.response?.data?.message || "Nu s-au putut încărca utilizatorii.",
       );
     } finally {
       setLoading(false);
@@ -34,87 +34,85 @@ function Administrare() {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-        
       setUpdatingUserId(userId);
 
-      const response = await api.patch(
-        `/users/${userId}/role`,
-        {
-          role: newRole,
-        }
-      );
+      const response = await api.patch(`/users/${userId}/role`, {
+        role: newRole,
+      });
 
       setUsers((currentUsers) =>
         currentUsers.map((user) =>
-          user.id === userId
-            ? response.data.user
-            : user
-        )
+          user.id === userId ? response.data.user : user,
+        ),
       );
     } catch (error) {
       console.error("Eroare modificare rol:", error);
 
-      alert(
-        error.response?.data?.message ||
-          "Rolul nu a putut fi modificat."
-      );
+      alert(error.response?.data?.message || "Rolul nu a putut fi modificat.");
     } finally {
       setUpdatingUserId(null);
     }
   };
   const handleStatusChange = async (userId, currentStatus) => {
-  try {
-    const response = await api.patch(
-      `/users/${userId}/status`,
-      {
+    try {
+      const response = await api.patch(`/users/${userId}/status`, {
         isActive: !currentStatus,
-      }
+      });
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.id === userId ? response.data.user : user,
+        ),
+      );
+    } catch (error) {
+      console.error("Eroare modificare status:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Statusul utilizatorului nu a putut fi modificat.",
+      );
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    const confirmed = window.confirm(
+      "Ești sigur că vrei să ștergi acest utilizator?",
     );
 
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === userId
-          ? response.data.user
-          : user
-      )
-    );
-  } catch (error) {
-    console.error("Eroare modificare status:", error);
+    if (!confirmed) {
+      return;
+    }
 
-    alert(
-      error.response?.data?.message ||
-        "Statusul utilizatorului nu a putut fi modificat."
-    );
+    try {
+      const response = await api.delete(`/users/${userId}`);
+
+      setUsers((currentUsers) =>
+        currentUsers.filter((user) => user.id !== userId),
+      );
+
+      console.log(response.data.message);
+    } catch (error) {
+      console.error("Eroare ștergere utilizator:", error);
+
+      alert(
+        error.response?.data?.message || "Utilizatorul nu a putut fi șters.",
+      );
+    }
+  };
+
+  const filteredUsers = users.filter((user) => {
+  const search = searchTerm.toLowerCase().trim();
+
+  if (!search) {
+    return true;
   }
-};
 
-const handleDeleteUser = async (userId) => {
-  const confirmed = window.confirm(
-    "Ești sigur că vrei să ștergi acest utilizator?"
+  return (
+    user.username?.toLowerCase().includes(search) ||
+    user.full_name?.toLowerCase().includes(search) ||
+    user.email?.toLowerCase().includes(search)
   );
-
-  if (!confirmed) {
-    return;
-  }
-
-  try {
-    const response = await api.delete(`/users/${userId}`);
-
-    setUsers((currentUsers) =>
-      currentUsers.filter((user) => user.id !== userId)
-    );
-
-    console.log(response.data.message);
-  } catch (error) {
-    console.error("Eroare ștergere utilizator:", error);
-
-    alert(
-      error.response?.data?.message ||
-        "Utilizatorul nu a putut fi șters."
-    );
-  }
-};
-
+});
   if (loading) {
     return <div>Se încarcă utilizatorii...</div>;
   }
@@ -124,101 +122,96 @@ const handleDeleteUser = async (userId) => {
   }
 
   return (
-  <div className="admin-page">
-    <h1>Administrare utilizatori</h1>
+    <div className="admin-page">
+      <h1>Administrare utilizatori</h1>
 
-    <p className="admin-description">
-      Gestionarea conturilor și a drepturilor utilizatorilor.
-    </p>
+      <p className="admin-description">
+        Gestionarea conturilor și a drepturilor utilizatorilor.
+      </p>
+
+<div className="admin-search">
+  <input
+    type="text"
+    placeholder="Caută după utilizator, nume sau email..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+  />
+</div>
 
       <div className="admin-table-wrapper">
-  <table className="admin-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Utilizator</th>
-            <th>Nume complet</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Status</th>
-            <th>Acțiuni</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-
-              <td>{user.username}</td>
-
-              <td>{user.full_name}</td>
-
-              <td>{user.email}</td>
-
-              <td>
-                <select
-                  value={user.role}
-                  disabled={updatingUserId === user.id}
-                  onChange={(e) =>
-                    handleRoleChange(
-                      user.id,
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="USER">USER</option>
-                  <option value="EDITOR">EDITOR</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
-
-                {updatingUserId === user.id && (
-                  <span> Se salvează...</span>
-                )}
-              </td>
-
-              <td>
-  <button
-  type="button"
-  className="admin-status-button"
-  onClick={() =>
-    handleStatusChange(
-      user.id,
-      user.is_active
-    )
-  }
->
-  {user.is_active
-    ? "Dezactivează"
-    : "Activează"}
-</button>
-
-  <span className="admin-status">
-    {" "}
-    {user.is_active ? "Activ" : "Inactiv"}
-  </span>
-</td>
-<td>
-  <button
-    type="button"
-    className="admin-delete"
-    onClick={() => handleDeleteUser(user.id)}
-  >
-    Șterge
-  </button>
-</td>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Utilizator</th>
+              <th>Nume complet</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Status</th>
+              <th>Acțiuni</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {filteredUsers.map((user) => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+
+                <td>{user.username}</td>
+
+                <td>{user.full_name}</td>
+
+                <td>{user.email}</td>
+
+                <td>
+                  <select
+                    value={user.role}
+                    disabled={updatingUserId === user.id}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                  >
+                    <option value="USER">USER</option>
+                    <option value="EDITOR">EDITOR</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+
+                  {updatingUserId === user.id && <span> Se salvează...</span>}
+                </td>
+
+                <td>
+                  <button
+                    type="button"
+                    className="admin-status-button"
+                    onClick={() => handleStatusChange(user.id, user.is_active)}
+                  >
+                    {user.is_active ? "Dezactivează" : "Activează"}
+                  </button>
+
+                  <span
+                    className={`admin-status ${
+                      user.is_active
+                        ? "admin-status-active"
+                        : "admin-status-inactive"
+                    }`}
+                  >
+                    {user.is_active ? "Activ" : "Inactiv"}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="admin-delete"
+                    onClick={() => handleDeleteUser(user.id)}
+                  >
+                    Șterge
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
-
- 
-  
 }
-
-
 
 export default Administrare;

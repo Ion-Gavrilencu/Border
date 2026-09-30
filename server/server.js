@@ -1,9 +1,7 @@
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
-
 
 dotenv.config();
 
@@ -11,6 +9,12 @@ const pool = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const telegramRoutes = require("./routes/telegramRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const legislationRoutes = require("./routes/legislationRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
+const usefulInfoRoutes = require("./routes/usefulInfoRoutes");
+const searchRoutes = require("./routes/searchRoutes");
+const auditRoutes = require("./routes/auditRoutes");
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -19,13 +23,11 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
@@ -58,4 +60,11 @@ app.listen(PORT, () => {
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/telegrame", telegramRoutes);
+  app.use("/api/ordine", orderRoutes);
+  app.use("/api/legislatie", legislationRoutes);
+  app.use("/api/dashboard", dashboardRoutes);
+  app.use("/api/legislatie", legislationRoutes);
+  app.use("/api/informatii-utile", usefulInfoRoutes);
+  app.use("/api/search", searchRoutes);
+  app.use("/api/audit", auditRoutes);
 });

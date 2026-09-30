@@ -5,6 +5,7 @@ const {
   getTelegramById,
   createTelegram,
   updateTelegram,
+  deleteTelegram,
 } = require("../controllers/telegramController");
 
 const authenticate = require("../middleware/authMiddleware");
@@ -42,4 +43,10 @@ router.patch(
   updateTelegram
 );
 
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeRoles("ADMIN"),
+  deleteTelegram
+);
 module.exports = router;

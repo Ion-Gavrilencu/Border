@@ -8,7 +8,9 @@ function Telegrame() {
     const navigate = useNavigate();
     const { user } = useAuth();
   const [telegrame, setTelegrame] = useState([]);
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -97,6 +99,42 @@ function Telegrame() {
     return <div>{error}</div>;
   }
 
+  const filteredTelegrame = telegrame.filter((telegram) => {
+  const search = searchTerm.toLowerCase().trim();
+
+  const matchesSearch =
+    !search ||
+    telegram.title?.toLowerCase().includes(search) ||
+    telegram.number?.toLowerCase().includes(search) ||
+    telegram.created_by_name?.toLowerCase().includes(search) ||
+    telegram.created_by_username?.toLowerCase().includes(search);
+
+  const telegramDate = telegram.telegram_date
+    ? new Date(telegram.telegram_date)
+    : null;
+
+  const matchesDateFrom =
+    !dateFrom ||
+    (telegramDate &&
+      telegramDate >= new Date(`${dateFrom}T00:00:00`));
+
+  const matchesDateTo =
+    !dateTo ||
+    (telegramDate &&
+      telegramDate <= new Date(`${dateTo}T23:59:59`));
+
+  return (
+    matchesSearch &&
+    matchesDateFrom &&
+    matchesDateTo
+  );
+});
+
+const resetFilters = () => {
+  setSearchTerm("");
+  setDateFrom("");
+  setDateTo("");
+};
   return (
   <div className="telegrame-page">
     <div className="telegrame-header">
@@ -122,6 +160,40 @@ function Telegrame() {
       : "Adaugă telegramă"}
   </button>
 )}
+
+<input
+  type="text"
+  placeholder="Caută după număr, titlu sau autor..."
+  
+  value={searchTerm}
+  onChange={(event) =>
+    setSearchTerm(event.target.value)
+  }
+  className="telegram-search-input"
+/>
+
+<input
+  type="date"
+  value={dateFrom}
+  onChange={(event) => setDateFrom(event.target.value)}
+  className="telegram-date-filter"
+/>
+
+<input
+  type="date"
+  value={dateTo}
+  onChange={(event) => setDateTo(event.target.value)}
+  className="telegram-date-filter"
+/> 
+
+<button
+  type="button"
+  className="telegram-reset-button"
+  onClick={resetFilters}
+>
+  Resetează filtrele
+</button> 
+
     </div>
 
     {error && (
@@ -217,7 +289,14 @@ function Telegrame() {
 </thead>
 
           <tbody>
-            {telegrame.map((telegram) => (
+            {filteredTelegrame.length === 0 ? (
+  <tr>
+    <td colSpan="6" className="telegram-no-results">
+      Nu au fost găsite rezultate.
+    </td>
+  </tr>
+) : (
+  filteredTelegrame.map((telegram) => (
               <tr key={telegram.id}>
                 <td>{telegram.id}</td>
 
@@ -252,7 +331,8 @@ function Telegrame() {
   </button>
 </td>
               </tr>
-            ))}
+            ))
+          )}
           </tbody>
         </table>
       </div>

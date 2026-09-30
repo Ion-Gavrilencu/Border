@@ -1,5 +1,5 @@
 const pool = require("../config/database");
-
+const { createAuditLog } = require("./auditController");
 const getTelegrame = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -54,7 +54,7 @@ const getTelegramById = async (req, res) => {
         ON t.created_by = u.id
       WHERE t.id = $1
       `,
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -77,12 +77,7 @@ const getTelegramById = async (req, res) => {
 
 const createTelegram = async (req, res) => {
   try {
-    const {
-      title,
-      number,
-      telegramDate,
-      content,
-    } = req.body;
+    const { title, number, telegramDate, content } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({
@@ -110,14 +105,16 @@ const createTelegram = async (req, res) => {
         created_at,
         updated_at
       `,
-      [
-        title,
-        number || null,
-        telegramDate || null,
-        content,
-        req.user.id,
-      ]
+      [title, number || null, telegramDate || null, content, req.user.id],
     );
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: "CREATE",
+      entityType: "telegrama",
+      entityId: result.rows[0].id,
+      description: `A creat telegrama "${result.rows[0].title}"`,
+    });
 
     return res.status(201).json({
       message: "Telegrama a fost adăugată.",
@@ -136,12 +133,7 @@ const updateTelegram = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      title,
-      number,
-      telegramDate,
-      content,
-    } = req.body;
+    const { title, number, telegramDate, content } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({
@@ -169,13 +161,7 @@ const updateTelegram = async (req, res) => {
         created_at,
         updated_at
       `,
-      [
-        title,
-        number || null,
-        telegramDate || null,
-        content,
-        id,
-      ]
+      [title, number || null, telegramDate || null, content, id],
     );
 
     if (result.rows.length === 0) {
@@ -183,6 +169,14 @@ const updateTelegram = async (req, res) => {
         message: "Telegrama nu a fost găsită.",
       });
     }
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: "UPDATE",
+      entityType: "telegrama",
+      entityId: result.rows[0].id,
+      description: `A modificat telegrama "${result.rows[0].title}"`,
+    });
 
     return res.status(200).json({
       message: "Telegrama a fost actualizată.",
@@ -197,9 +191,50 @@ const updateTelegram = async (req, res) => {
   }
 };
 
+const deleteTelegram = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+      DELETE FROM telegrame
+      WHERE id = $1
+      RETURNING id, title
+      `,
+      [id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Telegrama nu a fost găsită.",
+      });
+    }
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: "DELETE",
+      entityType: "telegrama",
+      entityId: Number(id),
+      description: `A șters telegrama cu ID ${id}`,
+    }); 
+    
+    return res.status(200).json({
+      message: "Telegrama a fost ștearsă.",
+      telegram: result.rows[0],
+    });
+  } catch (error) {
+    console.error("DELETE TELEGRAM ERROR:", error);
+
+    return res.status(500).json({
+      message: "Eroare la ștergerea telegramei.",
+    });
+  }
+};
+
 module.exports = {
   getTelegrame,
   getTelegramById,
   createTelegram,
   updateTelegram,
+  deleteTelegram,
 };

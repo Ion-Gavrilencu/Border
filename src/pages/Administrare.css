@@ -89,3 +89,69 @@
   color: #777;
   font-size: 13px;
 }
+
+.admin-status {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 4px 9px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-status-active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.admin-status-inactive {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.admin-search {
+  margin: 20px 0;
+}
+
+.admin-search input {
+  width: 100%;
+  max-width: 420px;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.admin-search input:focus {
+  border-color: #999;
+}
+
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  min-width: 900px;
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    width: 100%;
+  }
+
+  .admin-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    white-space: nowrap;
+  }
+
+  .admin-search input {
+    max-width: 100%;
+  }
+}

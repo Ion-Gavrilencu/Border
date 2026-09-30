@@ -1,0 +1,41 @@
+.useful-info-page .telegram-list {
+  display: grid;
+  gap: 16px;
+}
+
+.useful-info-page .telegram-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.useful-info-page .telegram-card h3 {
+  margin-bottom: 8px;
+}
+
+.useful-info-page .telegram-card p {
+  line-height: 1.6;
+}
+
+.useful-info-page .telegram-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.useful-info-page .telegram-card small {
+  display: block;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .useful-info-page .telegram-card {
+    flex-direction: column;
+  }
+
+  .useful-info-page .telegram-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

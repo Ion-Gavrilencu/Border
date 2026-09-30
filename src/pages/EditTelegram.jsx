@@ -36,8 +36,7 @@ function EditTelegram() {
         console.error("Eroare încărcare telegramă:", error);
 
         setError(
-          error.response?.data?.message ||
-            "Telegrama nu a putut fi încărcată."
+          error.response?.data?.message || "Telegrama nu a putut fi încărcată.",
         );
       } finally {
         setLoading(false);
@@ -70,8 +69,7 @@ function EditTelegram() {
       console.error("Eroare modificare telegramă:", error);
 
       setError(
-        error.response?.data?.message ||
-          "Telegrama nu a putut fi modificată."
+        error.response?.data?.message || "Telegrama nu a putut fi modificată.",
       );
     } finally {
       setSaving(false);
@@ -84,25 +82,15 @@ function EditTelegram() {
 
   return (
     <div className="telegrame-page">
-      <button
-        type="button"
-        onClick={() => navigate(`/telegrame/${id}`)}
-      >
+      <button type="button" onClick={() => navigate(`/telegrame/${id}`)}>
         ← Înapoi
       </button>
 
       <h1>Editează telegrama</h1>
 
-      {error && (
-        <div className="telegram-error">
-          {error}
-        </div>
-      )}
+      {error && <div className="telegram-error">{error}</div>}
 
-      <form
-        className="telegram-form"
-        onSubmit={handleSubmit}
-      >
+      <form className="telegram-form" onSubmit={handleSubmit}>
         <div className="telegram-form-group">
           <label>Număr telegramă</label>
 
@@ -154,9 +142,7 @@ function EditTelegram() {
           className="telegram-save-button"
           disabled={saving}
         >
-          {saving
-            ? "Se salvează..."
-            : "Salvează modificările"}
+          {saving ? "Se salvează..." : "Salvează modificările"}
         </button>
       </form>
     </div>

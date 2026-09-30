@@ -59,6 +59,30 @@ function TelegramDetails() {
     return <div>Telegrama nu există.</div>;
   }
 
+  const handleDelete = async () => {
+  const confirmed = window.confirm(
+    "Sigur dorești să ștergi această telegramă?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await api.delete(`/telegrame/${id}`);
+
+    alert("Telegrama a fost ștearsă.");
+
+    navigate("/telegrame");
+  } catch (error) {
+    console.error("Eroare la ștergerea telegramei:", error);
+
+    alert(
+      error.response?.data?.message ||
+        "Telegrama nu a putut fi ștearsă."
+    );
+  }
+};
   return (
     <div className="telegrame-page">
       <button
@@ -77,6 +101,16 @@ function TelegramDetails() {
     }
   >
     Editează
+  </button>
+)}
+
+{user?.role === "ADMIN" && (
+  <button
+    type="button"
+    className="telegram-delete-button"
+    onClick={handleDelete}
+  >
+    Șterge
   </button>
 )}
 

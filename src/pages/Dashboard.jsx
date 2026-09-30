@@ -1,29 +1,48 @@
-import {
-  Megaphone,
-  FileText,
-  Scale,
-  Info,
-  ArrowRight
-} from "lucide-react";
-
+import { Megaphone, FileText, Scale, Info, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 import "./Dashboard.css";
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    telegrame: 0,
+    ordine: 0,
+    legislatie: 0,
+    informatii_utile: 0,
+    utilizatori: 0,
+  });
+
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [recent, setRecent] = useState([]);
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await api.get("/dashboard/stats");
+
+        setStats(response.data.stats);
+        setRecent(response.data.recent || []);
+      } catch (error) {
+        console.error("Eroare la încărcarea statisticilor:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    loadStats();
+  }, []);
   return (
     <div className="dashboard">
-
       <div className="welcome-section">
         <div>
           <h1>Bine ai venit!</h1>
 
-          <p>
-            Aici găsești informațiile și documentele de serviciu.
-          </p>
+          <p>Aici găsești informațiile și documentele de serviciu.</p>
         </div>
       </div>
 
       <div className="stats-grid">
-
         <div className="stat-card">
           <div className="stat-icon">
             <Megaphone size={24} />
@@ -31,7 +50,7 @@ function Dashboard() {
 
           <div>
             <span>Telegrame</span>
-            <strong>24</strong>
+            <strong>{loadingStats ? "..." : stats.telegrame}</strong>
           </div>
         </div>
 
@@ -42,7 +61,7 @@ function Dashboard() {
 
           <div>
             <span>Ordine interne</span>
-            <strong>16</strong>
+            <strong>{loadingStats ? "..." : stats.ordine}</strong>
           </div>
         </div>
 
@@ -53,7 +72,7 @@ function Dashboard() {
 
           <div>
             <span>Acte legislative</span>
-            <strong>38</strong>
+            <strong>{loadingStats ? "..." : stats.legislatie}</strong>
           </div>
         </div>
 
@@ -64,16 +83,13 @@ function Dashboard() {
 
           <div>
             <span>Informații utile</span>
-            <strong>12</strong>
+            <strong>{loadingStats ? "..." : stats.informatii_utile}</strong>
           </div>
         </div>
-
       </div>
 
       <div className="dashboard-grid">
-
         <section className="dashboard-card">
-
           <div className="card-header">
             <div>
               <h2>Ultimele informații</h2>
@@ -84,49 +100,73 @@ function Dashboard() {
           </div>
 
           <div className="information-list">
+            {recent.length === 0 ? (
+              <p>Nu există documente recente.</p>
+            ) : (
+              recent.map((item) => (
+                <div
+                  className="information-item"
+                  key={`${item.type}-${item.id}`}
+                  onClick={() => {
+                    if (item.type === "telegrama") {
+                      navigate(`/telegrame/${item.id}`);
+                    }
 
-            <div className="information-item">
-              <div className="item-icon telegram">
-                <Megaphone size={19} />
-              </div>
+                    if (item.type === "ordin") {
+                      navigate(`/ordine/${item.id}`);
+                    }
 
-              <div>
-                <strong>Telegramă nouă</strong>
-                <p>Informare privind organizarea activității</p>
-                <small>20 septembrie 2026</small>
-              </div>
-            </div>
+                    if (item.type === "legislatie") {
+                      navigate(`/legislatie/${item.id}`);
+                    }
 
-            <div className="information-item">
-              <div className="item-icon order">
-                <FileText size={19} />
-              </div>
+                    if (item.type === "informatii") {
+                      navigate(`/informatii-utile/${item.id}`);
+                    }
+                  }}
+                >
+                  <div
+                    className={`item-icon ${
+                      item.type === "telegrama"
+                        ? "telegram"
+                        : item.type === "ordin"
+                          ? "order"
+                          : "law"
+                    }`}
+                  >
+                    {item.type === "telegrama" && <Megaphone size={19} />}
 
-              <div>
-                <strong>Ordin intern</strong>
-                <p>Dispoziții privind activitatea de serviciu</p>
-                <small>18 septembrie 2026</small>
-              </div>
-            </div>
+                    {item.type === "ordin" && <FileText size={19} />}
 
-            <div className="information-item">
-              <div className="item-icon law">
-                <Scale size={19} />
-              </div>
+                    {item.type === "legislatie" && <Scale size={19} />}
 
-              <div>
-                <strong>Modificare legislativă</strong>
-                <p>Act normativ adăugat în baza legislativă</p>
-                <small>15 septembrie 2026</small>
-              </div>
-            </div>
+                    {item.type === "informatii" && <Info size={19} />}
+                  </div>
 
+                  <div>
+                    <strong>
+                      {item.type === "telegrama"
+                        ? "Telegramă nouă"
+                        : item.type === "ordin"
+                          ? "Ordin intern"
+                          : item.type === "legislatie"
+                            ? "Act legislativ"
+                            : "Informație utilă"}
+                    </strong>
+
+                    <p>{item.title}</p>
+
+                    <small>
+                      {new Date(item.created_at).toLocaleDateString("ro-RO")}
+                    </small>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-
         </section>
 
         <section className="dashboard-card">
-
           <div className="card-header">
             <div>
               <h2>Acces rapid</h2>
@@ -135,37 +175,32 @@ function Dashboard() {
           </div>
 
           <div className="quick-links">
-
-            <button>
+            <button onClick={() => navigate("/telegrame")}>
               <Megaphone size={20} />
               <span>Telegrame</span>
               <ArrowRight size={17} />
             </button>
 
-            <button>
+            <button onClick={() => navigate("/ordine")}>
               <FileText size={20} />
               <span>Ordine interne</span>
               <ArrowRight size={17} />
             </button>
 
-            <button>
+            <button onClick={() => navigate("/legislatie")}>
               <Scale size={20} />
               <span>Legislație</span>
               <ArrowRight size={17} />
             </button>
 
-            <button>
+            <button onClick={() => navigate("/informatii-utile")}>
               <Info size={20} />
               <span>Informații utile</span>
               <ArrowRight size={17} />
             </button>
-
           </div>
-
         </section>
-
       </div>
-
     </div>
   );
 }

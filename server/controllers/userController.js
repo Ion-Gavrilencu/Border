@@ -28,12 +28,15 @@ const getUsers = async (req, res) => {
   }
 };
 
-
 const updateUserRole = async (req, res) => {
   try {
     const { id } = req.params;
-const { role } = req.body || {};
-
+    const { role } = req.body || {};
+if (Number(id) === Number(req.user.id) && role !== "ADMIN") {
+  return res.status(400).json({
+    message: "Nu îți poți modifica propriul rol de administrator.",
+  });
+}
     const allowedRoles = ["USER", "EDITOR", "ADMIN"];
 
     if (!allowedRoles.includes(role)) {
@@ -58,7 +61,7 @@ const { role } = req.body || {};
         created_at,
         updated_at
       `,
-      [role, id]
+      [role, id],
     );
 
     if (result.rows.length === 0) {
@@ -80,13 +83,15 @@ const { role } = req.body || {};
   }
 };
 
-
 const updateUserStatus = async (req, res) => {
   try {
-    
     const { id } = req.params;
     const { isActive } = req.body;
-
+    if (Number(id) === Number(req.user.id) && isActive === false) {
+      return res.status(400).json({
+        message: "Nu îți poți dezactiva propriul cont de administrator.",
+      });
+    }
     if (typeof isActive !== "boolean") {
       return res.status(400).json({
         message: "Valoarea statusului este invalidă.",
@@ -109,7 +114,7 @@ const updateUserStatus = async (req, res) => {
         created_at,
         updated_at
       `,
-      [isActive, id]
+      [isActive, id],
     );
 
     if (result.rows.length === 0) {
@@ -131,7 +136,6 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
-
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,7 +152,7 @@ const deleteUser = async (req, res) => {
       WHERE id = $1
       RETURNING id, username
       `,
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -169,7 +173,6 @@ const deleteUser = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   getUsers,

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Megaphone,
@@ -9,24 +10,85 @@ import {
   Settings,
   LogOut,
   Bell,
-  User
+  User,
+  Search,
 } from "lucide-react";
-
+import api from "../services/api";
 import "./MainLayout.css";
 
 function MainLayout() {
-    const navigate = useNavigate();
-const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-const handleLogout = async () => {
-  await logout();
-  navigate("/login", { replace: true });
-};
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  useEffect(() => {
+    const value = searchTerm.trim();
+
+    if (!value) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+
+        const response = await api.get(
+          `/search?q=${encodeURIComponent(value)}`,
+        );
+
+        setSearchResults(response.data.results || []);
+        setShowSearchResults(true);
+      } catch (error) {
+        console.error("Eroare la căutare:", error);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const handleSearchResultClick = (item) => {
+    if (item.type === "telegrama") {
+      navigate(`/telegrame/${item.id}`);
+    }
+
+    if (item.type === "ordin") {
+      navigate(`/ordine/${item.id}`);
+    }
+
+    if (item.type === "legislatie") {
+      navigate(`/legislatie/${item.id}`);
+    }
+
+    if (item.type === "informatii") {
+      navigate(`/informatii-utile/${item.id}`);
+    }
+
+    setSearchTerm("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
   return (
     <div className="app-layout">
-
       <aside className="sidebar">
-
         <div className="sidebar-logo">
           <div className="logo-box">PS</div>
 
@@ -37,7 +99,6 @@ const handleLogout = async () => {
         </div>
 
         <nav className="sidebar-menu">
-
           <NavLink to="/dashboard">
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
@@ -62,37 +123,85 @@ const handleLogout = async () => {
             <Info size={20} />
             <span>Informații utile</span>
           </NavLink>
-
         </nav>
 
         <div className="sidebar-bottom">
-
           {user?.role === "ADMIN" && (
-  <NavLink to="/admin">
-    <Settings size={20} />
-    <span>Administrare</span>
-  </NavLink>
-)}
+            <NavLink to="/admin">
+              <Settings size={20} />
+              <span>Administrare</span>
+            </NavLink>
+          )}
 
           <button className="logout-button" onClick={handleLogout}>
             <LogOut size={20} />
             <span>Deconectare</span>
           </button>
-
         </div>
-
       </aside>
 
       <div className="main-area">
-
         <header className="topbar">
-
           <div>
             <h3>Platforma de Serviciu</h3>
           </div>
 
-          <div className="topbar-right">
+          <div className="topbar-search">
+            <Search size={19} />
 
+            <input
+              type="text"
+              placeholder="Caută în documente..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+
+            {showSearchResults && (
+              <div className="search-results">
+                {searchLoading ? (
+                  <div className="search-message">Se caută...</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="search-message">
+                    Nu au fost găsite rezultate.
+                  </div>
+                ) : (
+                  searchResults.map((item) => (
+                    <button
+                      key={`${item.type}-${item.id}`}
+                      className="search-result-item"
+                      onClick={() => handleSearchResultClick(item)}
+                    >
+                      <div className="search-result-icon">
+                        {item.type === "telegrama" && <Megaphone size={17} />}
+
+                        {item.type === "ordin" && <FileText size={17} />}
+
+                        {item.type === "legislatie" && <Scale size={17} />}
+
+                        {item.type === "informatii" && <Info size={17} />}
+                      </div>
+
+                      <div className="search-result-content">
+                        <strong>{item.title}</strong>
+
+                        <span>
+                          {item.type === "telegrama"
+                            ? "Telegramă"
+                            : item.type === "ordin"
+                              ? "Ordin intern"
+                              : item.type === "legislatie"
+                                ? "Act legislativ"
+                                : "Informație utilă"}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="topbar-right">
             <button className="icon-button">
               <Bell size={21} />
               <span className="notification-dot"></span>
@@ -108,17 +217,13 @@ const handleLogout = async () => {
                 <small>Personal</small>
               </div>
             </div>
-
           </div>
-
         </header>
 
         <main className="content">
           <Outlet />
         </main>
-
       </div>
-
     </div>
   );
 }
