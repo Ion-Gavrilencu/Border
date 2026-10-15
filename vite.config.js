@@ -4,5 +4,5 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Adaugă această linie
+  base: '/Border/', // Pune exact numele repository-ului tău între slash-uri
 })
