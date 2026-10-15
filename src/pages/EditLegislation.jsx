@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
+import "./EditLegislation.css";
 
 function EditLegislation() {
   const { id } = useParams();
@@ -85,90 +86,134 @@ function EditLegislation() {
   };
 
   if (loading) {
-    return <div>Se încarcă...</div>;
+    return (
+      <div className="edit-legislation-page">
+        <div className="edit-legislation-loading">
+          <div className="edit-legislation-spinner"></div>
+          <span>Se încarcă actul legislativ...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
+    <div className="edit-legislation-page">
+      <div className="edit-legislation-header">
         <div>
+          <span className="edit-legislation-label">
+            GESTIONARE LEGISLAȚIE
+          </span>
+
           <h1>Editează actul legislativ</h1>
+
+          <p>
+            Modifică datele actului legislativ selectat.
+          </p>
         </div>
       </div>
 
       {message && (
-        <div className="error-message">
+        <div className="edit-legislation-message">
           {message}
         </div>
       )}
 
       <form
         onSubmit={handleSubmit}
-        className="telegram-form"
+        className="edit-legislation-form"
       >
-        <div className="form-group">
-          <label>Titlu</label>
+        <div className="edit-legislation-form-header">
+          <h2>Date act legislativ</h2>
 
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-          />
+          <p>
+            Actualizează informațiile necesare și salvează
+            modificările.
+          </p>
         </div>
 
-        <div className="form-group">
-          <label>Număr act</label>
+        <div className="edit-legislation-form-body">
+          <div className="edit-legislation-form-group">
+            <label htmlFor="title">
+              Titlu
+            </label>
 
-          <input
-            type="text"
-            name="lawNumber"
-            value={formData.lawNumber}
-            onChange={handleChange}
-          />
+            <input
+              id="title"
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Introduceți titlul actului legislativ"
+              required
+            />
+          </div>
+
+          <div className="edit-legislation-form-group">
+            <label htmlFor="lawNumber">
+              Număr act
+            </label>
+
+            <input
+              id="lawNumber"
+              type="text"
+              name="lawNumber"
+              value={formData.lawNumber}
+              onChange={handleChange}
+              placeholder="Ex.: Legea nr. 28/2024"
+            />
+          </div>
+
+          <div className="edit-legislation-form-group">
+            <label htmlFor="lawDate">
+              Data actului
+            </label>
+
+            <input
+              id="lawDate"
+              type="date"
+              name="lawDate"
+              value={formData.lawDate}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="edit-legislation-form-group">
+            <label htmlFor="content">
+              Conținut
+            </label>
+
+            <textarea
+              id="content"
+              name="content"
+              value={formData.content}
+              onChange={handleChange}
+              rows="12"
+              placeholder="Introduceți conținutul actului legislativ..."
+              required
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label>Data actului</label>
-
-          <input
-            type="date"
-            name="lawDate"
-            value={formData.lawDate}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Conținut</label>
-
-          <textarea
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows="12"
-            required
-          />
-        </div>
-
-        <div className="telegram-actions">
+        <div className="edit-legislation-actions">
           <button
             type="button"
-            className="telegram-view-button"
+            className="edit-legislation-cancel-button"
             onClick={() =>
               navigate(`/legislatie/${id}`)
             }
+            disabled={saving}
           >
             Anulează
           </button>
 
           <button
             type="submit"
-            className="add-button"
+            className="edit-legislation-save-button"
             disabled={saving}
           >
-            {saving ? "Se salvează..." : "Salvează modificările"}
+            {saving
+              ? "Se salvează..."
+              : "Salvează modificările"}
           </button>
         </div>
       </form>

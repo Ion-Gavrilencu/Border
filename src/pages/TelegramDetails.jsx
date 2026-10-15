@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import Attachments from "../components/Attachments";
+import "./TelegramDetails.css";
 
 function TelegramDetails() {
-    const { user } = useAuth();
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+
+  
 
   const [telegram, setTelegram] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,8 +29,7 @@ function TelegramDetails() {
         console.error("Eroare telegramă:", error);
 
         setError(
-          error.response?.data?.message ||
-            "Telegrama nu a putut fi încărcată."
+          error.response?.data?.message || "Telegrama nu a putut fi încărcată.",
         );
       } finally {
         setLoading(false);
@@ -36,126 +39,187 @@ function TelegramDetails() {
     loadTelegram();
   }, [id]);
 
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "Sigur dorești să ștergi această telegramă?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await api.delete(`/telegrame/${id}`);
+
+      alert("Telegrama a fost ștearsă.");
+
+      navigate("/telegrame");
+    } catch (error) {
+      console.error("Eroare la ștergerea telegramei:", error);
+
+      alert(
+        error.response?.data?.message || "Telegrama nu a putut fi ștearsă.",
+      );
+    }
+  };
+
   if (loading) {
-    return <div>Se încarcă telegrama...</div>;
+    return (
+      <div className="telegram-details-loading">
+        <div className="telegram-details-spinner" />
+        <span>Se încarcă telegrama...</span>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div>
-        <p>{error}</p>
+      <div className="telegram-details-page">
+        <div className="telegram-details-error">
+          <span className="telegram-details-error-icon">!</span>
+          <span>{error}</span>
+        </div>
 
         <button
           type="button"
+          className="telegram-details-back-button"
           onClick={() => navigate("/telegrame")}
         >
-          Înapoi la telegrame
+          ← Înapoi la telegrame
         </button>
       </div>
     );
   }
 
   if (!telegram) {
-    return <div>Telegrama nu există.</div>;
-  }
+    return (
+      <div className="telegram-details-page">
+        <div className="telegram-details-error">
+          <span className="telegram-details-error-icon">!</span>
+          <span>Telegrama nu există.</span>
+        </div>
 
-  const handleDelete = async () => {
-  const confirmed = window.confirm(
-    "Sigur dorești să ștergi această telegramă?"
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-  try {
-    await api.delete(`/telegrame/${id}`);
-
-    alert("Telegrama a fost ștearsă.");
-
-    navigate("/telegrame");
-  } catch (error) {
-    console.error("Eroare la ștergerea telegramei:", error);
-
-    alert(
-      error.response?.data?.message ||
-        "Telegrama nu a putut fi ștearsă."
+        <button
+          type="button"
+          className="telegram-details-back-button"
+          onClick={() => navigate("/telegrame")}
+        >
+          ← Înapoi la telegrame
+        </button>
+      </div>
     );
   }
-};
+
   return (
-    <div className="telegrame-page">
-      <button
-        type="button"
-        onClick={() => navigate("/telegrame")}
-      >
-        ← Înapoi la telegrame
-      </button>
+    <div className="telegram-details-page">
+      <div className="telegram-details-header">
+        <div className="telegram-details-title-section">
+          <div className="telegram-details-label">TELEGRAMĂ</div>
 
-      {(user?.role === "EDITOR" ||
-  user?.role === "ADMIN") && (
-  <button
-    type="button"
-    onClick={() =>
-      navigate(`/telegrame/${id}/edit`)
-    }
-  >
-    Editează
-  </button>
-)}
+          <h1>{telegram.title}</h1>
 
-{user?.role === "ADMIN" && (
-  <button
-    type="button"
-    className="telegram-delete-button"
-    onClick={handleDelete}
-  >
-    Șterge
-  </button>
-)}
-
-      <h1>{telegram.title}</h1>
-
-      <div>
-        <p>
-          <strong>Număr:</strong>{" "}
-          {telegram.number || "-"}
-        </p>
-
-        <p>
-          <strong>Data:</strong>{" "}
-          {telegram.telegram_date
-            ? new Date(
-                telegram.telegram_date
-              ).toLocaleDateString("ro-RO")
-            : "-"}
-        </p>
-
-        <p>
-          <strong>Creat de:</strong>{" "}
-          {telegram.created_by_name ||
-            telegram.created_by_username ||
-            "-"}
-        </p>
-
-        <p>
-          <strong>Data creării:</strong>{" "}
-          {telegram.created_at
-            ? new Date(
-                telegram.created_at
-              ).toLocaleString("ro-RO")
-            : "-"}
-        </p>
-
-        <hr />
-
-        <h2>Conținut</h2>
-
-        <div>
-          {telegram.content}
+          <p>Informații și conținutul telegramei</p>
         </div>
+
+        <button
+          type="button"
+          className="telegram-details-back-button"
+          onClick={() => navigate("/telegrame")}
+        >
+          ← Înapoi la telegrame
+        </button>
+      </div>
+
+      <div className="telegram-details-card">
+        <div className="telegram-details-card-header">
+          <h2>Detalii telegramă</h2>
+        </div>
+
+        <div className="telegram-details-card-body">
+          <div className="telegram-details-info-grid">
+            <div className="telegram-details-info-item">
+              <span className="telegram-details-info-label">Număr</span>
+
+              <span className="telegram-details-info-value">
+                {telegram.number || "-"}
+              </span>
+            </div>
+
+            <div className="telegram-details-info-item">
+              <span className="telegram-details-info-label">
+                Data telegramei
+              </span>
+
+              <span className="telegram-details-info-value">
+                {telegram.telegram_date
+                  ? new Date(telegram.telegram_date).toLocaleDateString("ro-RO")
+                  : "-"}
+              </span>
+            </div>
+
+            <div className="telegram-details-info-item">
+              <span className="telegram-details-info-label">Creat de</span>
+
+              <span className="telegram-details-info-value">
+                {telegram.created_by_name ||
+                  telegram.created_by_username ||
+                  "-"}
+              </span>
+            </div>
+
+            <div className="telegram-details-info-item">
+              <span className="telegram-details-info-label">Data creării</span>
+
+              <span className="telegram-details-info-value">
+                {telegram.created_at
+                  ? new Date(telegram.created_at).toLocaleString("ro-RO")
+                  : "-"}
+              </span>
+            </div>
+          </div>
+
+          <div className="telegram-details-content-section">
+            <div className="telegram-details-content-label">Conținut</div>
+
+            <div className="telegram-details-content">
+              {telegram.content || "Nu există conținut disponibil."}
+            </div>
+          </div>
+
+          <Attachments
+  entityType="telegrame"
+  entityId={telegram.id}
+  canEdit={user?.role === "EDITOR" || user?.role === "ADMIN"}
+  canDelete={user?.role === "ADMIN"}
+/>
+
+        </div>
+
+        {(user?.role === "EDITOR" || user?.role === "ADMIN") && (
+          <div className="telegram-details-actions">
+            <button
+              type="button"
+              className="telegram-details-edit-button"
+              onClick={() => navigate(`/telegrame/${id}/edit`)}
+            >
+              Editează telegrama
+            </button>
+
+            {user?.role === "ADMIN" && (
+              <button
+                type="button"
+                className="telegram-details-delete-button"
+                onClick={handleDelete}
+              >
+                Șterge telegrama
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
+
+    
   );
 }
 

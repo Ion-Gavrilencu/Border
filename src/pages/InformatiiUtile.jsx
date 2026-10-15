@@ -7,6 +7,7 @@ import "./InformatiiUtile.css";
 function InformatiiUtile() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const [informatii, setInformatii] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -18,8 +19,11 @@ function InformatiiUtile() {
     content: "",
   });
 
-  const canEdit = user?.role === "EDITOR" || user?.role === "ADMIN";
+  const canEdit =
+    user?.role === "EDITOR" || user?.role === "ADMIN";
+
   const canDelete = user?.role === "ADMIN";
+
   const loadInformatii = async () => {
     try {
       setLoading(true);
@@ -28,11 +32,14 @@ function InformatiiUtile() {
 
       setInformatii(response.data.informatii || []);
     } catch (error) {
-      console.error("Eroare la încărcarea informațiilor utile:", error);
+      console.error(
+        "Eroare la încărcarea informațiilor utile:",
+        error
+      );
 
       setMessage(
         error.response?.data?.message ||
-          "Eroare la încărcarea informațiilor utile.",
+          "Eroare la încărcarea informațiilor utile."
       );
     } finally {
       setLoading(false);
@@ -68,22 +75,27 @@ function InformatiiUtile() {
 
       setShowForm(false);
 
-      setMessage("Informația utilă a fost adăugată.");
+      setMessage(
+        "Informația utilă a fost adăugată."
+      );
 
       await loadInformatii();
     } catch (error) {
-      console.error("Eroare la adăugarea informației utile:", error);
+      console.error(
+        "Eroare la adăugarea informației utile:",
+        error
+      );
 
       setMessage(
         error.response?.data?.message ||
-          "Eroare la adăugarea informației utile.",
+          "Eroare la adăugarea informației utile."
       );
     }
   };
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
-      "Ești sigur că vrei să ștergi această informație?",
+      "Ești sigur că vrei să ștergi această informație?"
     );
 
     if (!confirmed) {
@@ -95,49 +107,76 @@ function InformatiiUtile() {
 
       await api.delete(`/informatii-utile/${id}`);
 
-      setMessage("Informația utilă a fost ștearsă.");
+      setMessage(
+        "Informația utilă a fost ștearsă."
+      );
 
       await loadInformatii();
     } catch (error) {
-      console.error("Eroare la ștergerea informației utile:", error);
+      console.error(
+        "Eroare la ștergerea informației utile:",
+        error
+      );
 
       setMessage(
         error.response?.data?.message ||
-          "Eroare la ștergerea informației utile.",
+          "Eroare la ștergerea informației utile."
       );
     }
   };
 
   if (loading) {
-    return <div>Se încarcă informațiile utile...</div>;
+    return (
+      <div className="informatii-page">
+        <div className="informatii-loading">
+          Se încarcă informațiile utile...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page-container useful-info-page">
-      <div className="page-header">
+    <div className="informatii-page">
+      <div className="informatii-header">
         <div>
           <h1>Informații utile</h1>
-          <p>Informații și materiale utile pentru activitatea de serviciu</p>
+
+          <p className="informatii-description">
+            Informații și materiale utile pentru activitatea
+            de serviciu.
+          </p>
         </div>
 
         {canEdit && (
           <button
-            className="add-button"
+            type="button"
+            className="informatii-add-button"
             onClick={() => {
-              setShowForm(!showForm);
+              setShowForm((current) => !current);
               setMessage("");
             }}
           >
-            {showForm ? "Închide" : "Adaugă informație"}
+            {showForm
+              ? "Închide"
+              : "Adaugă informație"}
           </button>
         )}
       </div>
 
-      {message && <div className="success-message">{message}</div>}
+      {message && (
+        <div className="informatii-message">
+          {message}
+        </div>
+      )}
 
       {showForm && canEdit && (
-        <form onSubmit={handleSubmit} className="telegram-form">
-          <div className="form-group">
+        <form
+          onSubmit={handleSubmit}
+          className="informatii-form"
+        >
+          <h2>Adaugă informație utilă</h2>
+
+          <div className="informatii-form-group">
             <label>Titlu</label>
 
             <input
@@ -145,11 +184,12 @@ function InformatiiUtile() {
               name="title"
               value={formData.title}
               onChange={handleChange}
+              placeholder="Introduceți titlul"
               required
             />
           </div>
 
-          <div className="form-group">
+          <div className="informatii-form-group">
             <label>Categorie</label>
 
             <input
@@ -161,77 +201,108 @@ function InformatiiUtile() {
             />
           </div>
 
-          <div className="form-group">
+          <div className="informatii-form-group">
             <label>Conținut</label>
 
             <textarea
               name="content"
               value={formData.content}
               onChange={handleChange}
+              placeholder="Introduceți informația..."
               rows="8"
               required
             />
           </div>
 
-          <button type="submit" className="add-button">
-            Salvează
+          <button
+            type="submit"
+            className="informatii-save-button"
+          >
+            Salvează informația
           </button>
         </form>
       )}
 
-      <div className="telegram-list">
+      <div className="informatii-list">
         {informatii.length === 0 ? (
-          <p>Nu există informații utile.</p>
+          <div className="informatii-empty">
+            Nu există informații utile.
+          </div>
         ) : (
           informatii.map((item) => (
-            <div key={item.id} className="telegram-card">
-              <div>
-                <h3>{item.title}</h3>
+            <div
+              key={item.id}
+              className="informatii-card"
+            >
+              <div className="informatii-card-content">
+                <div className="informatii-card-main">
+                  <span className="informatii-card-label">
+                    INFORMAȚIE UTILĂ
+                  </span>
 
-                {item.category && (
-                  <p>
-                    <strong>Categorie:</strong> {item.category}
+                  <h3>{item.title}</h3>
+
+                  {item.category && (
+                    <div className="informatii-category">
+                      {item.category}
+                    </div>
+                  )}
+
+                  <p className="informatii-preview">
+                    {item.content.length > 180
+                      ? `${item.content.substring(
+                          0,
+                          180
+                        )}...`
+                      : item.content}
                   </p>
-                )}
 
-                <p>
-                  {item.content.length > 180
-                    ? `${item.content.substring(0, 180)}...`
-                    : item.content}
-                </p>
+                  {item.created_by_name && (
+                    <small className="informatii-author">
+                      Adăugat de: {item.created_by_name}
+                    </small>
+                  )}
+                </div>
 
-                {item.created_by_name && (
-                  <small>Adăugat de: {item.created_by_name}</small>
-                )}
-              </div>
-
-              <div className="telegram-actions">
-                <button
-                  className="telegram-view-button"
-                  onClick={() => navigate(`/informatii-utile/${item.id}`)}
-                >
-                  Vezi detalii
-                </button>
-
-                {canEdit && (
+                <div className="informatii-actions">
                   <button
-                    className="telegram-view-button"
+                    type="button"
+                    className="informatii-view-button"
                     onClick={() =>
-                      navigate(`/informatii-utile/${item.id}/edit`)
+                      navigate(
+                        `/informatii-utile/${item.id}`
+                      )
                     }
                   >
-                    Editează
+                    Vezi detalii
                   </button>
-                )}
 
-                {canDelete && (
-                  <button
-                    className="telegram-delete-button"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    Șterge
-                  </button>
-                )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="informatii-edit-button"
+                      onClick={() =>
+                        navigate(
+                          `/informatii-utile/${item.id}/edit`
+                        )
+                      }
+                    >
+                      Editează
+                    </button>
+                  )}
+
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="informatii-delete-button"
+                      onClick={() =>
+                        handleDelete(item.id)
+                      }
+                    >
+                      Șterge
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))

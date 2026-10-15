@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
+import "./EditInformatiiUtile.css";
 
 function EditInformatiiUtile() {
   const { id } = useParams();
@@ -91,78 +92,114 @@ function EditInformatiiUtile() {
   };
 
   if (loading) {
-    return <div>Se încarcă informația...</div>;
+    return (
+      <div className="edit-informatii-page">
+        <div className="edit-informatii-loading">
+          <div className="edit-informatii-spinner"></div>
+          <span>Se încarcă informația...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
+    <div className="edit-informatii-page">
+      <div className="edit-informatii-header">
         <div>
+          <span className="edit-informatii-label">
+            GESTIONARE CONȚINUT
+          </span>
+
           <h1>Editează informația utilă</h1>
-          <p>Modifică datele informației selectate</p>
+
+          <p>
+            Modifică datele informației selectate.
+          </p>
         </div>
       </div>
 
       {message && (
-        <div className="success-message">
+        <div className="edit-informatii-message">
           {message}
         </div>
       )}
 
       <form
         onSubmit={handleSubmit}
-        className="telegram-form"
+        className="edit-informatii-form"
       >
-        <div className="form-group">
-          <label>Titlu</label>
+        <div className="edit-informatii-form-header">
+          <h2>Date informație</h2>
 
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-          />
+          <p>
+            Actualizează câmpurile necesare și salvează
+            modificările.
+          </p>
         </div>
 
-        <div className="form-group">
-          <label>Categorie</label>
+        <div className="edit-informatii-form-body">
+          <div className="edit-informatii-form-group">
+            <label htmlFor="title">Titlu</label>
 
-          <input
-            type="text"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-          />
+            <input
+              id="title"
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Introduceți titlul informației"
+              required
+            />
+          </div>
+
+          <div className="edit-informatii-form-group">
+            <label htmlFor="category">Categorie</label>
+
+            <input
+              id="category"
+              type="text"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              placeholder="Ex.: Proceduri, Contacte, General"
+            />
+          </div>
+
+          <div className="edit-informatii-form-group">
+            <label htmlFor="content">Conținut</label>
+
+            <textarea
+              id="content"
+              name="content"
+              value={formData.content}
+              onChange={handleChange}
+              rows="12"
+              placeholder="Introduceți conținutul informației..."
+              required
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label>Conținut</label>
-
-          <textarea
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows="10"
-            required
-          />
-        </div>
-
-        <div className="telegram-actions">
+        <div className="edit-informatii-actions">
           <button
-            type="submit"
-            className="add-button"
+            type="button"
+            className="edit-informatii-cancel-button"
+            onClick={() =>
+              navigate("/informatii-utile")
+            }
             disabled={saving}
           >
-            {saving ? "Se salvează..." : "Salvează modificările"}
+            Anulează
           </button>
 
           <button
-            type="button"
-            className="telegram-view-button"
-            onClick={() => navigate("/informatii-utile")}
+            type="submit"
+            className="edit-informatii-save-button"
+            disabled={saving}
           >
-            Anulează
+            {saving
+              ? "Se salvează..."
+              : "Salvează modificările"}
           </button>
         </div>
       </form>

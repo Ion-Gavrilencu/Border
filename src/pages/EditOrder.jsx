@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
+import "./EditOrder.css";
 
 function EditOrder() {
   const { id } = useParams();
@@ -12,6 +13,7 @@ function EditOrder() {
   const [content, setContent] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -23,7 +25,7 @@ function EditOrder() {
 
         setTitle(order.title || "");
         setNumber(order.number || "");
-        setOrderDate(order.order_date || "");
+        setOrderDate(order.order_date ? order.order_date.substring(0, 10) : "");
         setContent(order.content || "");
       } catch (error) {
         console.error("Eroare încărcare ordin:", error);
@@ -43,6 +45,9 @@ function EditOrder() {
     event.preventDefault();
 
     try {
+      setSaving(true);
+      setError("");
+
       await api.patch(`/ordine/${id}`, {
         title,
         number,
@@ -57,74 +62,112 @@ function EditOrder() {
       setError(
         error.response?.data?.message || "Ordinul nu a putut fi actualizat.",
       );
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) {
-    return <div>Se încarcă ordinul...</div>;
+    return (
+      <div className="edit-order-page">
+        <div className="edit-order-loading">
+          <div className="edit-order-spinner"></div>
+          <span>Se încarcă ordinul...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="telegrame-page">
-      <div className="telegrame-header">
+    <div className="edit-order-page">
+      <div className="edit-order-header">
         <div>
+          <span className="edit-order-label">GESTIONARE ORDINE</span>
+
           <h1>Editează ordinul</h1>
-          <p>Modifică datele ordinului</p>
+
+          <p>Modifică datele ordinului selectat.</p>
         </div>
       </div>
 
-      {error && <div className="telegram-error">{error}</div>}
+      {error && <div className="edit-order-error">{error}</div>}
 
-      <form className="telegram-form" onSubmit={handleSubmit}>
-        <div className="telegram-form-group">
-          <label>Titlu</label>
+      <form className="edit-order-form" onSubmit={handleSubmit}>
+        <div className="edit-order-form-header">
+          <h2>Date ordin</h2>
 
-          <input
-            type="text"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            required
-          />
+          <p>Actualizează informațiile necesare și salvează modificările.</p>
         </div>
 
-        <div className="telegram-form-group">
-          <label>Număr</label>
+        <div className="edit-order-form-body">
+          <div className="edit-order-form-group">
+            <label htmlFor="order-title">Titlu</label>
 
-          <input
-            type="text"
-            value={number}
-            onChange={(event) => setNumber(event.target.value)}
-          />
+            <input
+              id="order-title"
+              type="text"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Introduceți titlul ordinului"
+              required
+            />
+          </div>
+
+          <div className="edit-order-form-group">
+            <label htmlFor="order-number">Număr</label>
+
+            <input
+              id="order-number"
+              type="text"
+              value={number}
+              onChange={(event) => setNumber(event.target.value)}
+              placeholder="Ex.: 123/2026"
+            />
+          </div>
+
+          <div className="edit-order-form-group">
+            <label htmlFor="order-date">Data ordinului</label>
+
+            <input
+              id="order-date"
+              type="date"
+              value={orderDate}
+              onChange={(event) => setOrderDate(event.target.value)}
+            />
+          </div>
+
+          <div className="edit-order-form-group">
+            <label htmlFor="order-content">Conținut</label>
+
+            <textarea
+              id="order-content"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="Introduceți conținutul ordinului..."
+              rows="12"
+              required
+            />
+          </div>
         </div>
 
-        <div className="telegram-form-group">
-          <label>Data ordinului</label>
+        <div className="edit-order-actions">
+          <button
+            type="button"
+            className="edit-order-cancel-button"
+            onClick={() => navigate(`/ordine/${id}`)}
+            disabled={saving}
+          >
+            Anulează
+          </button>
 
-          <input
-            type="date"
-            value={orderDate}
-            onChange={(event) => setOrderDate(event.target.value)}
-          />
+          <button
+            type="submit"
+            className="edit-order-save-button"
+            disabled={saving}
+          >
+            {saving ? "Se salvează..." : "Salvează modificările"}
+          </button>
         </div>
-
-        <div className="telegram-form-group">
-          <label>Conținut</label>
-
-          <textarea
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            required
-            rows="10"
-          />
-        </div>
-
-        <button type="submit" className="telegram-save-button">
-          Salvează modificările
-        </button>
-
-        <button type="button" onClick={() => navigate(`/ordine/${id}`)}>
-          Anulează
-        </button>
       </form>
     </div>
   );

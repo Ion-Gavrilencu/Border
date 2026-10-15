@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
+import "./EditTelegram.css";
 
 function EditTelegram() {
   const { id } = useParams();
@@ -33,10 +34,14 @@ function EditTelegram() {
           content: telegram.content || "",
         });
       } catch (error) {
-        console.error("Eroare încărcare telegramă:", error);
+        console.error(
+          "Eroare încărcare telegramă:",
+          error
+        );
 
         setError(
-          error.response?.data?.message || "Telegrama nu a putut fi încărcată.",
+          error.response?.data?.message ||
+            "Telegrama nu a putut fi încărcată."
         );
       } finally {
         setLoading(false);
@@ -46,8 +51,8 @@ function EditTelegram() {
     loadTelegram();
   }, [id]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
     setFormData((current) => ({
       ...current,
@@ -55,8 +60,8 @@ function EditTelegram() {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     try {
       setSaving(true);
@@ -66,10 +71,14 @@ function EditTelegram() {
 
       navigate(`/telegrame/${id}`);
     } catch (error) {
-      console.error("Eroare modificare telegramă:", error);
+      console.error(
+        "Eroare modificare telegramă:",
+        error
+      );
 
       setError(
-        error.response?.data?.message || "Telegrama nu a putut fi modificată.",
+        error.response?.data?.message ||
+          "Telegrama nu a putut fi modificată."
       );
     } finally {
       setSaving(false);
@@ -77,73 +86,146 @@ function EditTelegram() {
   };
 
   if (loading) {
-    return <div>Se încarcă telegrama...</div>;
+    return (
+      <div className="edit-telegram-page">
+        <div className="edit-telegram-loading">
+          <div className="edit-telegram-spinner"></div>
+          <span>Se încarcă telegrama...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="telegrame-page">
-      <button type="button" onClick={() => navigate(`/telegrame/${id}`)}>
-        ← Înapoi
-      </button>
+    <div className="edit-telegram-page">
+      <div className="edit-telegram-header">
+        <div>
+          <span className="edit-telegram-label">
+            GESTIONARE TELEGRAME
+          </span>
 
-      <h1>Editează telegrama</h1>
+          <h1>Editează telegrama</h1>
 
-      {error && <div className="telegram-error">{error}</div>}
-
-      <form className="telegram-form" onSubmit={handleSubmit}>
-        <div className="telegram-form-group">
-          <label>Număr telegramă</label>
-
-          <input
-            type="text"
-            name="number"
-            value={formData.number}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="telegram-form-group">
-          <label>Titlu</label>
-
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="telegram-form-group">
-          <label>Data</label>
-
-          <input
-            type="date"
-            name="telegramDate"
-            value={formData.telegramDate}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="telegram-form-group">
-          <label>Conținut</label>
-
-          <textarea
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows="12"
-            required
-          />
+          <p>
+            Modifică datele telegramei selectate.
+          </p>
         </div>
 
         <button
-          type="submit"
-          className="telegram-save-button"
-          disabled={saving}
+          type="button"
+          className="edit-telegram-back-button"
+          onClick={() =>
+            navigate(`/telegrame/${id}`)
+          }
         >
-          {saving ? "Se salvează..." : "Salvează modificările"}
+          ← Înapoi
         </button>
+      </div>
+
+      {error && (
+        <div className="edit-telegram-error">
+          {error}
+        </div>
+      )}
+
+      <form
+        className="edit-telegram-form"
+        onSubmit={handleSubmit}
+      >
+        <div className="edit-telegram-form-header">
+          <h2>Date telegramă</h2>
+
+          <p>
+            Actualizează informațiile necesare și
+            salvează modificările.
+          </p>
+        </div>
+
+        <div className="edit-telegram-form-body">
+          <div className="edit-telegram-form-group">
+            <label htmlFor="telegram-number">
+              Număr telegramă
+            </label>
+
+            <input
+              id="telegram-number"
+              type="text"
+              name="number"
+              value={formData.number}
+              onChange={handleChange}
+              placeholder="Ex.: 123/2026"
+            />
+          </div>
+
+          <div className="edit-telegram-form-group">
+            <label htmlFor="telegram-title">
+              Titlu
+            </label>
+
+            <input
+              id="telegram-title"
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Introduceți titlul telegramei"
+              required
+            />
+          </div>
+
+          <div className="edit-telegram-form-group">
+            <label htmlFor="telegram-date">
+              Data
+            </label>
+
+            <input
+              id="telegram-date"
+              type="date"
+              name="telegramDate"
+              value={formData.telegramDate}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="edit-telegram-form-group">
+            <label htmlFor="telegram-content">
+              Conținut
+            </label>
+
+            <textarea
+              id="telegram-content"
+              name="content"
+              value={formData.content}
+              onChange={handleChange}
+              rows="12"
+              placeholder="Introduceți conținutul telegramei..."
+              required
+            />
+          </div>
+        </div>
+
+        <div className="edit-telegram-actions">
+          <button
+            type="button"
+            className="edit-telegram-cancel-button"
+            onClick={() =>
+              navigate(`/telegrame/${id}`)
+            }
+            disabled={saving}
+          >
+            Anulează
+          </button>
+
+          <button
+            type="submit"
+            className="edit-telegram-save-button"
+            disabled={saving}
+          >
+            {saving
+              ? "Se salvează..."
+              : "Salvează modificările"}
+          </button>
+        </div>
       </form>
     </div>
   );

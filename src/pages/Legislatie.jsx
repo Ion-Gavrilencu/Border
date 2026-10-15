@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import "./Legislatie.css";
 
 function Legislatie() {
   const { user } = useAuth();
@@ -30,7 +31,11 @@ function Legislatie() {
 
       setLegislatie(response.data.legislatie || []);
     } catch (error) {
-      console.error("Eroare la încărcarea legislației:", error);
+      console.error(
+        "Eroare la încărcarea legislației:",
+        error
+      );
+
       setMessage(
         error.response?.data?.message ||
           "Eroare la încărcarea legislației."
@@ -69,11 +74,16 @@ function Legislatie() {
       });
 
       setShowForm(false);
-      setMessage("Actul legislativ a fost adăugat.");
+      setMessage(
+        "Actul legislativ a fost adăugat."
+      );
 
       await loadLegislation();
     } catch (error) {
-      console.error("Eroare la adăugarea legislației:", error);
+      console.error(
+        "Eroare la adăugarea legislației:",
+        error
+      );
 
       setMessage(
         error.response?.data?.message ||
@@ -83,36 +93,55 @@ function Legislatie() {
   };
 
   if (loading) {
-    return <div>Se încarcă legislația...</div>;
+    return (
+      <div className="legislatie-page">
+        <div className="legislatie-loading">
+          Se încarcă legislația...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
+    <div className="legislatie-page">
+      <div className="legislatie-header">
         <div>
           <h1>Legislație</h1>
-          <p>Acte legislative disponibile în platformă</p>
+
+          <p className="legislatie-description">
+            Acte legislative disponibile în platformă.
+          </p>
         </div>
 
         {canEdit && (
           <button
-            className="add-button"
-            onClick={() => setShowForm(!showForm)}
+            type="button"
+            className="legislatie-add-button"
+            onClick={() =>
+              setShowForm((current) => !current)
+            }
           >
-            {showForm ? "Închide" : "Adaugă legislație"}
+            {showForm
+              ? "Închide"
+              : "Adaugă legislație"}
           </button>
         )}
       </div>
 
       {message && (
-        <div className="success-message">
+        <div className="legislatie-message">
           {message}
         </div>
       )}
 
       {showForm && canEdit && (
-        <form onSubmit={handleSubmit} className="telegram-form">
-          <div className="form-group">
+        <form
+          onSubmit={handleSubmit}
+          className="legislatie-form"
+        >
+          <h2>Adaugă act legislativ</h2>
+
+          <div className="legislatie-form-group">
             <label>Titlu</label>
 
             <input
@@ -120,11 +149,12 @@ function Legislatie() {
               name="title"
               value={formData.title}
               onChange={handleChange}
+              placeholder="Introduceți titlul actului"
               required
             />
           </div>
 
-          <div className="form-group">
+          <div className="legislatie-form-group">
             <label>Număr act</label>
 
             <input
@@ -132,10 +162,11 @@ function Legislatie() {
               name="lawNumber"
               value={formData.lawNumber}
               onChange={handleChange}
+              placeholder="Ex: Legea nr. 28/2024"
             />
           </div>
 
-          <div className="form-group">
+          <div className="legislatie-form-group">
             <label>Data actului</label>
 
             <input
@@ -146,58 +177,80 @@ function Legislatie() {
             />
           </div>
 
-          <div className="form-group">
+          <div className="legislatie-form-group">
             <label>Conținut</label>
 
             <textarea
               name="content"
               value={formData.content}
               onChange={handleChange}
+              placeholder="Introduceți conținutul actului legislativ..."
               rows="8"
               required
             />
           </div>
 
-          <button type="submit" className="add-button">
-            Salvează
+          <button
+            type="submit"
+            className="legislatie-save-button"
+          >
+            Salvează actul
           </button>
         </form>
       )}
 
-      <div className="telegram-list">
+      <div className="legislatie-list">
         {legislatie.length === 0 ? (
-          <p>Nu există acte legislative.</p>
+          <div className="legislatie-empty">
+            Nu există acte legislative.
+          </div>
         ) : (
           legislatie.map((item) => (
-            <div key={item.id} className="telegram-card">
-              <div>
-                <h3>{item.title}</h3>
+            <div
+              key={item.id}
+              className="legislatie-card"
+            >
+              <div className="legislatie-card-content">
+                <div className="legislatie-card-info">
+                  <span className="legislatie-card-label">
+                    ACT LEGISLATIV
+                  </span>
 
-                {item.law_number && (
-                  <p>
-                    <strong>Număr:</strong>{" "}
-                    {item.law_number}
-                  </p>
-                )}
+                  <h3>{item.title}</h3>
 
-                {item.law_date && (
-                  <p>
-                    <strong>Data:</strong>{" "}
-                    {new Date(
-                      item.law_date
-                    ).toLocaleDateString("ro-RO")}
-                  </p>
-                )}
+                  <div className="legislatie-meta">
+                    {item.law_number && (
+                      <span>
+                        <strong>Număr:</strong>{" "}
+                        {item.law_number}
+                      </span>
+                    )}
+
+                    {item.law_date && (
+                      <span>
+                        <strong>Data:</strong>{" "}
+                        {new Date(
+                          item.law_date
+                        ).toLocaleDateString(
+                          "ro-RO"
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="legislatie-view-button"
+                  onClick={() =>
+                    navigate(
+                      `/legislatie/${item.id}`
+                    )
+                  }
+                >
+                  Vezi
+                </button>
               </div>
-
-              <button
-                className="telegram-view-button"
-                onClick={() =>
-                  navigate(`/legislatie/${item.id}`)
-                }
-              >
-                Vezi
-              </button>
             </div>
           ))
         )}

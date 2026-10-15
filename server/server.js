@@ -15,6 +15,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const usefulInfoRoutes = require("./routes/usefulInfoRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const auditRoutes = require("./routes/auditRoutes");
+const attachmentRoutes = require("./routes/attachmentRoutes");
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -67,4 +68,5 @@ app.listen(PORT, () => {
   app.use("/api/informatii-utile", usefulInfoRoutes);
   app.use("/api/search", searchRoutes);
   app.use("/api/audit", auditRoutes);
+  app.use("/api/attachments", attachmentRoutes);
 });

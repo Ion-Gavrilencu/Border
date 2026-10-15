@@ -25,7 +25,6 @@ function Login() {
 
     try {
       await login(username, password);
-
       navigate("/dashboard");
     } catch (error) {
       setError(
@@ -39,54 +38,91 @@ function Login() {
 
   return (
     <div className="login-page">
+      <div className="login-background-shape login-background-shape-one" />
+      <div className="login-background-shape login-background-shape-two" />
+
       <div className="login-card">
-        <div className="login-logo">PS</div>
+        <div className="login-header">
+          <div className="login-logo">
+            <span>PS</span>
+          </div>
 
-        <h1>Platforma de Serviciu</h1>
+          <h1>Platforma de Serviciu</h1>
 
-        <p className="login-subtitle">
-          Sistem intern de informare
-        </p>
+          <p className="login-subtitle">
+            Sistem intern de informare
+          </p>
+        </div>
+
+        <div className="login-divider" />
+
+        <div className="login-form-header">
+          <h2>Autentificare</h2>
+          <p>Introduceți datele de acces pentru a continua.</p>
+        </div>
 
         {error && (
-          <div className="login-error">
-            {error}
+          <div className="login-error" role="alert">
+            <span className="login-error-icon">!</span>
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Utilizator</label>
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="login-form-group">
+            <label htmlFor="username">Utilizator</label>
 
             <input
+              id="username"
               type="text"
               placeholder="Introduceți utilizatorul"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
               required
             />
           </div>
 
-          <div className="form-group">
-            <label>Parolă</label>
+          <div className="login-form-group">
+            <label htmlFor="password">Parolă</label>
 
             <input
+              id="password"
               type="password"
               placeholder="Introduceți parola"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               required
             />
           </div>
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Se autentifică..." : "Autentificare"}
+          <button
+            type="submit"
+            className="login-button"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="login-spinner" />
+                Se autentifică...
+              </>
+            ) : (
+              "Autentificare"
+            )}
           </button>
         </form>
 
-        <p className="login-footer">
-          Platformă internă
-        </p>
+        <div className="login-security">
+          <span className="login-security-icon">●</span>
+          <span>Acces autorizat pentru personal</span>
+        </div>
+
+        <div className="login-footer">
+          <span>Platformă internă</span>
+          <span className="login-footer-separator">•</span>
+          <span>Acces securizat</span>
+        </div>
       </div>
     </div>
   );

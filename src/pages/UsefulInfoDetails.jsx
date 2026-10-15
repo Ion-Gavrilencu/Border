@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import "./UsefulInfoDetails.css";
 
 function UsefulInfoDetails() {
   const { id } = useParams();
@@ -42,21 +43,31 @@ function UsefulInfoDetails() {
   }, [id]);
 
   if (loading) {
-    return <div>Se încarcă informația...</div>;
+    return (
+      <div className="useful-info-details-loading">
+        <div className="useful-info-details-spinner" />
+        <span>Se încarcă informația...</span>
+      </div>
+    );
   }
 
   if (message) {
     return (
-      <div className="page-container">
-        <div className="success-message">
-          {message}
+      <div className="useful-info-details-page">
+        <div className="useful-info-details-error">
+          <span className="useful-info-details-error-icon">
+            !
+          </span>
+
+          <span>{message}</span>
         </div>
 
         <button
-          className="telegram-view-button"
+          type="button"
+          className="useful-info-details-back-button"
           onClick={() => navigate("/informatii-utile")}
         >
-          Înapoi
+          ← Înapoi la informații utile
         </button>
       </div>
     );
@@ -67,57 +78,86 @@ function UsefulInfoDetails() {
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
+    <div className="useful-info-details-page">
+      <div className="useful-info-details-header">
+        <div className="useful-info-details-title-section">
+          <div className="useful-info-details-label">
+            INFORMAȚIE UTILĂ
+          </div>
+
           <h1>{informatie.title}</h1>
 
-          {informatie.category && (
-            <p>
-              <strong>Categorie:</strong>{" "}
-              {informatie.category}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="telegram-card">
-        <div className="useful-info-content">
-          <p
-            style={{
-              whiteSpace: "pre-wrap",
-              lineHeight: "1.7",
-            }}
-          >
-            {informatie.content}
+          <p>
+            Informații și detalii utile pentru activitatea de serviciu
           </p>
 
-          {informatie.created_by_name && (
-            <small>
-              Adăugat de: {informatie.created_by_name}
-            </small>
+          {informatie.category && (
+            <div className="useful-info-details-category">
+              {informatie.category}
+            </div>
           )}
         </div>
-      </div>
 
-      <div className="telegram-actions">
         <button
-          className="telegram-view-button"
+          type="button"
+          className="useful-info-details-back-button"
           onClick={() => navigate("/informatii-utile")}
         >
-          Înapoi
+          ← Înapoi
         </button>
+      </div>
 
-        {canEdit && (
+      <div className="useful-info-details-card">
+        <div className="useful-info-details-card-header">
+          <h2>Detalii informație</h2>
+        </div>
+
+        <div className="useful-info-details-card-body">
+          <div className="useful-info-details-content-section">
+            <div className="useful-info-details-content-label">
+              Conținut
+            </div>
+
+            <div className="useful-info-details-content">
+              {informatie.content ||
+                "Nu există conținut disponibil."}
+            </div>
+          </div>
+
+          {informatie.created_by_name && (
+            <div className="useful-info-details-author">
+              <span className="useful-info-details-author-label">
+                Adăugat de
+              </span>
+
+              <span className="useful-info-details-author-value">
+                {informatie.created_by_name}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="useful-info-details-actions">
           <button
-            className="add-button"
-            onClick={() =>
-              navigate(`/informatii-utile/${id}/edit`)
-            }
+            type="button"
+            className="useful-info-details-back-action"
+            onClick={() => navigate("/informatii-utile")}
           >
-            Editează
+            Înapoi
           </button>
-        )}
+
+          {canEdit && (
+            <button
+              type="button"
+              className="useful-info-details-edit-button"
+              onClick={() =>
+                navigate(`/informatii-utile/${id}/edit`)
+              }
+            >
+              Editează informația
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

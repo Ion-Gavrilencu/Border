@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import "./Ordine.css";
 
 function Ordine() {
   const navigate = useNavigate();
@@ -72,22 +73,31 @@ function Ordine() {
   };
 
   if (loading) {
-    return <div>Se încarcă ordinele...</div>;
+    return (
+      <div className="ordine-page">
+        <div className="ordine-loading">
+          Se încarcă ordinele...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="telegrame-page">
-      <div className="telegrame-header">
+    <div className="ordine-page">
+      <div className="ordine-header">
         <div>
           <h1>Ordine</h1>
-          <p>Lista ordinelor interne</p>
+
+          <p className="ordine-description">
+            Lista ordinelor interne disponibile în platformă.
+          </p>
         </div>
 
         {(user?.role === "EDITOR" ||
           user?.role === "ADMIN") && (
           <button
             type="button"
-            className="telegram-add-button"
+            className="ordine-add-button"
             onClick={() =>
               setShowForm((current) => !current)
             }
@@ -100,41 +110,48 @@ function Ordine() {
       </div>
 
       {error && (
-        <div className="telegram-error">
+        <div className="ordine-error">
           {error}
         </div>
       )}
 
       {showForm && (
         <form
-          className="telegram-form"
+          className="ordine-form"
           onSubmit={handleSubmit}
         >
-          <div className="telegram-form-group">
+          <h2>Adaugă ordin intern</h2>
+
+          <div className="ordine-form-group">
             <label>Titlu</label>
+
             <input
               type="text"
               value={title}
               onChange={(event) =>
                 setTitle(event.target.value)
               }
+              placeholder="Introduceți titlul ordinului"
               required
             />
           </div>
 
-          <div className="telegram-form-group">
+          <div className="ordine-form-group">
             <label>Număr</label>
+
             <input
               type="text"
               value={number}
               onChange={(event) =>
                 setNumber(event.target.value)
               }
+              placeholder="Ex: 123/2026"
             />
           </div>
 
-          <div className="telegram-form-group">
+          <div className="ordine-form-group">
             <label>Data ordinului</label>
+
             <input
               type="date"
               value={orderDate}
@@ -144,13 +161,15 @@ function Ordine() {
             />
           </div>
 
-          <div className="telegram-form-group">
+          <div className="ordine-form-group">
             <label>Conținut</label>
+
             <textarea
               value={content}
               onChange={(event) =>
                 setContent(event.target.value)
               }
+              placeholder="Introduceți conținutul ordinului..."
               required
               rows="8"
             />
@@ -158,15 +177,15 @@ function Ordine() {
 
           <button
             type="submit"
-            className="telegram-save-button"
+            className="ordine-save-button"
           >
             Salvează ordinul
           </button>
         </form>
       )}
 
-      <div className="telegrame-table-container">
-        <table className="telegrame-table">
+      <div className="ordine-table-container">
+        <table className="ordine-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -181,7 +200,10 @@ function Ordine() {
           <tbody>
             {ordine.length === 0 ? (
               <tr>
-                <td colSpan="6">
+                <td
+                  colSpan="6"
+                  className="ordine-no-results"
+                >
                   Nu există ordine.
                 </td>
               </tr>
@@ -213,7 +235,7 @@ function Ordine() {
                   <td>
                     <button
                       type="button"
-                      className="telegram-view-button"
+                      className="ordine-view-button"
                       onClick={() =>
                         navigate(
                           `/ordine/${order.id}`
