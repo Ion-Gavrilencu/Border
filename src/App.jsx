@@ -22,7 +22,7 @@ import UsefulInfoDetails from "./pages/UsefulInfoDetails";
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/Border">
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
 
