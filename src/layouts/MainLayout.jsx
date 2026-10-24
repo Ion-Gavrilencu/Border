@@ -12,6 +12,7 @@ import {
   Bell,
   User,
   Search,
+  ChevronDown,
 } from "lucide-react";
 import api from "../services/api";
 import "./MainLayout.css";
@@ -23,6 +24,7 @@ function MainLayout() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
@@ -207,16 +209,65 @@ function MainLayout() {
               <span className="notification-dot"></span>
             </button>
 
-            <div className="user-info">
-              <div className="user-avatar">
-                <User size={19} />
-              </div>
+            
+<div className="user-menu-container">
+  <button
+    type="button"
+    className="user-info user-menu-trigger"
+    onClick={() => setShowUserMenu((prev) => !prev)}
+    aria-expanded={showUserMenu}
+    aria-haspopup="true"
+  >
+    <div className="user-avatar">
+      <User size={19} />
+    </div>
 
-              <div>
-                <strong>Utilizator</strong>
-                <small>Personal</small>
-              </div>
-            </div>
+    <div>
+      <strong>
+        {user?.fullName || user?.username || "Utilizator"}
+      </strong>
+      <small>
+        {user?.role === "ADMIN"
+          ? "Administrator"
+          : user?.role === "EDITOR"
+            ? "Editor"
+            : "Utilizator"}
+      </small>
+    </div>
+
+    <ChevronDown size={16} />
+  </button>
+
+  {showUserMenu && (
+    <div className="user-dropdown">
+      <button
+        type="button"
+        onClick={() => {
+          setShowUserMenu(false);
+          navigate("/profil");
+        }}
+      >
+        <User size={18} />
+        <span>Profilul meu și setări</span>
+      </button>
+
+      <div className="user-dropdown-divider" />
+
+      <button
+        type="button"
+        className="user-dropdown-logout"
+        onClick={() => {
+          setShowUserMenu(false);
+          handleLogout();
+        }}
+      >
+        <LogOut size={18} />
+        <span>Deconectare</span>
+      </button>
+    </div>
+  )}
+</div>
+
           </div>
         </header>
 

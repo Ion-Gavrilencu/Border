@@ -1,6 +1,8 @@
+
 const express = require("express");
 
 const {
+  createUser,
   getUsers,
   updateUserRole,
   updateUserStatus,
@@ -12,6 +14,15 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
+// Crearea utilizatorilor - doar ADMIN
+router.post(
+  "/",
+  authenticate,
+  authorizeRoles("ADMIN"),
+  createUser
+);
+
+// Lista utilizatorilor - doar ADMIN
 router.get(
   "/",
   authenticate,
@@ -19,6 +30,7 @@ router.get(
   getUsers
 );
 
+// Modificarea rolului
 router.patch(
   "/:id/role",
   authenticate,
@@ -26,6 +38,7 @@ router.patch(
   updateUserRole
 );
 
+// Activarea / dezactivarea contului
 router.patch(
   "/:id/status",
   authenticate,
@@ -33,6 +46,7 @@ router.patch(
   updateUserStatus
 );
 
+// Ștergerea utilizatorului
 router.delete(
   "/:id",
   authenticate,

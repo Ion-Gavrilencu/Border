@@ -18,7 +18,8 @@ import EditLegislation from "./pages/EditLegislation";
 import InformatiiUtile from "./pages/InformatiiUtile";
 import EditInformatiiUtile from "./pages/EditInformatiiUtile";
 import UsefulInfoDetails from "./pages/UsefulInfoDetails";
-
+import ActivateAccount from "./pages/ActivateAccount";
+import Profile from "./pages/Profile";
 function App() {
   return (
     <AuthProvider>
@@ -27,6 +28,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
 
           <Route path="/login" element={<Login />} />
+          <Route path="/activate" element={<ActivateAccount />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
@@ -52,6 +54,7 @@ function App() {
                 path="/legislatie/:id/edit"
                 element={<EditLegislation />}
               />
+              <Route path="/profil" element={<Profile />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<Administrare />} />
               </Route>

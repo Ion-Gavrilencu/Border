@@ -6,6 +6,14 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+const updateUser = (updatedUser) => {
+  setUser((previousUser) => ({
+    ...previousUser,
+    ...updatedUser,
+  }));
+};
+
 
   const checkAuth = async () => {
     try {
@@ -52,6 +60,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         checkAuth,
+        updateUser,
       }}
     >
       {children}

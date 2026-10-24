@@ -1,0 +1,169 @@
+
+.profile-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+.profile-header {
+  margin-bottom: 28px;
+}
+
+.profile-header h1 {
+  margin: 0;
+  font-size: 26px;
+  color: var(--text-primary);
+}
+
+.profile-header p {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.profile-card {
+  min-width: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-card h2 {
+  margin: 0 0 24px;
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.profile-info:last-child {
+  border-bottom: none;
+}
+
+.profile-info span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.profile-info strong {
+  color: var(--text-primary);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.profile-hint {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+
+.profile-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-card form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-card form input {
+  margin-bottom: 8px;
+}
+
+.profile-card form button {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.profile-error {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.profile-success {
+  color: var(--success);
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-page {
+    padding: 22px 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-page {
+    padding: 18px 14px;
+  }
+
+  .profile-card {
+    padding: 20px;
+  }
+
+  .profile-card form button {
+    width: 100%;
+  }
+}
+
+
+/* Editarea datelor personale */
+
+.profile-edit-button {
+  margin-top: 24px;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.profile-actions .btn {
+  margin-top: 0;
+}
+
+.profile-cancel-button {
+  padding: 11px 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-cancel-button:hover {
+  background: #f1f5f9;
+}
+
+.profile-cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
