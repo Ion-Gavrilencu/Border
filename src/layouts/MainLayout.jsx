@@ -91,14 +91,26 @@ function MainLayout() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <div className="sidebar-logo">
-          <div className="logo-box">PS</div>
+        
 
-          <div>
-            <h2>Platforma</h2>
-            <span>de Serviciu</span>
-          </div>
-        </div>
+<NavLink
+  to="/dashboard"
+  className="sidebar-logo"
+  aria-label="BORDER - Mergi la Dashboard"
+>
+  <img
+    src={`${import.meta.env.BASE_URL}images/border-logo.png`}
+    alt="Emblema BORDER"
+    className="border-logo-image"
+  />
+
+  <div className="border-logo-text">
+    <h2>BORDER</h2>
+    <span>PORTAL INFORMAȚIONAL</span>
+  </div>
+</NavLink>
+
+
 
         <nav className="sidebar-menu">
           <NavLink to="/dashboard">
@@ -144,9 +156,7 @@ function MainLayout() {
 
       <div className="main-area">
         <header className="topbar">
-          <div>
-            <h3>Platforma de Serviciu</h3>
-          </div>
+          
 
           <div className="topbar-search">
             <Search size={19} />

@@ -1,5 +1,8 @@
+
 const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
+
+// LISTA TELEGRAMELOR
 const getTelegrame = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -15,8 +18,7 @@ const getTelegrame = async (req, res) => {
         u.username AS created_by_username,
         u.full_name AS created_by_name
       FROM telegrame t
-      LEFT JOIN users u
-        ON t.created_by = u.id
+      LEFT JOIN users u ON t.created_by = u.id
       ORDER BY t.telegram_date DESC NULLS LAST, t.id DESC
     `);
 
@@ -32,6 +34,7 @@ const getTelegrame = async (req, res) => {
   }
 };
 
+// DETALII TELEGRAMĂ
 const getTelegramById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -50,11 +53,10 @@ const getTelegramById = async (req, res) => {
         u.username AS created_by_username,
         u.full_name AS created_by_name
       FROM telegrame t
-      LEFT JOIN users u
-        ON t.created_by = u.id
+      LEFT JOIN users u ON t.created_by = u.id
       WHERE t.id = $1
       `,
-      [id],
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -75,13 +77,15 @@ const getTelegramById = async (req, res) => {
   }
 };
 
+// ADAUGĂ TELEGRAMĂ
 const createTelegram = async (req, res) => {
   try {
     const { title, number, telegramDate, content } = req.body;
 
-    if (!title || !content) {
+    // Doar denumirea este obligatorie.
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Denumirea telegramei este obligatorie.",
       });
     }
 
@@ -105,7 +109,13 @@ const createTelegram = async (req, res) => {
         created_at,
         updated_at
       `,
-      [title, number || null, telegramDate || null, content, req.user.id],
+      [
+        title.trim(),
+        typeof number === "string" ? number.trim() || null : null,
+        telegramDate || null,
+        typeof content === "string" ? content : "",
+        req.user.id,
+      ]
     );
 
     await createAuditLog({
@@ -129,15 +139,15 @@ const createTelegram = async (req, res) => {
   }
 };
 
+// MODIFICĂ TELEGRAMĂ
 const updateTelegram = async (req, res) => {
   try {
     const { id } = req.params;
-
     const { title, number, telegramDate, content } = req.body;
 
-    if (!title || !content) {
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Denumirea telegramei este obligatorie.",
       });
     }
 
@@ -161,7 +171,13 @@ const updateTelegram = async (req, res) => {
         created_at,
         updated_at
       `,
-      [title, number || null, telegramDate || null, content, id],
+      [
+        title.trim(),
+        typeof number === "string" ? number.trim() || null : null,
+        telegramDate || null,
+        typeof content === "string" ? content : "",
+        id,
+      ]
     );
 
     if (result.rows.length === 0) {
@@ -191,6 +207,7 @@ const updateTelegram = async (req, res) => {
   }
 };
 
+// ȘTERGE TELEGRAMĂ
 const deleteTelegram = async (req, res) => {
   try {
     const { id } = req.params;
@@ -201,7 +218,7 @@ const deleteTelegram = async (req, res) => {
       WHERE id = $1
       RETURNING id, title
       `,
-      [id],
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -216,8 +233,8 @@ const deleteTelegram = async (req, res) => {
       entityType: "telegrama",
       entityId: Number(id),
       description: `A șters telegrama cu ID ${id}`,
-    }); 
-    
+    });
+
     return res.status(200).json({
       message: "Telegrama a fost ștearsă.",
       telegram: result.rows[0],

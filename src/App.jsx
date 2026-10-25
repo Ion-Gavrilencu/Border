@@ -7,7 +7,7 @@ import AdminRoute from "./components/AdminRoute";
 import Administrare from "./pages/Administrare";
 import { AuthProvider } from "./context/AuthContext";
 import Telegrame from "./pages/Telegrame";
-import TelegramDetails from "./pages/TelegramDetails";
+
 import EditTelegram from "./pages/EditTelegram";
 import Ordine from "./pages/Ordine";
 import OrderDetails from "./pages/OrderDetails";
@@ -23,7 +23,7 @@ import Profile from "./pages/Profile";
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/Border">
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
 
@@ -34,7 +34,7 @@ function App() {
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/telegrame" element={<Telegrame />} />
-              <Route path="/telegrame/:id" element={<TelegramDetails />} />
+
               <Route path="/telegrame/:id/edit" element={<EditTelegram />} />
               <Route path="/ordine" element={<Ordine />} />
               <Route path="/ordine/:id" element={<OrderDetails />} />

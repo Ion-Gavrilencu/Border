@@ -1,91 +1,224 @@
-import { Megaphone, FileText, Scale, Info, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+
+import {
+  Megaphone,
+  FileText,
+  Scale,
+  Info,
+  ArrowRight,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
+
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./Dashboard.css";
 
+const initialStats = {
+  telegrame: 0,
+  ordine: 0,
+  legislatie: 0,
+  informatii_utile: 0,
+  utilizatori: 0,
+};
+
+const sections = [
+  {
+    key: "telegrame",
+    title: "Telegrame",
+    path: "/telegrame",
+    icon: Megaphone,
+  },
+  {
+    key: "ordine",
+    title: "Ordine interne",
+    path: "/ordine",
+    icon: FileText,
+  },
+  {
+    key: "legislatie",
+    title: "Acte legislative",
+    path: "/legislatie",
+    icon: Scale,
+  },
+  {
+    key: "informatii_utile",
+    title: "Informații utile",
+    path: "/informatii-utile",
+    icon: Info,
+  },
+];
+
+const recentTypes = {
+  telegrama: {
+    label: "Telegramă nouă",
+    path: "/telegrame",
+    icon: Megaphone,
+    className: "telegram",
+  },
+  ordin: {
+    label: "Ordin intern",
+    path: "/ordine",
+    icon: FileText,
+    className: "order",
+  },
+  legislatie: {
+    label: "Act legislativ",
+    path: "/legislatie",
+    icon: Scale,
+    className: "law",
+  },
+  informatii: {
+    label: "Informație utilă",
+    path: "/informatii-utile",
+    icon: Info,
+    className: "info",
+  },
+};
+
 function Dashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    telegrame: 0,
-    ordine: 0,
-    legislatie: 0,
-    informatii_utile: 0,
-    utilizatori: 0,
-  });
+
+  const [stats, setStats] = useState(initialStats);
+  const [recent, setRecent] = useState([]);
 
   const [loadingStats, setLoadingStats] = useState(true);
-  const [recent, setRecent] = useState([]);
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const response = await api.get("/dashboard/stats");
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
 
-        setStats(response.data.stats);
-        setRecent(response.data.recent || []);
-      } catch (error) {
-        console.error("Eroare la încărcarea statisticilor:", error);
-      } finally {
-        setLoadingStats(false);
+  const loadDashboard = useCallback(async (showLoading = false) => {
+    try {
+      if (showLoading) {
+        setLoadingStats(true);
+      } else {
+        setRefreshing(true);
+      }
+
+      setError("");
+
+      const response = await api.get("/dashboard/stats");
+
+      const data = response.data;
+
+      if (!data || !data.stats) {
+        throw new Error("Răspuns invalid de la server.");
+      }
+
+      const normalizedStats = {};
+
+      Object.keys(initialStats).forEach((key) => {
+        normalizedStats[key] = Number(data.stats[key] ?? 0);
+      });
+
+      setStats(normalizedStats);
+      setRecent(Array.isArray(data.recent) ? data.recent : []);
+    } catch (err) {
+      console.error("Eroare Dashboard:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Datele nu au putut fi încărcate. Verifică conexiunea cu serverul.",
+      );
+    } finally {
+  console.log("Dashboard: cererea s-a terminat");
+  setLoadingStats(false);
+  setRefreshing(false);
+}
+  }, []);
+
+  useEffect(() => {
+    loadDashboard(true);
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        loadDashboard(false);
       }
     };
 
-    loadStats();
-  }, []);
+    document.addEventListener("visibilitychange", handleFocus);
+console.log("Dashboard render:", {
+  loadingStats,
+  refreshing,
+  stats,
+  recentCount: recent.length,
+});
+    return () => {
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [loadDashboard]);
+
   return (
     <div className="dashboard">
-      <div className="welcome-section">
-        <div>
-          <h1>Bine ai venit!</h1>
+      
 
-          <p>Aici găsești informațiile și documentele de serviciu.</p>
+
+{/* BANNER BORDER */}
+<div
+  className="border-hero"
+  style={{
+    "--border-banner-url": `url("${import.meta.env.BASE_URL}images/border-banner.png")`,
+  }}
+>
+  <div className="border-hero-content">
+    <p className="border-hero-description">
+      Documente
+      <span>•</span>
+      Legislație
+      <span>•</span>
+      Informații
+      <span>•</span>
+      Suport operațional
+    </p>
+  </div>
+</div>
+
+
+
+      {error && (
+        <div className="dashboard-error" role="alert">
+          <AlertCircle size={18} />
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => loadDashboard(true)}
+          >
+            Reîncearcă
+          </button>
         </div>
-      </div>
+      )}
 
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Megaphone size={24} />
-          </div>
+        {sections.map((section) => {
+          const Icon = section.icon;
 
-          <div>
-            <span>Telegrame</span>
-            <strong>{loadingStats ? "..." : stats.telegrame}</strong>
-          </div>
-        </div>
+          return (
+            <button
+              key={section.key}
+              type="button"
+              className="stat-card stat-card-clickable"
+              onClick={() => navigate(section.path)}
+              title={`Deschide ${section.title}`}
+            >
+              <div className="stat-icon">
+                <Icon size={24} />
+              </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">
-            <FileText size={24} />
-          </div>
+              <div className="stat-content">
+                <span>{section.title}</span>
+                <strong>
+                  {loadingStats ? "..." : stats[section.key]}
+                </strong>
+              </div>
 
-          <div>
-            <span>Ordine interne</span>
-            <strong>{loadingStats ? "..." : stats.ordine}</strong>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Scale size={24} />
-          </div>
-
-          <div>
-            <span>Acte legislative</span>
-            <strong>{loadingStats ? "..." : stats.legislatie}</strong>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Info size={24} />
-          </div>
-
-          <div>
-            <span>Informații utile</span>
-            <strong>{loadingStats ? "..." : stats.informatii_utile}</strong>
-          </div>
-        </div>
+              <ArrowRight
+                size={17}
+                className="stat-arrow"
+              />
+            </button>
+          );
+        })}
       </div>
 
       <div className="dashboard-grid">
@@ -96,72 +229,66 @@ function Dashboard() {
               <p>Documente adăugate recent</p>
             </div>
 
-            <ArrowRight size={20} />
+            <RefreshCw
+              size={19}
+              className={refreshing ? "refresh-spin" : ""}
+              style={{ cursor: "pointer" }}
+              onClick={() => loadDashboard(false)}
+              aria-label="Actualizează informațiile"
+            />
           </div>
 
           <div className="information-list">
-            {recent.length === 0 ? (
-              <p>Nu există documente recente.</p>
+            {loadingStats ? (
+              <p className="dashboard-empty">
+                Se încarcă informațiile...
+              </p>
+            ) : recent.length === 0 ? (
+              <p className="dashboard-empty">
+                Nu există documente recente.
+              </p>
             ) : (
-              recent.map((item) => (
-                <div
-                  className="information-item"
-                  key={`${item.type}-${item.id}`}
-                  onClick={() => {
-                    if (item.type === "telegrama") {
-                      navigate(`/telegrame/${item.id}`);
-                    }
+              recent.map((item) => {
+                const config = recentTypes[item.type];
 
-                    if (item.type === "ordin") {
-                      navigate(`/ordine/${item.id}`);
-                    }
+                if (!config) return null;
 
-                    if (item.type === "legislatie") {
-                      navigate(`/legislatie/${item.id}`);
-                    }
+                const Icon = config.icon;
 
-                    if (item.type === "informatii") {
-                      navigate(`/informatii-utile/${item.id}`);
+                return (
+                  <button
+                    key={`${item.type}-${item.id}`}
+                    type="button"
+                    className="information-item information-item-button"
+                    onClick={() =>
+                      navigate(`${config.path}/${item.id}`)
                     }
-                  }}
-                >
-                  <div
-                    className={`item-icon ${
-                      item.type === "telegrama"
-                        ? "telegram"
-                        : item.type === "ordin"
-                          ? "order"
-                          : "law"
-                    }`}
                   >
-                    {item.type === "telegrama" && <Megaphone size={19} />}
+                    <div
+                      className={`item-icon ${config.className}`}
+                    >
+                      <Icon size={19} />
+                    </div>
 
-                    {item.type === "ordin" && <FileText size={19} />}
+                    <div className="information-content">
+                      <strong>{config.label}</strong>
+                      <p>{item.title}</p>
+                      <small>
+                        {item.created_at
+                          ? new Date(
+                              item.created_at,
+                            ).toLocaleDateString("ro-RO")
+                          : ""}
+                      </small>
+                    </div>
 
-                    {item.type === "legislatie" && <Scale size={19} />}
-
-                    {item.type === "informatii" && <Info size={19} />}
-                  </div>
-
-                  <div>
-                    <strong>
-                      {item.type === "telegrama"
-                        ? "Telegramă nouă"
-                        : item.type === "ordin"
-                          ? "Ordin intern"
-                          : item.type === "legislatie"
-                            ? "Act legislativ"
-                            : "Informație utilă"}
-                    </strong>
-
-                    <p>{item.title}</p>
-
-                    <small>
-                      {new Date(item.created_at).toLocaleDateString("ro-RO")}
-                    </small>
-                  </div>
-                </div>
-              ))
+                    <ArrowRight
+                      size={17}
+                      className="information-arrow"
+                    />
+                  </button>
+                );
+              })
             )}
           </div>
         </section>
@@ -175,29 +302,21 @@ function Dashboard() {
           </div>
 
           <div className="quick-links">
-            <button onClick={() => navigate("/telegrame")}>
-              <Megaphone size={20} />
-              <span>Telegrame</span>
-              <ArrowRight size={17} />
-            </button>
+            {sections.map((section) => {
+              const Icon = section.icon;
 
-            <button onClick={() => navigate("/ordine")}>
-              <FileText size={20} />
-              <span>Ordine interne</span>
-              <ArrowRight size={17} />
-            </button>
-
-            <button onClick={() => navigate("/legislatie")}>
-              <Scale size={20} />
-              <span>Legislație</span>
-              <ArrowRight size={17} />
-            </button>
-
-            <button onClick={() => navigate("/informatii-utile")}>
-              <Info size={20} />
-              <span>Informații utile</span>
-              <ArrowRight size={17} />
-            </button>
+              return (
+                <button
+                  key={section.key}
+                  type="button"
+                  onClick={() => navigate(section.path)}
+                >
+                  <Icon size={20} />
+                  <span>{section.title}</span>
+                  <ArrowRight size={17} />
+                </button>
+              );
+            })}
           </div>
         </section>
       </div>
@@ -206,3 +325,4 @@ function Dashboard() {
 }
 
 export default Dashboard;
+

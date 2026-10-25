@@ -1,457 +1,240 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Pencil, Trash2 } from "lucide-react";
+import DocumentUploader from "../components/DocumentUploader";
 import api from "../services/api";
-import "./Telegrame.css";
 import { useAuth } from "../context/AuthContext";
-
+import TelegramGallery from "../components/TelegramGallery";
+import "./Telegrame.css";
+const emptyForm = {
+  title: "",
+  number: "",
+  telegramDate: "",
+  content: "",
+};
+const getFileCategory = (file) => {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("video/")) return "video";
+  if (file.type === "application/pdf") return "pdf";
+  if (/\.docx?$/i.test(file.name)) return "word";
+  return "other";
+};
 function Telegrame() {
   const navigate = useNavigate();
   const { user } = useAuth();
-
+  const canEdit =
+    user?.role === "EDITOR" || user?.role === "ADMIN";
+  const canDelete = user?.role === "ADMIN";
   const [telegrame, setTelegrame] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [showForm, setShowForm] = useState(false);
-
-  const [formData, setFormData] = useState({
-    title: "",
-    number: "",
-    telegramDate: "",
-    content: "",
-  });
-
-  const [selectedFiles, setSelectedFiles] = useState([]);
-
-  const [links, setLinks] = useState([]);
-  const [linkName, setLinkName] = useState("");
-  const [linkUrl, setLinkUrl] = useState("");
-
   const [saving, setSaving] = useState(false);
-
-  const loadTelegrame = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await api.get("/telegrame");
-
-      setTelegrame(response.data.telegrame);
-    } catch (error) {
-      console.error("Eroare telegrame:", error);
-
-      setError(
-        error.response?.data?.message ||
-          "Nu s-au putut încărca telegramele."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [deletingId, setDeletingId] = useState(null);
+  const [formData, setFormData] = useState({ ...emptyForm });
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [galleryTelegram, setGalleryTelegram] = useState(null);
   useEffect(() => {
+    let active = true;
+    const loadTelegrame = async () => {
+      try {
+        const response = await api.get("/telegrame");
+        if (active) {
+          setTelegrame(response.data.telegrame || []);
+        }
+      } catch (err) {
+        if (active) {
+          setError(
+            err.response?.data?.message ||
+              "Nu s-au putut încărca telegramele."
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
     loadTelegrame();
+    return () => {
+      active = false;
+    };
   }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  };
-
-  const getFileCategory = (file) => {
-    if (file.type.startsWith("image/")) {
-      return "image";
-    }
-
-    if (file.type.startsWith("video/")) {
-      return "video";
-    }
-
-    if (file.type === "application/pdf") {
-      return "pdf";
-    }
-
-    if (
-      file.type === "application/msword" ||
-      file.type ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      return "word";
-    }
-
-    return "other";
-  };
-
-  const formatFileSize = (bytes) => {
-    if (!bytes) {
-      return "0 KB";
-    }
-
-    if (bytes < 1024 * 1024) {
-      return `${Math.round(bytes / 1024)} KB`;
-    }
-
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  const handleFilesChange = (e) => {
-    const files = Array.from(e.target.files || []);
-
-    if (files.length === 0) {
-      return;
-    }
-
-    const maxFileSize = 100 * 1024 * 1024;
-
-    const invalidFiles = files.filter(
-      (file) => file.size > maxFileSize
-    );
-
-    if (invalidFiles.length > 0) {
-      alert(
-        `Următoarele fișiere depășesc limita de 100 MB:\n\n${invalidFiles
-          .map((file) => file.name)
-          .join("\n")}`
-      );
-
-      e.target.value = "";
-      return;
-    }
-
-    setSelectedFiles((current) => {
-      const existingKeys = new Set(
-        current.map(
-          (file) =>
-            `${file.name}-${file.size}-${file.lastModified}`
-        )
-      );
-
-      const newFiles = files.filter(
-        (file) =>
-          !existingKeys.has(
-            `${file.name}-${file.size}-${file.lastModified}`
-          )
-      );
-
-      return [...current, ...newFiles];
-    });
-
-    e.target.value = "";
-  };
-
-  const removeSelectedFile = (indexToRemove) => {
-    setSelectedFiles((current) =>
-      current.filter(
-        (_, index) => index !== indexToRemove
-      )
-    );
-  };
-
-  const addLinkToList = () => {
-    const name = linkName.trim();
-    const url = linkUrl.trim();
-
-    if (!name) {
-      alert("Introduceți denumirea linkului.");
-      return;
-    }
-
-    if (!url) {
-      alert("Introduceți adresa linkului.");
-      return;
-    }
-
-    try {
-      const parsedUrl = new URL(url);
-
-      if (
-        !["http:", "https:"].includes(
-          parsedUrl.protocol
-        )
-      ) {
-        alert(
-          "Sunt permise doar linkurile HTTP și HTTPS."
-        );
-        return;
-      }
-    } catch {
-      alert("Adresa introdusă nu este un link valid.");
-      return;
-    }
-
-    const alreadyExists = links.some(
-      (link) => link.url === url
-    );
-
-    if (alreadyExists) {
-      alert("Acest link a fost deja adăugat.");
-      return;
-    }
-
-    setLinks((current) => [
-      ...current,
-      {
-        name,
-        url,
-      },
-    ]);
-
-    setLinkName("");
-    setLinkUrl("");
-  };
-
-  const removeLinkFromList = (indexToRemove) => {
-    setLinks((current) =>
-      current.filter(
-        (_, index) => index !== indexToRemove
-      )
-    );
-  };
-
-  const uploadAttachments = async (telegramId) => {
-    if (selectedFiles.length === 0) {
-      return [];
-    }
-
-    const failedFiles = [];
-
-    for (const file of selectedFiles) {
-      try {
-        const attachmentFormData = new FormData();
-
-        attachmentFormData.append("file", file);
-        attachmentFormData.append(
-          "entityType",
-          "telegrame"
-        );
-        attachmentFormData.append(
-          "entityId",
-          telegramId
-        );
-        attachmentFormData.append(
-          "fileCategory",
-          getFileCategory(file)
-        );
-
-        await api.post(
-          "/attachments/upload",
-          attachmentFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-      } catch (error) {
-        console.error(
-          `Eroare încărcare fișier ${file.name}:`,
-          error
-        );
-
-        failedFiles.push(file.name);
-      }
-    }
-
-    return failedFiles;
-  };
-
-  const uploadLinks = async (telegramId) => {
-    if (links.length === 0) {
-      return [];
-    }
-
-    const failedLinks = [];
-
-    for (const link of links) {
-      try {
-        await api.post("/attachments/link", {
-          entityType: "telegrame",
-          entityId: telegramId,
-          name: link.name,
-          url: link.url,
-        });
-      } catch (error) {
-        console.error(
-          `Eroare adăugare link ${link.url}:`,
-          error
-        );
-
-        failedLinks.push(link.name);
-      }
-    }
-
-    return failedLinks;
-  };
-
   const resetForm = () => {
-    setFormData({
-      title: "",
-      number: "",
-      telegramDate: "",
-      content: "",
-    });
-
+    setFormData({ ...emptyForm });
     setSelectedFiles([]);
-    setLinks([]);
-    setLinkName("");
     setLinkUrl("");
-  };
-
-  const handleCancelForm = () => {
-    if (saving) {
-      return;
-    }
-
-    resetForm();
     setShowForm(false);
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      setSaving(true);
-      setError("");
-
-      /*
-       * 1. Creăm telegrama.
-       */
-      const response = await api.post(
-        "/telegrame",
-        formData
-      );
-
-      const newTelegram = response.data.telegram;
-
-      /*
-       * 2. Încărcăm fișierele.
-       */
-      const failedFiles =
-        await uploadAttachments(
-          newTelegram.id
-        );
-
-      /*
-       * 3. Salvăm linkurile.
-       */
-      const failedLinks =
-        await uploadLinks(newTelegram.id);
-
-      /*
-       * 4. Adăugăm telegrama în listă.
-       */
-      setTelegrame((current) => [
-        newTelegram,
-        ...current,
-      ]);
-
-      /*
-       * 5. Resetăm formularul.
-       */
-      resetForm();
-      setShowForm(false);
-
-      /*
-       * 6. Informăm dacă unele atașamente
-       * nu au putut fi salvate.
-       */
-      if (
-        failedFiles.length > 0 ||
-        failedLinks.length > 0
-      ) {
-        let message =
-          "Telegrama a fost salvată, însă unele atașamente nu au putut fi adăugate.\n\n";
-
-        if (failedFiles.length > 0) {
-          message +=
-            "Fișiere:\n" +
-            failedFiles.join("\n") +
-            "\n\n";
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!canEdit || saving) return;
+    if (!formData.title.trim()) {
+      setError("Denumirea telegramei este obligatorie.");
+      return;
+    }
+    if (selectedFiles.length === 0 && !linkUrl.trim()) {
+      setError("Adaugă un document, fotografii sau un link.");
+      return;
+    }
+    if (linkUrl.trim()) {
+      try {
+        const url = new URL(linkUrl.trim());
+        if (!["http:", "https:"].includes(url.protocol)) {
+          throw new Error("Link invalid");
         }
-
-        if (failedLinks.length > 0) {
-          message +=
-            "Linkuri:\n" +
-            failedLinks.join("\n");
-        }
-
-        alert(message);
+      } catch {
+        setError("Introdu un link HTTP sau HTTPS valid.");
+        return;
       }
-    } catch (error) {
-      console.error(
-        "Eroare adăugare telegramă:",
-        error
-      );
-
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const response = await api.post("/telegrame", {
+        ...formData,
+        title: formData.title.trim(),
+      });
+      const telegram = response.data.telegram;
+      const failed = [];
+      for (const file of selectedFiles) {
+        try {
+          const data = new FormData();
+          data.append("file", file);
+          data.append("entityType", "telegrame");
+          data.append("entityId", telegram.id);
+          data.append("fileCategory", getFileCategory(file));
+          await api.post("/attachments/upload", data);
+        } catch (err) {
+          console.error("Eroare încărcare fișier:", err);
+          failed.push(file.name);
+        }
+      }
+      if (linkUrl.trim()) {
+        try {
+          await api.post("/attachments/link", {
+            entityType: "telegrame",
+            entityId: telegram.id,
+            name: telegram.title,
+            url: linkUrl.trim(),
+          });
+        } catch (err) {
+          console.error("Eroare salvare link:", err);
+          failed.push("Link");
+        }
+      }
+      setTelegrame((current) => [telegram, ...current]);
+      resetForm();
+      if (failed.length > 0) {
+        alert(
+          `Telegrama a fost creată, dar nu s-au salvat: ${failed.join(", ")}`
+        );
+      }
+    } catch (err) {
+      console.error("Eroare salvare telegramă:", err);
       setError(
-        error.response?.data?.message ||
-          "Telegrama nu a putut fi adăugată."
+        err.response?.data?.message ||
+          "Telegrama nu a putut fi salvată."
       );
     } finally {
       setSaving(false);
     }
   };
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setDateFrom("");
-    setDateTo("");
-  };
-
-  const filteredTelegrame = telegrame.filter(
-    (telegram) => {
-      const search = searchTerm
-        .toLowerCase()
-        .trim();
-
-      const matchesSearch =
-        !search ||
-        telegram.title
-          ?.toLowerCase()
-          .includes(search) ||
-        telegram.number
-          ?.toLowerCase()
-          .includes(search) ||
-        telegram.created_by_name
-          ?.toLowerCase()
-          .includes(search) ||
-        telegram.created_by_username
-          ?.toLowerCase()
-          .includes(search);
-
-      const telegramDate = telegram.telegram_date
-        ? new Date(telegram.telegram_date)
-        : null;
-
-      const matchesDateFrom =
-        !dateFrom ||
-        (telegramDate &&
-          telegramDate >=
-            new Date(`${dateFrom}T00:00:00`));
-
-      const matchesDateTo =
-        !dateTo ||
-        (telegramDate &&
-          telegramDate <=
-            new Date(`${dateTo}T23:59:59`));
-
-      return (
-        matchesSearch &&
-        matchesDateFrom &&
-        matchesDateTo
+  // DESCHIDERE TELEGRAMĂ
+  const handleOpenTelegram = async (telegram) => {
+    const newTab = window.open("about:blank", "_blank");
+    if (newTab) {
+      newTab.opener = null;
+    }
+    try {
+      const response = await api.get(
+        `/attachments/telegrame/${telegram.id}`
+      );
+      const attachments = response.data.attachments || [];
+      const images = attachments.filter(
+        (item) =>
+          item.attachment_type !== "link" &&
+          (item.file_category === "image" ||
+            item.mime_type?.startsWith("image/"))
+      );
+      const pdf = attachments.find(
+        (item) =>
+          item.attachment_type !== "link" &&
+          (item.file_category === "pdf" ||
+            item.mime_type === "application/pdf" ||
+            /\.pdf$/i.test(
+              item.original_name ||
+                item.file_name ||
+                item.name ||
+                ""
+            ))
+      );
+      // Mai multe fotografii: deschidem galeria.
+      if (!pdf && images.length > 1) {
+        newTab?.close();
+        setGalleryTelegram(telegram);
+        return;
+      }
+      const attachment = pdf || attachments[0];
+      if (!attachment) {
+  newTab?.close();
+  alert("Această telegramă nu are documente sau linkuri atașate.");
+  return;
+}
+      let url;
+      if (attachment.attachment_type === "link") {
+        url = attachment.url;
+        if (!/^https?:\/\//i.test(url || "")) {
+          throw new Error("Link invalid");
+        }
+      } else {
+        url = `${api.defaults.baseURL}/attachments/file/${attachment.id}`;
+      }
+      if (newTab && !newTab.closed) {
+        newTab.location.replace(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    } catch (err) {
+      newTab?.close();
+      console.error("Eroare deschidere telegramă:", err);
+      setError(
+        "Nu s-a putut deschide documentul sau linkul telegramei."
       );
     }
-  );
-
+  };
+  // EDITARE TELEGRAMĂ
+  const handleEditTelegram = (telegram) => {
+    if (!canEdit) return;
+    navigate(`/telegrame/${telegram.id}/edit`);
+  };
+  // ȘTERGERE TELEGRAMĂ
+  const handleDeleteTelegram = async (telegram) => {
+    if (!canDelete || deletingId !== null) return;
+    const confirmed = window.confirm(
+      `Sigur dorești să ștergi telegrama "${telegram.title}"?\n\nAceastă acțiune nu poate fi anulată.`
+    );
+    if (!confirmed) return;
+    setDeletingId(telegram.id);
+    setError("");
+    try {
+      await api.delete(`/telegrame/${telegram.id}`);
+      setTelegrame((current) =>
+        current.filter((item) => item.id !== telegram.id)
+      );
+      if (galleryTelegram?.id === telegram.id) {
+        setGalleryTelegram(null);
+      }
+    } catch (err) {
+      console.error("Eroare ștergere telegramă:", err);
+      setError(
+        err.response?.data?.message ||
+          "Telegrama nu a putut fi ștearsă."
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
   if (loading) {
     return (
       <div className="telegrame-page">
@@ -461,340 +244,129 @@ function Telegrame() {
       </div>
     );
   }
-
   return (
     <div className="telegrame-page">
+      {/* ANTET */}
       <div className="telegrame-header">
         <div>
           <h1>Telegrame</h1>
-
           <p className="telegrame-description">
-            Lista telegramelor disponibile în
-            platformă.
+            Lista telegramelor disponibile în platformă.
           </p>
         </div>
-
-        <div className="telegram-header-actions">
-          {(user?.role === "EDITOR" ||
-            user?.role === "ADMIN") && (
+        {canEdit && (
+          <div className="telegram-header-actions">
             <button
               type="button"
               className="telegram-add-button"
-              onClick={() =>
-                setShowForm(
-                  (current) => !current
-                )
-              }
+              onClick={() => {
+                if (showForm) {
+                  resetForm();
+                } else {
+                  setShowForm(true);
+                }
+              }}
             >
               {showForm
                 ? "Închide formularul"
-                : "Adaugă telegramă"}
+                : "+ Adaugă telegramă"}
             </button>
-          )}
-
-          <input
-            type="text"
-            placeholder="Caută după număr, titlu sau autor..."
-            value={searchTerm}
-            onChange={(event) =>
-              setSearchTerm(event.target.value)
-            }
-            className="telegram-search-input"
-          />
-
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(event) =>
-              setDateFrom(event.target.value)
-            }
-            className="telegram-date-filter"
-          />
-
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(event) =>
-              setDateTo(event.target.value)
-            }
-            className="telegram-date-filter"
-          />
-
-          <button
-            type="button"
-            className="telegram-reset-button"
-            onClick={resetFilters}
-          >
-            Resetează filtrele
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-
       {error && (
-        <div className="telegram-error">
+        <div className="telegram-error" role="alert">
           {error}
         </div>
       )}
-
-      {showForm && (
-        <form
-          className="telegram-form"
-          onSubmit={handleSubmit}
-        >
+      {/* FORMULAR ADĂUGARE */}
+      {showForm && canEdit && (
+        <form className="telegram-form" onSubmit={handleSubmit}>
           <div className="telegram-form-header">
-            <div>
-              <h2>Adaugă telegramă</h2>
-
-              <p>
-                Completează datele telegramei și
-                atașează documentele sau linkurile
-                necesare.
-              </p>
-            </div>
+            <h2>Adaugă telegramă</h2>
+            <button
+              type="button"
+              className="telegram-form-close"
+              onClick={resetForm}
+              disabled={saving}
+              aria-label="Închide formularul"
+            >
+              ×
+            </button>
           </div>
-
           <div className="telegram-form-body">
             <div className="telegram-form-group">
               <label htmlFor="telegram-number">
                 Număr telegramă
               </label>
-
               <input
                 id="telegram-number"
                 type="text"
-                name="number"
-                value={formData.number}
-                onChange={handleChange}
                 placeholder="Ex: 125/2026"
+                value={formData.number}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    number: e.target.value,
+                  })
+                }
               />
             </div>
-
-            <div className="telegram-form-group">
-              <label htmlFor="telegram-title">
-                Titlu
-              </label>
-
-              <input
-                id="telegram-title"
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="Introduceți titlul telegramei"
-                required
-              />
-            </div>
-
             <div className="telegram-form-group">
               <label htmlFor="telegram-date">
                 Data telegramei
               </label>
-
               <input
                 id="telegram-date"
                 type="date"
-                name="telegramDate"
                 value={formData.telegramDate}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    telegramDate: e.target.value,
+                  })
+                }
               />
             </div>
-
-            <div className="telegram-form-group">
-              <label htmlFor="telegram-content">
-                Conținut
+            <div className="telegram-form-group telegram-form-full">
+              <label htmlFor="telegram-title">
+                Denumirea telegramei
               </label>
-
-              <textarea
-                id="telegram-content"
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                placeholder="Introduceți conținutul telegramei..."
-                rows="10"
+              <input
+                id="telegram-title"
+                type="text"
                 required
+                placeholder="Introduceți denumirea telegramei"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    title: e.target.value,
+                  })
+                }
               />
             </div>
-
-            {/* =================================================
-                DOCUMENTE ȘI FIȘIERE
-                ================================================= */}
-
-            <div className="telegram-form-group">
-              <label>
-                Documente și fișiere
-              </label>
-
-              <div className="telegram-file-upload">
-                <label
-                  htmlFor="telegram-files"
-                  className="telegram-file-upload-button"
-                >
-                  + Adaugă fișiere
-                </label>
-
-                <input
-                  id="telegram-files"
-                  type="file"
-                  multiple
-                  accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.pdf,.doc,.docx"
-                  onChange={handleFilesChange}
-                  className="telegram-file-input"
+              <div className="telegram-form-group telegram-form-full">
+                <label>Conținutul telegramei</label>
+                <DocumentUploader
+                  files={selectedFiles}
+                  onFilesChange={setSelectedFiles}
+                  linkUrl={linkUrl}
+                  onLinkChange={setLinkUrl}
+                  disabled={saving}
+                  onError={setError}
                 />
-
-                <p className="telegram-file-help">
-                  Poți selecta mai multe fișiere:
-                  PDF, Word, imagini și video.
-                  Dimensiunea maximă este de 100 MB
-                  pentru fiecare fișier.
-                </p>
               </div>
-
-              {selectedFiles.length > 0 && (
-                <div className="telegram-selected-files">
-                  <div className="telegram-selected-files-title">
-                    Fișiere selectate (
-                    {selectedFiles.length})
-                  </div>
-
-                  {selectedFiles.map(
-                    (file, index) => (
-                      <div
-                        key={`${file.name}-${file.lastModified}`}
-                        className="telegram-selected-file"
-                      >
-                        <div className="telegram-selected-file-info">
-                          <strong>
-                            {file.name}
-                          </strong>
-
-                          <span>
-                            {formatFileSize(
-                              file.size
-                            )}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          className="telegram-remove-file"
-                          onClick={() =>
-                            removeSelectedFile(
-                              index
-                            )
-                          }
-                          disabled={saving}
-                        >
-                          Elimină
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* =================================================
-                LINKURI
-                ================================================= */}
-
-            <div className="telegram-form-group">
-              <label>
-                Linkuri și surse externe
-              </label>
-
-              <div className="telegram-link-box">
-                <div className="telegram-link-fields">
-                  <input
-                    type="text"
-                    value={linkName}
-                    onChange={(event) =>
-                      setLinkName(
-                        event.target.value
-                      )
-                    }
-                    placeholder="Denumire link, ex: Sursa oficială"
-                  />
-
-                  <input
-                    type="url"
-                    value={linkUrl}
-                    onChange={(event) =>
-                      setLinkUrl(
-                        event.target.value
-                      )
-                    }
-                    placeholder="https://exemplu.md/..."
-                  />
-
-                  <button
-                    type="button"
-                    className="telegram-add-link-button"
-                    onClick={addLinkToList}
-                    disabled={saving}
-                  >
-                    + Adaugă link
-                  </button>
-                </div>
-
-                <p className="telegram-file-help">
-                  Sunt acceptate linkuri HTTP și
-                  HTTPS.
-                </p>
-
-                {links.length > 0 && (
-                  <div className="telegram-links-list">
-                    <div className="telegram-selected-files-title">
-                      Linkuri adăugate (
-                      {links.length})
-                    </div>
-
-                    {links.map(
-                      (link, index) => (
-                        <div
-                          key={`${link.url}-${index}`}
-                          className="telegram-link-item"
-                        >
-                          <div className="telegram-link-item-info">
-                            <strong>
-                              {link.name}
-                            </strong>
-
-                            <span>
-                              {link.url}
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="telegram-remove-file"
-                            onClick={() =>
-                              removeLinkFromList(
-                                index
-                              )
-                            }
-                            disabled={saving}
-                          >
-                            Elimină
-                          </button>
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
-
           <div className="telegram-form-actions">
             <button
               type="button"
               className="telegram-cancel-button"
-              onClick={handleCancelForm}
+              onClick={resetForm}
               disabled={saving}
             >
               Anulează
             </button>
-
             <button
               type="submit"
               className="telegram-save-button"
@@ -807,7 +379,7 @@ function Telegrame() {
           </div>
         </form>
       )}
-
+      {/* TABEL TELEGRAME */}
       {telegrame.length === 0 ? (
         <div className="telegram-empty">
           Nu există telegrame.
@@ -822,78 +394,99 @@ function Telegrame() {
                 <th>Titlu</th>
                 <th>Data</th>
                 <th>Creat de</th>
+                {(canEdit || canDelete) && (
+                  <th className="telegram-actions-heading">
+                    Acțiuni
+                  </th>
+                )}
               </tr>
             </thead>
-
             <tbody>
-              {filteredTelegrame.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="telegram-no-results"
-                  >
-                    Nu au fost găsite rezultate.
+              {telegrame.map((telegram) => (
+                <tr
+                  key={telegram.id}
+                  className="telegram-row"
+                  onClick={() => handleOpenTelegram(telegram)}
+                >
+                  <td>{telegram.id}</td>
+                  <td>{telegram.number || "—"}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="telegram-title-link"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenTelegram(telegram);
+                      }}
+                    >
+                      {telegram.title}
+                    </button>
                   </td>
-                </tr>
-              ) : (
-                filteredTelegrame.map(
-                  (telegram) => (
-                    <tr
-                      key={telegram.id}
-                      className="telegram-row"
-                      onClick={() =>
-                        navigate(
-                          `/telegrame/${telegram.id}`
-                        )
+                  <td>
+                    {telegram.telegram_date
+                      ? new Date(
+                          telegram.telegram_date
+                        ).toLocaleDateString("ro-RO")
+                      : "—"}
+                  </td>
+                  <td>
+                    {telegram.created_by_name ||
+                      telegram.created_by_username ||
+                      "—"}
+                  </td>
+                  {(canEdit || canDelete) && (
+                    <td
+                      className="telegram-actions-cell"
+                      onClick={(event) =>
+                        event.stopPropagation()
                       }
                     >
-                      <td>{telegram.id}</td>
-
-                      <td>
-                        {telegram.number || "-"}
-                      </td>
-
-                      <td>
-                        <button
-                          type="button"
-                          className="telegram-title-link"
-                          onClick={(event) => {
-                            event.stopPropagation();
-
-                            navigate(
-                              `/telegrame/${telegram.id}`
-                            );
-                          }}
-                        >
-                          {telegram.title}
-                        </button>
-                      </td>
-
-                      <td>
-                        {telegram.telegram_date
-                          ? new Date(
-                              telegram.telegram_date
-                            ).toLocaleDateString(
-                              "ro-RO"
-                            )
-                          : "-"}
-                      </td>
-
-                      <td>
-                        {telegram.created_by_name ||
-                          telegram.created_by_username ||
-                          "-"}
-                      </td>
-                    </tr>
-                  )
-                )
-              )}
+                      <div className="telegram-row-actions">
+                        {canEdit && (
+                          <button
+                            type="button"
+                            className="telegram-action-button telegram-action-edit"
+                            title="Editează telegrama"
+                            aria-label={`Editează ${telegram.title}`}
+                            onClick={() =>
+                              handleEditTelegram(telegram)
+                            }
+                          >
+                            <Pencil size={17} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            className="telegram-action-button telegram-action-delete"
+                            title="Șterge telegrama"
+                            aria-label={`Șterge ${telegram.title}`}
+                            disabled={deletingId !== null}
+                            onClick={() =>
+                              handleDeleteTelegram(telegram)
+                            }
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
+      {/* GALERIE FOTO */}
+      {galleryTelegram && (
+        <TelegramGallery
+          telegramId={galleryTelegram.id}
+          title={galleryTelegram.title}
+          onClose={() => setGalleryTelegram(null)}
+        />
+      )}
     </div>
   );
 }
-
 export default Telegrame;
