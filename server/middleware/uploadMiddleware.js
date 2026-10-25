@@ -2,12 +2,12 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const uploadDirectory = path.join(
-  __dirname,
-  "..",
-  "uploads",
-  "attachments"
+
+const uploadDirectory = path.resolve(
+  process.env.UPLOAD_DIR ||
+    path.join(__dirname, "..", "uploads", "attachments")
 );
+
 
 // Creează automat folderul dacă nu există
 if (!fs.existsSync(uploadDirectory)) {
