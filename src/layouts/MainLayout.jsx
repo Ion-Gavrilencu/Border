@@ -91,26 +91,22 @@ function MainLayout() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        
+        <NavLink
+          to="/dashboard"
+          className="sidebar-logo"
+          aria-label="BORDER - Mergi la Dashboard"
+        >
+          <img
+            src={`${import.meta.env.BASE_URL}images/border-logo.png`}
+            alt="Emblema BORDER"
+            className="border-logo-image"
+          />
 
-<NavLink
-  to="/dashboard"
-  className="sidebar-logo"
-  aria-label="BORDER - Mergi la Dashboard"
->
-  <img
-    src={`${import.meta.env.BASE_URL}images/border-logo.png`}
-    alt="Emblema BORDER"
-    className="border-logo-image"
-  />
-
-  <div className="border-logo-text">
-    <h2>BORDER</h2>
-    <span>PORTAL INFORMAȚIONAL</span>
-  </div>
-</NavLink>
-
-
+          <div className="border-logo-text">
+            <h2>BORDER</h2>
+            <span>PORTAL INFORMAȚIONAL</span>
+          </div>
+        </NavLink>
 
         <nav className="sidebar-menu">
           <NavLink to="/dashboard">
@@ -130,7 +126,7 @@ function MainLayout() {
 
           <NavLink to="/legislatie">
             <Scale size={20} />
-            <span>Legislație</span>
+            <span>Acte normative</span>
           </NavLink>
 
           <NavLink to="/informatii-utile">
@@ -156,8 +152,6 @@ function MainLayout() {
 
       <div className="main-area">
         <header className="topbar">
-          
-
           <div className="topbar-search">
             <Search size={19} />
 
@@ -219,65 +213,63 @@ function MainLayout() {
               <span className="notification-dot"></span>
             </button>
 
-            
-<div className="user-menu-container">
-  <button
-    type="button"
-    className="user-info user-menu-trigger"
-    onClick={() => setShowUserMenu((prev) => !prev)}
-    aria-expanded={showUserMenu}
-    aria-haspopup="true"
-  >
-    <div className="user-avatar">
-      <User size={19} />
-    </div>
+            <div className="user-menu-container">
+              <button
+                type="button"
+                className="user-info user-menu-trigger"
+                onClick={() => setShowUserMenu((prev) => !prev)}
+                aria-expanded={showUserMenu}
+                aria-haspopup="true"
+              >
+                <div className="user-avatar">
+                  <User size={19} />
+                </div>
 
-    <div>
-      <strong>
-        {user?.fullName || user?.username || "Utilizator"}
-      </strong>
-      <small>
-        {user?.role === "ADMIN"
-          ? "Administrator"
-          : user?.role === "EDITOR"
-            ? "Editor"
-            : "Utilizator"}
-      </small>
-    </div>
+                <div>
+                  <strong>
+                    {user?.fullName || user?.username || "Utilizator"}
+                  </strong>
+                  <small>
+                    {user?.role === "ADMIN"
+                      ? "Administrator"
+                      : user?.role === "EDITOR"
+                        ? "Editor"
+                        : "Utilizator"}
+                  </small>
+                </div>
 
-    <ChevronDown size={16} />
-  </button>
+                <ChevronDown size={16} />
+              </button>
 
-  {showUserMenu && (
-    <div className="user-dropdown">
-      <button
-        type="button"
-        onClick={() => {
-          setShowUserMenu(false);
-          navigate("/profil");
-        }}
-      >
-        <User size={18} />
-        <span>Profilul meu și setări</span>
-      </button>
+              {showUserMenu && (
+                <div className="user-dropdown">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      navigate("/profil");
+                    }}
+                  >
+                    <User size={18} />
+                    <span>Profilul meu și setări</span>
+                  </button>
 
-      <div className="user-dropdown-divider" />
+                  <div className="user-dropdown-divider" />
 
-      <button
-        type="button"
-        className="user-dropdown-logout"
-        onClick={() => {
-          setShowUserMenu(false);
-          handleLogout();
-        }}
-      >
-        <LogOut size={18} />
-        <span>Deconectare</span>
-      </button>
-    </div>
-  )}
-</div>
-
+                  <button
+                    type="button"
+                    className="user-dropdown-logout"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut size={18} />
+                    <span>Deconectare</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

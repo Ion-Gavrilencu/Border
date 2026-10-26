@@ -32,13 +32,14 @@ const getUsefulInfo = async (req, res) => {
   }
 };
 
+
 const createUsefulInfo = async (req, res) => {
   try {
     const { title, category, content } = req.body || {};
 
-    if (!title || !content) {
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Titlul informației este obligatoriu.",
       });
     }
 
@@ -60,7 +61,14 @@ const createUsefulInfo = async (req, res) => {
         created_at,
         updated_at
       `,
-      [title, category || null, content, req.user.id],
+      [
+        title.trim(),
+        typeof category === "string"
+          ? category.trim() || null
+          : null,
+        typeof content === "string" ? content : "",
+        req.user.id,
+      ],
     );
 
     await createAuditLog({
@@ -84,15 +92,16 @@ const createUsefulInfo = async (req, res) => {
   }
 };
 
+
+
 const updateUsefulInfo = async (req, res) => {
   try {
     const { id } = req.params;
-
     const { title, category, content } = req.body || {};
 
-    if (!title || !content) {
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Titlul informației este obligatoriu.",
       });
     }
 
@@ -114,7 +123,14 @@ const updateUsefulInfo = async (req, res) => {
         created_at,
         updated_at
       `,
-      [title, category || null, content, id],
+      [
+        title.trim(),
+        typeof category === "string"
+          ? category.trim() || null
+          : null,
+        typeof content === "string" ? content : "",
+        id,
+      ],
     );
 
     if (result.rows.length === 0) {
@@ -143,6 +159,7 @@ const updateUsefulInfo = async (req, res) => {
     });
   }
 };
+
 
 const deleteUsefulInfo = async (req, res) => {
   try {

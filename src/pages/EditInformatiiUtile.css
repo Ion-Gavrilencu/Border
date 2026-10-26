@@ -314,3 +314,74 @@
     width: 100%;
   }
 }
+
+
+/* MATERIALE ȘI DOCUMENTE */
+
+.edit-informatii-attachments {
+  margin-top: 28px;
+  padding-top: 25px;
+  border-top: 1px solid #e3eaf2;
+}
+
+.edit-informatii-attachments-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 20px;
+}
+
+.edit-informatii-attachments-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: #eaf3fc;
+  color: #2569a6;
+}
+
+.edit-informatii-attachments-header h3 {
+  margin: 0 0 5px;
+  color: #153758;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.edit-informatii-attachments-header p {
+  margin: 0;
+  color: #8294a9;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.edit-informatii-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-informatii-message.success {
+  background: #edf9f2;
+  border: 1px solid #b9e3cb;
+  color: #20754b;
+}
+
+.edit-informatii-message.error {
+  background: #fff2f3;
+  border: 1px solid #f2c7ce;
+  color: #b43f50;
+}
+
+@media (max-width: 650px) {
+  .edit-informatii-attachments {
+    margin-top: 22px;
+    padding-top: 20px;
+  }
+
+  .edit-informatii-attachments-header {
+    align-items: flex-start;
+  }
+}

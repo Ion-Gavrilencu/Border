@@ -8,6 +8,7 @@ import {
   Link2,
   Trash2,
   FileCheck2,
+  Video,
 } from "lucide-react";
 
 import "./DocumentUploader.css";
@@ -15,26 +16,37 @@ import "./DocumentUploader.css";
 const ACCEPTED = {
   "application/pdf": [".pdf"],
   "application/msword": [".doc"],
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+    ".docx",
+  ],
   "image/jpeg": [".jpg", ".jpeg"],
   "image/png": [".png"],
   "image/webp": [".webp"],
 };
 
+const VIDEO_ACCEPTED = {
+  "video/mp4": [".mp4"],
+  "video/webm": [".webm"],
+  "video/quicktime": [".mov"],
+};
+
 const isImage = (file) => file.type.startsWith("image/");
+const isVideo = (file) => file.type.startsWith("video/");
 
 const formatSize = (bytes) => {
   if (bytes < 1024) return `${bytes} B`;
+
   if (bytes < 1024 * 1024) {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
+
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 function PreviewFile({ file, onRemove, disabled }) {
   const previewUrl = useMemo(
     () => (isImage(file) ? URL.createObjectURL(file) : null),
-    [file]
+    [file],
   );
 
   useEffect(() => {
@@ -48,6 +60,8 @@ function PreviewFile({ file, onRemove, disabled }) {
       <div className="du-file-preview">
         {previewUrl ? (
           <img src={previewUrl} alt={file.name} />
+        ) : isVideo(file) ? (
+          <Video size={22} />
         ) : (
           <FileText size={22} />
         )}
@@ -73,12 +87,13 @@ function PreviewFile({ file, onRemove, disabled }) {
 }
 
 export default function DocumentUploader({
-  files,
+  files = [],
   onFilesChange,
-  linkUrl,
+  linkUrl = "",
   onLinkChange,
   disabled = false,
   onError,
+  allowMixed = false,
 }) {
   const onDrop = useCallback(
     (acceptedFiles, rejectedFiles) => {
@@ -86,33 +101,47 @@ export default function DocumentUploader({
 
       if (rejectedFiles.length) {
         onError?.(
-          "Format neacceptat sau fișier prea mare. Sunt permise PDF, Word și fotografii de maximum 100 MB."
+          "Unul sau mai multe fișiere au un format neacceptat ori depășesc limita de 100 MB.",
         );
-        return;
       }
 
       if (!acceptedFiles.length) return;
+
+      if (allowMixed) {
+        onFilesChange((files || []).concat(acceptedFiles));
+        onError?.("");
+        return;
+      }
 
       const allImages = acceptedFiles.every(isImage);
 
       if (!allImages && acceptedFiles.length > 1) {
         onError?.(
-          "Poți adăuga mai multe fotografii sau un singur document."
+          "Poți adăuga mai multe fotografii sau un singur document.",
         );
         return;
       }
 
-      onError?.("");
       onFilesChange(acceptedFiles);
       onLinkChange("");
+      onError?.("");
     },
-    [disabled, onFilesChange, onLinkChange, onError]
+    [
+      disabled,
+      allowMixed,
+      files,
+      onFilesChange,
+      onLinkChange,
+      onError,
+    ],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } =
     useDropzone({
       onDrop,
-      accept: ACCEPTED,
+      accept: allowMixed
+        ? { ...ACCEPTED, ...VIDEO_ACCEPTED }
+        : ACCEPTED,
       maxSize: 100 * 1024 * 1024,
       multiple: true,
       disabled,
@@ -152,12 +181,29 @@ export default function DocumentUploader({
         </button>
 
         <div className="du-formats">
-          <span><FileText size={13} /> PDF / Word</span>
-          <span><ImageIcon size={13} /> JPG / PNG / WEBP</span>
+          <span>
+            <FileText size={13} />
+            PDF / Word
+          </span>
+
+          <span>
+            <ImageIcon size={13} />
+            JPG / PNG / WEBP
+          </span>
+
+          {allowMixed && (
+            <span>
+              <Video size={13} />
+              MP4 / WEBM / MOV
+            </span>
+          )}
         </div>
 
         <small>
-          Mai multe fotografii sau un singur document • Max. 100 MB/fișier
+          {allowMixed
+            ? "Poți selecta mai multe fișiere și adăuga un link."
+            : "Mai multe fotografii sau un singur document."}
+          {" "}Max. 100 MB/fișier
         </small>
       </div>
 
@@ -168,6 +214,7 @@ export default function DocumentUploader({
               <FileCheck2 size={16} />
               Fișiere selectate
             </span>
+
             <span className="du-count">{files.length}</span>
           </div>
 
@@ -179,7 +226,9 @@ export default function DocumentUploader({
                 disabled={disabled}
                 onRemove={() =>
                   onFilesChange(
-                    files.filter((_, fileIndex) => fileIndex !== index)
+                    files.filter(
+                      (_, fileIndex) => fileIndex !== index,
+                    ),
                   )
                 }
               />
@@ -190,7 +239,9 @@ export default function DocumentUploader({
 
       <div className="du-separator">
         <span />
-        <small>SAU ADAUGĂ UN LINK</small>
+        <small>
+          {allowMixed ? "ADAUGĂ ȘI UN LINK" : "SAU ADAUGĂ UN LINK"}
+        </small>
         <span />
       </div>
 
@@ -205,9 +256,10 @@ export default function DocumentUploader({
           disabled={disabled}
           onChange={(event) => {
             const value = event.target.value;
+
             onLinkChange(value);
 
-            if (value.trim()) {
+            if (!allowMixed && value.trim()) {
               onFilesChange([]);
             }
 

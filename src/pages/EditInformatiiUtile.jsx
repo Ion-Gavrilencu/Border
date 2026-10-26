@@ -1,7 +1,34 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Paperclip,
+} from "lucide-react";
+
 import api from "../services/api";
+import DocumentUploader from "../components/DocumentUploader";
 import "./EditInformatiiUtile.css";
+
+const getFileCategory = (file) => {
+  const type = file.type || "";
+  const name = file.name || "";
+
+  if (type.startsWith("image/")) return "image";
+  if (type.startsWith("video/")) return "video";
+  if (type === "application/pdf") return "pdf";
+
+  if (
+    /\.(doc|docx)$/i.test(name) ||
+    type.includes("wordprocessingml") ||
+    type === "application/msword"
+  ) {
+    return "word";
+  }
+
+  return "other";
+};
 
 function EditInformatiiUtile() {
   const { id } = useParams();
@@ -10,6 +37,7 @@ function EditInformatiiUtile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("error");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -17,14 +45,24 @@ function EditInformatiiUtile() {
     content: "",
   });
 
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [linkUrl, setLinkUrl] = useState("");
+
   useEffect(() => {
+    let active = true;
+
     const loadInfo = async () => {
       try {
-        const response = await api.get("/informatii-utile");
+        setLoading(true);
+        setMessage("");
 
-        const informatie = response.data.informatii.find(
-          (item) => String(item.id) === String(id)
+        const response = await api.get(
+          `/informatii-utile/${id}`,
         );
+
+        const informatie = response.data.informatie;
+
+        if (!active) return;
 
         if (!informatie) {
           setMessage("Informația utilă nu a fost găsită.");
@@ -37,21 +75,27 @@ function EditInformatiiUtile() {
           content: informatie.content || "",
         });
       } catch (error) {
+        if (!active) return;
+
         console.error(
           "Eroare la încărcarea informației:",
-          error
+          error,
         );
 
         setMessage(
           error.response?.data?.message ||
-            "Eroare la încărcarea informației utile."
+            "Eroare la încărcarea informației utile.",
         );
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     loadInfo();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const handleChange = (event) => {
@@ -66,25 +110,132 @@ function EditInformatiiUtile() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (saving) return;
+
+    if (!formData.title.trim()) {
+      setMessageType("error");
+      setMessage("Titlul informației este obligatoriu.");
+      return;
+    }
+
+    if (
+      !formData.content.trim() &&
+      selectedFiles.length === 0 &&
+      !linkUrl.trim()
+    ) {
+      setMessageType("error");
+      setMessage(
+        "Adaugă un conținut, un fișier sau un link.",
+      );
+      return;
+    }
+
+    if (linkUrl.trim()) {
+      try {
+        const parsed = new URL(linkUrl.trim());
+
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          throw new Error("Protocol neacceptat.");
+        }
+      } catch {
+        setMessageType("error");
+        setMessage(
+          "Introdu un link valid, care începe cu https:// sau http://.",
+        );
+        return;
+      }
+    }
+
     try {
       setSaving(true);
       setMessage("");
 
-      await api.patch(
-        `/informatii-utile/${id}`,
-        formData
-      );
+      // 1. Actualizăm informația.
+      await api.patch(`/informatii-utile/${id}`, {
+        title: formData.title.trim(),
+        category: formData.category.trim(),
+        content: formData.content.trim(),
+      });
 
-      navigate("/informatii-utile");
+      // 2. Încărcăm fișierele noi.
+      const failed = [];
+
+      for (const file of selectedFiles) {
+        try {
+          const data = new FormData();
+
+          data.append("file", file);
+          data.append("entityType", "informatii_utile");
+          data.append("entityId", String(id));
+          data.append(
+            "fileCategory",
+            getFileCategory(file),
+          );
+
+          await api.post("/attachments/upload", data);
+        } catch (error) {
+          console.error(
+            "Eroare la încărcarea fișierului:",
+            error,
+          );
+
+          failed.push(file.name);
+        }
+      }
+
+      // 3. Adăugăm linkul, dacă există.
+      if (linkUrl.trim()) {
+        try {
+          await api.post("/attachments/link", {
+            entityType: "informatii_utile",
+            entityId: id,
+            name: formData.title.trim(),
+            url: linkUrl.trim(),
+          });
+        } catch (error) {
+          console.error(
+            "Eroare la salvarea linkului:",
+            error,
+          );
+
+          failed.push("linkul");
+        }
+      }
+
+      if (failed.length > 0) {
+        setMessageType("error");
+        setMessage(
+          `Informația a fost actualizată, dar nu s-au putut încărca: ${failed.join(", ")}.`,
+        );
+
+        // Evităm retrimiterea fișierelor salvate deja.
+        setSelectedFiles((current) =>
+          current.filter((file) =>
+            failed.includes(file.name),
+          ),
+        );
+
+        if (!failed.includes("linkul")) {
+          setLinkUrl("");
+        }
+
+        return;
+      }
+
+      setMessageType("success");
+      setMessage("Modificările au fost salvate.");
+
+      navigate(`/informatii-utile/${id}`);
     } catch (error) {
       console.error(
         "Eroare la actualizarea informației:",
-        error
+        error,
       );
 
+      setMessageType("error");
       setMessage(
         error.response?.data?.message ||
-          "Eroare la actualizarea informației utile."
+          "Eroare la actualizarea informației utile.",
       );
     } finally {
       setSaving(false);
@@ -95,7 +246,7 @@ function EditInformatiiUtile() {
     return (
       <div className="edit-informatii-page">
         <div className="edit-informatii-loading">
-          <div className="edit-informatii-spinner"></div>
+          <div className="edit-informatii-spinner" />
           <span>Se încarcă informația...</span>
         </div>
       </div>
@@ -113,14 +264,24 @@ function EditInformatiiUtile() {
           <h1>Editează informația utilă</h1>
 
           <p>
-            Modifică datele informației selectate.
+            Modifică datele informației și adaugă
+            documente sau materiale noi.
           </p>
         </div>
       </div>
 
       {message && (
-        <div className="edit-informatii-message">
-          {message}
+        <div
+          className={`edit-informatii-message ${messageType}`}
+          role="status"
+        >
+          {messageType === "success" ? (
+            <CheckCircle2 size={18} />
+          ) : (
+            <AlertCircle size={18} />
+          )}
+
+          <span>{message}</span>
         </div>
       )}
 
@@ -139,7 +300,7 @@ function EditInformatiiUtile() {
 
         <div className="edit-informatii-form-body">
           <div className="edit-informatii-form-group">
-            <label htmlFor="title">Titlu</label>
+            <label htmlFor="title">Titlu *</label>
 
             <input
               id="title"
@@ -149,6 +310,7 @@ function EditInformatiiUtile() {
               onChange={handleChange}
               placeholder="Introduceți titlul informației"
               required
+              disabled={saving}
             />
           </div>
 
@@ -162,6 +324,7 @@ function EditInformatiiUtile() {
               value={formData.category}
               onChange={handleChange}
               placeholder="Ex.: Proceduri, Contacte, General"
+              disabled={saving}
             />
           </div>
 
@@ -173,9 +336,39 @@ function EditInformatiiUtile() {
               name="content"
               value={formData.content}
               onChange={handleChange}
-              rows="12"
+              rows={12}
               placeholder="Introduceți conținutul informației..."
-              required
+              disabled={saving}
+            />
+          </div>
+
+          <div className="edit-informatii-attachments">
+            <div className="edit-informatii-attachments-header">
+              <div className="edit-informatii-attachments-icon">
+                <Paperclip size={20} />
+              </div>
+
+              <div>
+                <h3>Materiale și documente</h3>
+                <p>
+                  Adaugă fotografii, PDF, Word,
+                  videoclipuri sau linkuri.
+                </p>
+              </div>
+            </div>
+
+            <DocumentUploader
+              files={selectedFiles}
+              onFilesChange={setSelectedFiles}
+              linkUrl={linkUrl}
+              onLinkChange={setLinkUrl}
+              disabled={saving}
+              allowMixed
+              onError={(error) => {
+                if (!error) return;
+                setMessageType("error");
+                setMessage(error);
+              }}
             />
           </div>
         </div>

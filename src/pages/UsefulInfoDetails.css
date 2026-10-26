@@ -342,3 +342,149 @@
     padding: 16px 18px;
   }
 }
+
+
+/* MATERIALE ATAȘATE */
+
+.uid-attachments {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e5ebf2;
+}
+
+.uid-attachments-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 20px;
+}
+
+.uid-attachments-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: #eaf3fc;
+  color: #2569a6;
+}
+
+.uid-attachments-heading h3 {
+  margin: 0 0 5px;
+  color: #153758;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.uid-attachments-heading p {
+  margin: 0;
+  color: #8294a9;
+  font-size: 12px;
+}
+
+.uid-attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.uid-attachment {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border: 1px solid #e1e9f1;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.uid-attachment-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #eaf3fc;
+  color: #2569a6;
+}
+
+.uid-attachment-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.uid-attachment-info strong {
+  overflow: hidden;
+  color: #173b5d;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uid-attachment-info span {
+  color: #8294a9;
+  font-size: 11px;
+}
+
+.uid-attachment-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 10px 13px;
+  border: 1px solid #cfe1f1;
+  border-radius: 8px;
+  background: #edf5fc;
+  color: #2167a4;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.uid-attachment-open:hover:not(:disabled) {
+  background: #dfedf9;
+}
+
+.uid-attachment-open:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.uid-attachments-empty {
+  padding: 16px;
+  border: 1px dashed #d9e4ef;
+  border-radius: 9px;
+  color: #8294a9;
+  font-size: 13px;
+}
+
+.uid-attachments-error {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #f0c5cb;
+  border-radius: 9px;
+  background: #fff3f4;
+  color: #b43f50;
+  font-size: 12px;
+}
+
+@media (max-width: 650px) {
+  .uid-attachment {
+    flex-wrap: wrap;
+  }
+
+  .uid-attachment-open {
+    width: 100%;
+  }
+}
