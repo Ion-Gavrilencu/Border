@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 dotenv.config();
 
 const pool = require("./config/database");
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const telegramRoutes = require("./routes/telegramRoutes");
@@ -19,33 +20,43 @@ const auditRoutes = require("./routes/auditRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 
 const app = express();
+
 const PORT = process.env.PORT || 5000;
 
-// Domeniile autorizate să acceseze API-ul
+// Domenii autorizate
 const allowedOrigins = [
   "http://localhost:5173",
   "https://ion-gavrilencu.github.io",
+  "https://border-4391.vercel.app",
 ];
 
+// Configurare CORS
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origine neautorizată"));
+    },
     credentials: true,
   })
 );
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Verificarea serverului
+// Verificare API
 app.get("/", (req, res) => {
   res.json({
     message: "API Platforma de Serviciu funcționează!",
   });
 });
 
-// Verificarea conexiunii la baza de date
+// Verificare bază de date
 app.get("/api/health", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
@@ -65,7 +76,7 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-// Rutele API
+// Rute API
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/telegrame", telegramRoutes);
@@ -77,7 +88,12 @@ app.use("/api/search", searchRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/attachments", attachmentRoutes);
 
-// Pornirea serverului
-app.listen(PORT, () => {
-  console.log(`Server pornit pe portul ${PORT}`);
-});
+// Export pentru Vercel
+module.exports = app;
+
+// Pornire doar în mediul local
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server pornit pe portul ${PORT}`);
+  });
+}
