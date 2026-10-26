@@ -1,44 +1,9 @@
 
 const fs = require("fs");
 const path = require("path");
+const { Readable } = require("stream");
+const { put, get, del } = require("@vercel/blob");
 const pool = require("../config/database");
-
-const uploadsDirectory = path.resolve(
-  process.env.UPLOAD_DIR ||
-    path.join(__dirname, "..", "uploads", "attachments"),
-);
-
-// Verifică dacă fișierul se află în directorul autorizat
-const resolveAttachmentPath = (storedPath) => {
-  if (typeof storedPath !== "string" || !storedPath.trim()) {
-    throw new Error("Calea fișierului este invalidă.");
-  }
-
-  // Acceptă atât căile absolute noi, cât și căile relative vechi.
-  const filePath = path.isAbsolute(storedPath)
-    ? path.resolve(storedPath)
-    : path.resolve(__dirname, "..", storedPath);
-
-  if (!filePath.startsWith(uploadsDirectory + path.sep)) {
-    throw new Error("Fișierul este în afara directorului autorizat.");
-  }
-
-  // Verifică și destinația reală a fișierului.
-  if (fs.existsSync(filePath)) {
-    const realDirectory = fs.realpathSync(uploadsDirectory);
-    const realFile = fs.realpathSync(filePath);
-
-    if (!realFile.startsWith(realDirectory + path.sep)) {
-      throw new Error("Fișierul real este în afara directorului autorizat.");
-    }
-
-    if (!fs.lstatSync(filePath).isFile()) {
-      throw new Error("Calea nu indică un fișier obișnuit.");
-    }
-  }
-
-  return filePath;
-};
 
 const allowedEntityTypes = [
   "telegrame",
@@ -66,31 +31,39 @@ const getEntityTable = (entityType) => {
   return tables[entityType];
 };
 
-// =====================================================
-// ADAUGĂ FIȘIER
-// =====================================================
+const validEntityId = (value) =>
+  /^[1-9]\d*$/.test(String(value || ""));
 
+const getSafeFilename = (filename) =>
+  path
+    .basename(filename || "document")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .slice(0, 150);
+
+const getBlobPath = (attachment) => {
+  if (
+    typeof attachment.file_path !== "string" ||
+    !attachment.file_path.startsWith("blob:")
+  ) {
+    return null;
+  }
+
+  return attachment.file_path.slice(5);
+};
+
+// ÎNCĂRCARE FIȘIER
 const uploadAttachment = async (req, res) => {
+  let uploadedBlobPath = null;
+
   try {
     const { entityType, entityId, fileCategory } = req.body;
 
-    if (!allowedEntityTypes.includes(entityType)) {
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
-
+    if (
+      !allowedEntityTypes.includes(entityType) ||
+      !validEntityId(entityId)
+    ) {
       return res.status(400).json({
-        message: "Tipul entității nu este valid.",
-      });
-    }
-
-    if (!entityId || Number.isNaN(Number(entityId))) {
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
-
-      return res.status(400).json({
-        message: "ID-ul entității nu este valid.",
+        message: "Tipul sau ID-ul entității este invalid.",
       });
     }
 
@@ -101,8 +74,6 @@ const uploadAttachment = async (req, res) => {
     }
 
     if (!allowedFileCategories.includes(fileCategory)) {
-      fs.unlinkSync(req.file.path);
-
       return res.status(400).json({
         message: "Categoria fișierului nu este validă.",
       });
@@ -112,16 +83,28 @@ const uploadAttachment = async (req, res) => {
 
     const entityResult = await pool.query(
       `SELECT id FROM ${tableName} WHERE id = $1`,
-      [entityId],
+      [entityId]
     );
 
     if (entityResult.rows.length === 0) {
-      fs.unlinkSync(req.file.path);
-
       return res.status(404).json({
-        message: "Elementul pentru care se adaugă fișierul nu există.",
+        message: "Elementul nu există.",
       });
     }
+
+    const filename = getSafeFilename(req.file.originalname);
+
+    const blobPath =
+      `attachments/${entityType}/${entityId}/` +
+      `${Date.now()}-${require("crypto").randomUUID()}-${filename}`;
+
+    const blob = await put(blobPath, req.file.buffer, {
+      access: "private",
+      contentType: req.file.mimetype,
+      addRandomSuffix: false,
+    });
+
+    uploadedBlobPath = blob.pathname;
 
     const result = await pool.query(
       `
@@ -137,18 +120,7 @@ const uploadAttachment = async (req, res) => {
         file_size,
         uploaded_by
       )
-      VALUES (
-        $1,
-        $2,
-        'file',
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        $9
-      )
+      VALUES ($1, $2, 'file', $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
       [
@@ -157,11 +129,11 @@ const uploadAttachment = async (req, res) => {
         fileCategory,
         req.file.originalname,
         req.file.originalname,
-        req.file.path,
+        `blob:${blob.pathname}`,
         req.file.mimetype,
         req.file.size,
         req.user?.id || null,
-      ],
+      ]
     );
 
     return res.status(201).json({
@@ -169,18 +141,13 @@ const uploadAttachment = async (req, res) => {
       attachment: result.rows[0],
     });
   } catch (error) {
-    console.error("Eroare upload atașament:", error);
+    console.error("UPLOAD ATTACHMENT ERROR:", error);
 
-    if (req.file) {
+    if (uploadedBlobPath) {
       try {
-        if (fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
-      } catch (deleteError) {
-        console.error(
-          "Eroare ștergere fișier după eroare:",
-          deleteError,
-        );
+        await del(uploadedBlobPath);
+      } catch (cleanupError) {
+        console.error("BLOB CLEANUP ERROR:", cleanupError);
       }
     }
 
@@ -190,51 +157,39 @@ const uploadAttachment = async (req, res) => {
   }
 };
 
-// =====================================================
 // ADAUGĂ LINK
-// =====================================================
-
 const createAttachmentLink = async (req, res) => {
   try {
     const { entityType, entityId, name, url } = req.body;
 
-    if (!allowedEntityTypes.includes(entityType)) {
+    if (
+      !allowedEntityTypes.includes(entityType) ||
+      !validEntityId(entityId)
+    ) {
       return res.status(400).json({
-        message: "Tipul entității nu este valid.",
+        message: "Tipul sau ID-ul entității este invalid.",
       });
     }
 
-    if (!entityId || Number.isNaN(Number(entityId))) {
-      return res.status(400).json({
-        message: "ID-ul entității nu este valid.",
-      });
-    }
-
-    if (!name || !name.trim()) {
+    if (typeof name !== "string" || !name.trim()) {
       return res.status(400).json({
         message: "Numele linkului este obligatoriu.",
-      });
-    }
-
-    if (!url || !url.trim()) {
-      return res.status(400).json({
-        message: "Linkul introdus este obligatoriu.",
       });
     }
 
     let parsedUrl;
 
     try {
-      parsedUrl = new URL(url.trim());
+      parsedUrl = new URL(url);
     } catch {
       return res.status(400).json({
-        message: "Linkul introdus nu este valid.",
+        message: "Linkul este invalid.",
       });
     }
 
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
       return res.status(400).json({
-        message: "Sunt permise doar linkurile HTTP și HTTPS.",
+        message: "Sunt permise doar linkuri HTTP și HTTPS.",
       });
     }
 
@@ -242,12 +197,12 @@ const createAttachmentLink = async (req, res) => {
 
     const entityResult = await pool.query(
       `SELECT id FROM ${tableName} WHERE id = $1`,
-      [entityId],
+      [entityId]
     );
 
-    if (entityResult.rows.length === 0) {
+    if (!entityResult.rows.length) {
       return res.status(404).json({
-        message: "Elementul pentru care se adaugă linkul nu există.",
+        message: "Elementul nu există.",
       });
     }
 
@@ -261,23 +216,16 @@ const createAttachmentLink = async (req, res) => {
         url,
         uploaded_by
       )
-      VALUES (
-        $1,
-        $2,
-        'link',
-        $3,
-        $4,
-        $5
-      )
+      VALUES ($1, $2, 'link', $3, $4, $5)
       RETURNING *
       `,
       [
         entityType,
         entityId,
         name.trim(),
-        url.trim(),
+        parsedUrl.toString(),
         req.user?.id || null,
-      ],
+      ]
     );
 
     return res.status(201).json({
@@ -285,7 +233,7 @@ const createAttachmentLink = async (req, res) => {
       attachment: result.rows[0],
     });
   } catch (error) {
-    console.error("Eroare adăugare link:", error);
+    console.error("CREATE LINK ERROR:", error);
 
     return res.status(500).json({
       message: "Linkul nu a putut fi adăugat.",
@@ -293,23 +241,17 @@ const createAttachmentLink = async (req, res) => {
   }
 };
 
-// =====================================================
-// LISTĂ ATAȘAMENTE
-// =====================================================
-
+// LISTARE ATAȘAMENTE
 const getAttachments = async (req, res) => {
   try {
     const { entityType, entityId } = req.params;
 
-    if (!allowedEntityTypes.includes(entityType)) {
+    if (
+      !allowedEntityTypes.includes(entityType) ||
+      !validEntityId(entityId)
+    ) {
       return res.status(400).json({
-        message: "Tipul entității nu este valid.",
-      });
-    }
-
-    if (!entityId || Number.isNaN(Number(entityId))) {
-      return res.status(400).json({
-        message: "ID-ul entității nu este valid.",
+        message: "Parametrii sunt invalizi.",
       });
     }
 
@@ -320,20 +262,19 @@ const getAttachments = async (req, res) => {
         u.username AS uploaded_by_username,
         u.full_name AS uploaded_by_name
       FROM attachments a
-      LEFT JOIN users u
-        ON u.id = a.uploaded_by
+      LEFT JOIN users u ON u.id = a.uploaded_by
       WHERE a.entity_type = $1
         AND a.entity_id = $2
       ORDER BY a.created_at DESC
       `,
-      [entityType, entityId],
+      [entityType, entityId]
     );
 
     return res.json({
       attachments: result.rows,
     });
   } catch (error) {
-    console.error("Eroare încărcare atașamente:", error);
+    console.error("GET ATTACHMENTS ERROR:", error);
 
     return res.status(500).json({
       message: "Atașamentele nu au putut fi încărcate.",
@@ -341,10 +282,90 @@ const getAttachments = async (req, res) => {
   }
 };
 
-// =====================================================
-// ȘTERGE ATAȘAMENT
-// =====================================================
+// DESCHIDERE FIȘIER PRIVAT
+const getAttachmentFile = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    if (!validEntityId(id)) {
+      return res.status(400).json({
+        message: "ID invalid.",
+      });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM attachments WHERE id = $1",
+      [id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        message: "Fișierul nu a fost găsit.",
+      });
+    }
+
+    const attachment = result.rows[0];
+
+    if (attachment.attachment_type !== "file") {
+      return res.status(400).json({
+        message: "Atașamentul nu este un fișier.",
+      });
+    }
+
+    const blobPath = getBlobPath(attachment);
+
+    if (!blobPath) {
+      return res.status(410).json({
+        message:
+          "Acest fișier a fost încărcat în vechiul sistem de stocare. Trebuie reîncărcat.",
+      });
+    }
+
+    const blob = await get(blobPath, {
+      access: "private",
+    });
+
+    if (!blob || !blob.stream) {
+      return res.status(404).json({
+        message: "Fișierul nu există în Blob Storage.",
+      });
+    }
+
+    res.setHeader(
+      "Content-Type",
+      attachment.mime_type || "application/octet-stream"
+    );
+
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, no-store");
+
+    const filename = getSafeFilename(
+      attachment.original_name || attachment.name
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${filename}"`
+    );
+
+    Readable.fromWeb(blob.stream).on("error", (error) => {
+      console.error("BLOB STREAM ERROR:", error);
+      res.destroy(error);
+    }).pipe(res);
+  } catch (error) {
+    console.error("GET ATTACHMENT FILE ERROR:", error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        message: "Fișierul nu a putut fi deschis.",
+      });
+    }
+
+    res.destroy(error);
+  }
+};
+
+// ȘTERGERE ATAȘAMENT
 const deleteAttachment = async (req, res) => {
   try {
     if (req.user?.role !== "ADMIN") {
@@ -355,64 +376,40 @@ const deleteAttachment = async (req, res) => {
 
     const { id } = req.params;
 
-    const attachmentResult = await pool.query(
-      `
-      SELECT *
-      FROM attachments
-      WHERE id = $1
-      `,
-      [id],
+    if (!validEntityId(id)) {
+      return res.status(400).json({
+        message: "ID invalid.",
+      });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM attachments WHERE id = $1",
+      [id]
     );
 
-    if (attachmentResult.rows.length === 0) {
+    if (!result.rows.length) {
       return res.status(404).json({
         message: "Atașamentul nu a fost găsit.",
       });
     }
 
-    const attachment = attachmentResult.rows[0];
+    const attachment = result.rows[0];
+    const blobPath = getBlobPath(attachment);
 
-    if (attachment.attachment_type === "file") {
-      if (!attachment.file_path) {
-        return res.status(400).json({
-          message: "Calea fișierului nu este validă.",
-        });
-      }
-
-      let filePath;
-
-      try {
-        filePath = resolveAttachmentPath(attachment.file_path);
-      } catch (pathError) {
-        return res.status(403).json({
-          message: "Ștergerea acestui fișier nu este permisă.",
-        });
-      }
-
-      if (fs.existsSync(filePath)) {
-        if (!fs.lstatSync(filePath).isFile()) {
-          return res.status(403).json({
-            message: "Tipul fișierului nu permite ștergerea.",
-          });
-        }
-
-        fs.unlinkSync(filePath);
-      }
+    if (blobPath) {
+      await del(blobPath);
     }
 
     await pool.query(
-      `
-      DELETE FROM attachments
-      WHERE id = $1
-      `,
-      [id],
+      "DELETE FROM attachments WHERE id = $1",
+      [id]
     );
 
     return res.json({
       message: "Atașamentul a fost șters cu succes.",
     });
   } catch (error) {
-    console.error("Eroare ștergere atașament:", error);
+    console.error("DELETE ATTACHMENT ERROR:", error);
 
     return res.status(500).json({
       message: "Atașamentul nu a putut fi șters.",
@@ -420,94 +417,10 @@ const deleteAttachment = async (req, res) => {
   }
 };
 
-// =====================================================
-// DESCHIDE / DESCARCĂ FIȘIER
-// =====================================================
-
-const getAttachmentFile = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM attachments
-      WHERE id = $1
-      `,
-      [id],
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: "Fișierul nu a fost găsit.",
-      });
-    }
-
-    const attachment = result.rows[0];
-
-    if (attachment.attachment_type !== "file") {
-      return res.status(400).json({
-        message: "Acest atașament este un link, nu un fișier.",
-      });
-    }
-
-    if (!attachment.file_path) {
-      return res.status(404).json({
-        message: "Calea fișierului nu există.",
-      });
-    }
-
-    let filePath;
-
-    try {
-      filePath = resolveAttachmentPath(attachment.file_path);
-    } catch (pathError) {
-      return res.status(403).json({
-        message: "Accesul la acest fișier nu este permis.",
-      });
-    }
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
-        message: "Fișierul nu mai există pe server.",
-      });
-    }
-
-    res.setHeader(
-      "Content-Type",
-      attachment.mime_type || "application/octet-stream",
-    );
-
-    res.setHeader(
-      "X-Content-Type-Options",
-      "nosniff",
-    );
-
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename="${encodeURIComponent(
-        attachment.original_name || attachment.name,
-      )}"`,
-    );
-
-    return res.sendFile(filePath);
-  } catch (error) {
-    console.error("Eroare accesare fișier:", error);
-
-    return res.status(500).json({
-      message: "Fișierul nu a putut fi accesat.",
-    });
-  }
-};
-
-// =====================================================
-// EXPORT FUNCȚII
-// =====================================================
-
 module.exports = {
   uploadAttachment,
   createAttachmentLink,
   getAttachments,
-  deleteAttachment,
   getAttachmentFile,
+  deleteAttachment,
 };
