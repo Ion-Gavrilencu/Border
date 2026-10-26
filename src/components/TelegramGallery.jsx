@@ -26,7 +26,7 @@ function TelegramGallery({
         setLoading(true);
         setError("");
 
-        if (!["telegrame", "ordine"].includes(entityType) || !documentId) {
+        if (!["telegrame", "ordine", "legislatie"].includes(entityType) || !documentId) {
           throw new Error("Tip de document sau ID invalid.");
         }
 

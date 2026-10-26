@@ -1,84 +1,282 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  ArrowLeft,
+  FileText,
+  Image,
+  Link2,
+  ExternalLink,
+  Trash2,
+  Save,
+} from "lucide-react";
+
 import api from "../services/api";
+
+import { useAuth } from "../context/AuthContext";
+
+import DocumentUploader from "../components/DocumentUploader";
+
 import "./EditLegislation.css";
+
+const getCategory = (file) => {
+  if (file.type.startsWith("image/")) return "image";
+
+  if (file.type === "application/pdf") return "pdf";
+
+  if (/\.docx?$/i.test(file.name)) return "word";
+
+  return "other";
+};
+
+const isImage = (item) =>
+  item.file_category === "image" || item.mime_type?.startsWith("image/");
+
+const isLink = (item) => item.attachment_type === "link";
 
 function EditLegislation() {
   const { id } = useParams();
+
   const navigate = useNavigate();
+
+  const { user } = useAuth();
+
+  const canEdit = user?.role === "EDITOR" || user?.role === "ADMIN";
+
+  const canDelete = user?.role === "ADMIN";
 
   const [formData, setFormData] = useState({
     title: "",
+
     lawNumber: "",
+
     lawDate: "",
+
     content: "",
   });
 
+  const [attachments, setAttachments] = useState([]);
+
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
+  const [linkUrl, setLinkUrl] = useState("");
+
   const [loading, setLoading] = useState(true);
+
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+
+  const [deletingId, setDeletingId] = useState(null);
+
+  const [error, setError] = useState("");
+
+  const goBack = () => navigate("/legislatie");
 
   useEffect(() => {
-    const loadLegislation = async () => {
-      try {
-        const response = await api.get(`/legislatie/${id}`);
+    let active = true;
 
-        const item = response.data.legislation;
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        setError("");
+
+        const [legislationResponse, attachmentsResponse] = await Promise.all([
+          api.get(`/legislatie/${id}`),
+
+          api.get(`/attachments/legislatie/${id}`),
+        ]);
+
+        if (!active) return;
+
+        const legislation = legislationResponse.data.legislation;
 
         setFormData({
-          title: item.title || "",
-          lawNumber: item.law_number || "",
-          lawDate: item.law_date
-            ? item.law_date.substring(0, 10)
-            : "",
-          content: item.content || "",
-        });
-      } catch (error) {
-        console.error(
-          "Eroare la încărcarea actului legislativ:",
-          error
-        );
+          title: legislation.title || "",
 
-        setMessage(
-          error.response?.data?.message ||
-            "Eroare la încărcarea actului legislativ."
-        );
+          lawNumber: legislation.law_number || "",
+
+          lawDate: legislation.law_date
+            ? String(legislation.law_date).split("T")[0]
+            : "",
+
+          content: legislation.content || "",
+        });
+
+        setAttachments(attachmentsResponse.data.attachments || []);
+      } catch (err) {
+        console.error("Eroare încărcare act normativ:", err);
+
+        if (active) {
+          setError(
+            err.response?.data?.message ||
+              "Legislationa nu a putut fi încărcată.",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
-    loadLegislation();
+    loadData();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((current) => ({
+      ...current,
+
       [name]: value,
     }));
+  };
+
+  const handleDeleteAttachment = async (attachment) => {
+    if (!canDelete || deletingId !== null || saving) return;
+
+    const confirmed = window.confirm(
+      "Sigur dorești să ștergi acest atașament?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(attachment.id);
+
+      setError("");
+
+      await api.delete(`/attachments/${attachment.id}`);
+
+      setAttachments((current) =>
+        current.filter((item) => item.id !== attachment.id),
+      );
+    } catch (err) {
+      console.error("Eroare ștergere atașament:", err);
+
+      setError(
+        err.response?.data?.message || "Atașamentul nu a putut fi șters.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleOpenAttachment = (attachment) => {
+    const url = isLink(attachment)
+      ? attachment.url
+      : `${api.defaults.baseURL}/attachments/file/${attachment.id}`;
+
+    if (!/^https?:\/\//i.test(url || "")) {
+      setError("Adresa atașamentului nu este validă.");
+
+      return;
+    }
+
+    window.open(url, "\_blank", "noopener,noreferrer");
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (!canEdit || saving) return;
+
+    if (!formData.title.trim()) {
+      setError("Denumirea actului normativ este obligatorie.");
+
+      return;
+    }
+
+    if (linkUrl.trim()) {
+      try {
+        const url = new URL(linkUrl.trim());
+
+        if (!["http:", "https:"].includes(url.protocol)) {
+          throw new Error("Link invalid");
+        }
+      } catch {
+        setError("Introdu un link HTTP sau HTTPS valid.");
+
+        return;
+      }
+    }
+
+    setSaving(true);
+
+    setError("");
+
     try {
-      setSaving(true);
-      setMessage("");
+      await api.patch(`/legislatie/${id}`, {
+        ...formData,
 
-      await api.patch(`/legislatie/${id}`, formData);
+        title: formData.title.trim(),
+      });
 
-      navigate(`/legislatie/${id}`);
-    } catch (error) {
-      console.error(
-        "Eroare la actualizarea actului legislativ:",
-        error
-      );
+      const failed = [];
 
-      setMessage(
-        error.response?.data?.message ||
-          "Eroare la actualizarea actului legislativ."
+      const remainingFiles = [];
+
+      for (const file of selectedFiles) {
+        try {
+          const data = new FormData();
+
+          data.append("file", file);
+
+          data.append("entityType", "legislatie");
+
+          data.append("entityId", id);
+
+          data.append("fileCategory", getCategory(file));
+
+          await api.post("/attachments/upload", data);
+        } catch (err) {
+          console.error("Eroare încărcare fișier:", err);
+
+          failed.push(file.name);
+
+          remainingFiles.push(file);
+        }
+      }
+
+      setSelectedFiles(remainingFiles);
+
+      if (linkUrl.trim()) {
+        try {
+          await api.post("/attachments/link", {
+            entityType: "legislatie",
+
+            entityId: id,
+
+            name: formData.title.trim(),
+
+            url: linkUrl.trim(),
+          });
+
+          setLinkUrl("");
+        } catch (err) {
+          console.error("Eroare salvare link:", err);
+
+          failed.push("Link");
+        }
+      }
+
+      if (failed.length > 0) {
+        setError(
+          `Datele au fost salvate, dar nu s-au adăugat: ${failed.join(", ")}.`,
+        );
+
+        return;
+      }
+
+      goBack();
+    } catch (err) {
+      console.error("Eroare modificare act normativ:", err);
+
+      setError(
+        err.response?.data?.message || "Legislationa nu a putut fi modificată.",
       );
     } finally {
       setSaving(false);
@@ -89,8 +287,7 @@ function EditLegislation() {
     return (
       <div className="edit-legislation-page">
         <div className="edit-legislation-loading">
-          <div className="edit-legislation-spinner"></div>
-          <span>Se încarcă actul legislativ...</span>
+          Se încarcă actul normativ...
         </div>
       </div>
     );
@@ -98,123 +295,199 @@ function EditLegislation() {
 
   return (
     <div className="edit-legislation-page">
-      <div className="edit-legislation-header">
+      <header className="edit-legislation-header">
         <div>
-          <span className="edit-legislation-label">
-            GESTIONARE LEGISLAȚIE
-          </span>
+          <span className="edit-legislation-label">GESTIONARE ACTELOR NORMATIV</span>
 
-          <h1>Editează actul legislativ</h1>
+          <h1>Editează actul normativ</h1>
 
-          <p>
-            Modifică datele actului legislativ selectat.
-          </p>
+          <p>Modifică informațiile și documentele atașate.</p>
         </div>
-      </div>
 
-      {message && (
-        <div className="edit-legislation-message">
-          {message}
+        <button
+          type="button"
+          className="edit-legislation-back-button"
+          onClick={goBack}
+        >
+          <ArrowLeft size={17} />
+          Înapoi
+        </button>
+      </header>
+
+      {error && (
+        <div className="edit-legislation-error" role="alert">
+          {error}
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="edit-legislation-form"
-      >
+      <form className="edit-legislation-form" onSubmit={handleSubmit}>
         <div className="edit-legislation-form-header">
-          <h2>Date act legislativ</h2>
+          <h2>Datele actului normativ</h2>
 
-          <p>
-            Actualizează informațiile necesare și salvează
-            modificările.
-          </p>
+          <p>Actualizează informațiile și gestionează atașamentele.</p>
         </div>
 
         <div className="edit-legislation-form-body">
-          <div className="edit-legislation-form-group">
-            <label htmlFor="title">
-              Titlu
-            </label>
+          <div className="edit-legislation-fields">
+            <div className="edit-legislation-form-group">
+              <label htmlFor="legislation-lawNumber">Număr act normativ</label>
 
-            <input
-              id="title"
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Introduceți titlul actului legislativ"
-              required
-            />
+              <input
+                id="legislation-lawNumber"
+                type="text"
+                name="lawNumber"
+                value={formData.lawNumber}
+                onChange={handleChange}
+                placeholder="Ex.: 125/2026"
+                disabled={!canEdit || saving}
+              />
+            </div>
+
+            <div className="edit-legislation-form-group">
+              <label htmlFor="legislation-date">Data actului normativ</label>
+
+              <input
+                id="legislation-date"
+                type="date"
+                name="lawDate"
+                value={formData.lawDate}
+                onChange={handleChange}
+                disabled={!canEdit || saving}
+              />
+            </div>
+
+            <div className="edit-legislation-form-group edit-legislation-full">
+              <label htmlFor="legislation-title">
+                Denumirea actului normativ
+              </label>
+
+              <input
+                id="legislation-title"
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Denumirea actului normativ"
+                required
+                disabled={!canEdit || saving}
+              />
+            </div>
           </div>
 
-          <div className="edit-legislation-form-group">
-            <label htmlFor="lawNumber">
-              Număr act
-            </label>
+          <div className="edit-legislation-section">
+            <h3>Documente și linkuri existente</h3>
 
-            <input
-              id="lawNumber"
-              type="text"
-              name="lawNumber"
-              value={formData.lawNumber}
-              onChange={handleChange}
-              placeholder="Ex.: Legea nr. 28/2024"
-            />
+            {attachments.length === 0 ? (
+              <p className="edit-legislation-empty">
+                Nu există documente atașate.
+              </p>
+            ) : (
+              <div className="edit-legislation-attachments">
+                {attachments.map((attachment) => {
+                  const Icon = isLink(attachment)
+                    ? Link2
+                    : isImage(attachment)
+                      ? Image
+                      : FileText;
+
+                  return (
+                    <div
+                      key={attachment.id}
+                      className="edit-legislation-attachment"
+                    >
+                      <div className="edit-legislation-attachment-icon">
+                        <Icon size={19} />
+                      </div>
+
+                      <div className="edit-legislation-attachment-name">
+                        <strong>
+                          {attachment.original_name ||
+                            attachment.file_name ||
+                            attachment.name ||
+                            (isLink(attachment) ? attachment.url : "Document")}
+                        </strong>
+
+                        <span>
+                          {isLink(attachment)
+                            ? "LINK"
+                            : isImage(attachment)
+                              ? "FOTOGRAFIE"
+                              : "DOCUMENT"}
+                        </span>
+                      </div>
+
+                      <div className="edit-legislation-attachment-actions">
+                        <button
+                          type="button"
+                          title="Deschide"
+                          aria-label="Deschide atașamentul"
+                          onClick={() => handleOpenAttachment(attachment)}
+                        >
+                          <ExternalLink size={17} />
+                        </button>
+
+                        {canDelete && (
+                          <button
+                            type="button"
+                            className="edit-legislation-attachment-delete"
+                            title="Șterge"
+                            aria-label="Șterge atașamentul"
+                            disabled={deletingId !== null || saving}
+                            onClick={() => handleDeleteAttachment(attachment)}
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="edit-legislation-form-group">
-            <label htmlFor="lawDate">
-              Data actului
-            </label>
+          {canEdit && (
+            <div className="edit-legislation-section">
+              <h3>Adaugă documente, fotografii sau link</h3>
 
-            <input
-              id="lawDate"
-              type="date"
-              name="lawDate"
-              value={formData.lawDate}
-              onChange={handleChange}
-            />
-          </div>
+              <p className="edit-legislation-section-description">
+                Încarcă fișiere noi sau adaugă un link extern. Documentele
+                existente vor fi păstrate.
+              </p>
 
-          <div className="edit-legislation-form-group">
-            <label htmlFor="content">
-              Conținut
-            </label>
-
-            <textarea
-              id="content"
-              name="content"
-              value={formData.content}
-              onChange={handleChange}
-              rows="12"
-              placeholder="Introduceți conținutul actului legislativ..."
-              required
-            />
-          </div>
+              <DocumentUploader
+                files={selectedFiles}
+                onFilesChange={setSelectedFiles}
+                linkUrl={linkUrl}
+                onLinkChange={setLinkUrl}
+                disabled={saving}
+                onError={setError}
+              />
+            </div>
+          )}
         </div>
 
         <div className="edit-legislation-actions">
           <button
             type="button"
             className="edit-legislation-cancel-button"
-            onClick={() =>
-              navigate(`/legislatie/${id}`)
-            }
+            onClick={goBack}
             disabled={saving}
           >
             Anulează
           </button>
 
-          <button
-            type="submit"
-            className="edit-legislation-save-button"
-            disabled={saving}
-          >
-            {saving
-              ? "Se salvează..."
-              : "Salvează modificările"}
-          </button>
+          {canEdit && (
+            <button
+              type="submit"
+              className="edit-legislation-save-button"
+              disabled={saving}
+            >
+              <Save size={17} />
+
+              {saving ? "Se salvează..." : "Salvează modificările"}
+            </button>
+          )}
         </div>
       </form>
     </div>

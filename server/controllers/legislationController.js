@@ -1,6 +1,8 @@
+
 const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
 
+// LISTA ACTELOR NORMATIVE
 const getLegislation = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -16,8 +18,7 @@ const getLegislation = async (req, res) => {
         u.username AS created_by_username,
         u.full_name AS created_by_name
       FROM legislatie l
-      LEFT JOIN users u
-        ON l.created_by = u.id
+      LEFT JOIN users u ON l.created_by = u.id
       ORDER BY l.law_date DESC NULLS LAST, l.id DESC
     `);
 
@@ -33,6 +34,7 @@ const getLegislation = async (req, res) => {
   }
 };
 
+// DETALII ACT NORMATIV
 const getLegislationById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -51,8 +53,7 @@ const getLegislationById = async (req, res) => {
         u.username AS created_by_username,
         u.full_name AS created_by_name
       FROM legislatie l
-      LEFT JOIN users u
-        ON l.created_by = u.id
+      LEFT JOIN users u ON l.created_by = u.id
       WHERE l.id = $1
       `,
       [id]
@@ -60,7 +61,7 @@ const getLegislationById = async (req, res) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        message: "Actul legislativ nu a fost găsit.",
+        message: "Actul normativ nu a fost găsit.",
       });
     }
 
@@ -71,11 +72,12 @@ const getLegislationById = async (req, res) => {
     console.error("GET LEGISLATION BY ID ERROR:", error);
 
     return res.status(500).json({
-      message: "Eroare la încărcarea actului legislativ.",
+      message: "Eroare la încărcarea actului normativ.",
     });
   }
 };
 
+// ADAUGĂ ACT NORMATIV
 const createLegislation = async (req, res) => {
   try {
     const {
@@ -85,9 +87,10 @@ const createLegislation = async (req, res) => {
       content,
     } = req.body || {};
 
-    if (!title || !content) {
+    // Doar denumirea este obligatorie.
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Denumirea actului normativ este obligatorie.",
       });
     }
 
@@ -112,10 +115,12 @@ const createLegislation = async (req, res) => {
         updated_at
       `,
       [
-        title,
-        lawNumber || null,
+        title.trim(),
+        typeof lawNumber === "string"
+          ? lawNumber.trim() || null
+          : null,
         lawDate || null,
-        content,
+        typeof content === "string" ? content : "",
         req.user.id,
       ]
     );
@@ -125,22 +130,24 @@ const createLegislation = async (req, res) => {
       action: "CREATE",
       entityType: "legislatie",
       entityId: result.rows[0].id,
-      description: `A creat actul legislativ "${result.rows[0].title}"`,
+      description:
+        `A creat actul normativ "${result.rows[0].title}"`,
     });
 
     return res.status(201).json({
-      message: "Actul legislativ a fost adăugat.",
+      message: "Actul normativ a fost adăugat.",
       legislation: result.rows[0],
     });
   } catch (error) {
     console.error("CREATE LEGISLATION ERROR:", error);
 
     return res.status(500).json({
-      message: "Eroare la adăugarea actului legislativ.",
+      message: "Eroare la adăugarea actului normativ.",
     });
   }
 };
 
+// MODIFICĂ ACT NORMATIV
 const updateLegislation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -152,9 +159,9 @@ const updateLegislation = async (req, res) => {
       content,
     } = req.body || {};
 
-    if (!title || !content) {
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Denumirea actului normativ este obligatorie.",
       });
     }
 
@@ -179,17 +186,19 @@ const updateLegislation = async (req, res) => {
         updated_at
       `,
       [
-        title,
-        lawNumber || null,
+        title.trim(),
+        typeof lawNumber === "string"
+          ? lawNumber.trim() || null
+          : null,
         lawDate || null,
-        content,
+        typeof content === "string" ? content : "",
         id,
       ]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        message: "Actul legislativ nu a fost găsit.",
+        message: "Actul normativ nu a fost găsit.",
       });
     }
 
@@ -198,22 +207,24 @@ const updateLegislation = async (req, res) => {
       action: "UPDATE",
       entityType: "legislatie",
       entityId: result.rows[0].id,
-      description: `A modificat actul legislativ "${result.rows[0].title}"`,
+      description:
+        `A modificat actul normativ "${result.rows[0].title}"`,
     });
 
     return res.status(200).json({
-      message: "Actul legislativ a fost actualizat.",
+      message: "Actul normativ a fost actualizat.",
       legislation: result.rows[0],
     });
   } catch (error) {
     console.error("UPDATE LEGISLATION ERROR:", error);
 
     return res.status(500).json({
-      message: "Eroare la actualizarea actului legislativ.",
+      message: "Eroare la actualizarea actului normativ.",
     });
   }
 };
 
+// ȘTERGE ACT NORMATIV
 const deleteLegislation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -229,7 +240,7 @@ const deleteLegislation = async (req, res) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        message: "Actul legislativ nu a fost găsit.",
+        message: "Actul normativ nu a fost găsit.",
       });
     }
 
@@ -238,18 +249,19 @@ const deleteLegislation = async (req, res) => {
       action: "DELETE",
       entityType: "legislatie",
       entityId: result.rows[0].id,
-      description: `A șters actul legislativ "${result.rows[0].title}"`,
+      description:
+        `A șters actul normativ "${result.rows[0].title}"`,
     });
 
     return res.status(200).json({
-      message: "Actul legislativ a fost șters.",
+      message: "Actul normativ a fost șters.",
       legislation: result.rows[0],
     });
   } catch (error) {
     console.error("DELETE LEGISLATION ERROR:", error);
 
     return res.status(500).json({
-      message: "Eroare la ștergerea actului legislativ.",
+      message: "Eroare la ștergerea actului normativ.",
     });
   }
 };
