@@ -1,5 +1,7 @@
 const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
+
+// LISTA ORDINELOR
 const getOrders = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -15,8 +17,7 @@ const getOrders = async (req, res) => {
         u.username AS created_by_username,
         u.full_name AS created_by_name
       FROM ordine o
-      LEFT JOIN users u
-        ON o.created_by = u.id
+      LEFT JOIN users u ON o.created_by = u.id
       ORDER BY o.order_date DESC NULLS LAST, o.id DESC
     `);
 
@@ -32,6 +33,7 @@ const getOrders = async (req, res) => {
   }
 };
 
+// DETALII ORDIN
 const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -50,8 +52,7 @@ const getOrderById = async (req, res) => {
         u.username AS created_by_username,
         u.full_name AS created_by_name
       FROM ordine o
-      LEFT JOIN users u
-        ON o.created_by = u.id
+      LEFT JOIN users u ON o.created_by = u.id
       WHERE o.id = $1
       `,
       [id],
@@ -75,13 +76,15 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// ADAUGĂ ORDIN
 const createOrder = async (req, res) => {
   try {
     const { title, number, orderDate, content } = req.body || {};
 
-    if (!title || !content) {
+    // Doar denumirea este obligatorie.
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Denumirea ordinului este obligatorie.",
       });
     }
 
@@ -105,7 +108,13 @@ const createOrder = async (req, res) => {
         created_at,
         updated_at
       `,
-      [title, number || null, orderDate || null, content, req.user.id],
+      [
+        title.trim(),
+        typeof number === "string" ? number.trim() || null : null,
+        orderDate || null,
+        typeof content === "string" ? content : "",
+        req.user.id,
+      ],
     );
 
     await createAuditLog({
@@ -129,15 +138,15 @@ const createOrder = async (req, res) => {
   }
 };
 
+// MODIFICĂ ORDIN
 const updateOrder = async (req, res) => {
   try {
     const { id } = req.params;
-
     const { title, number, orderDate, content } = req.body || {};
 
-    if (!title || !content) {
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        message: "Titlul și conținutul sunt obligatorii.",
+        message: "Denumirea ordinului este obligatorie.",
       });
     }
 
@@ -161,7 +170,13 @@ const updateOrder = async (req, res) => {
         created_at,
         updated_at
       `,
-      [title, number || null, orderDate || null, content, id],
+      [
+        title.trim(),
+        typeof number === "string" ? number.trim() || null : null,
+        orderDate || null,
+        typeof content === "string" ? content : "",
+        id,
+      ],
     );
 
     if (result.rows.length === 0) {
@@ -191,6 +206,7 @@ const updateOrder = async (req, res) => {
   }
 };
 
+// ȘTERGE ORDIN
 const deleteOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -211,12 +227,12 @@ const deleteOrder = async (req, res) => {
     }
 
     await createAuditLog({
-  userId: req.user.id,
-  action: "DELETE",
-  entityType: "ordin",
-  entityId: Number(id),
-  description: `A șters ordinul cu ID ${id}`,
-});
+      userId: req.user.id,
+      action: "DELETE",
+      entityType: "ordin",
+      entityId: Number(id),
+      description: `A șters ordinul cu ID ${id}`,
+    });
 
     return res.status(200).json({
       message: "Ordinul a fost șters.",

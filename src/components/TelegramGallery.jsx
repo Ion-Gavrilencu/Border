@@ -1,14 +1,22 @@
-
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import api from "../services/api";
 import "./TelegramGallery.css";
 
-function TelegramGallery({ telegramId, title, onClose }) {
+function TelegramGallery({
+  telegramId,
+  entityId,
+  entityType = "telegrame",
+  title,
+  onClose,
+}) {
   const [photos, setPhotos] = useState([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Compatibilitate cu utilizarea veche din Telegrame.
+  const documentId = entityId ?? telegramId;
 
   useEffect(() => {
     let active = true;
@@ -18,15 +26,19 @@ function TelegramGallery({ telegramId, title, onClose }) {
         setLoading(true);
         setError("");
 
+        if (!["telegrame", "ordine"].includes(entityType) || !documentId) {
+          throw new Error("Tip de document sau ID invalid.");
+        }
+
         const response = await api.get(
-          `/attachments/telegrame/${telegramId}`
+          `/attachments/${entityType}/${documentId}`,
         );
 
         const images = (response.data.attachments || []).filter(
           (item) =>
             item.attachment_type !== "link" &&
             (item.file_category === "image" ||
-              item.mime_type?.startsWith("image/"))
+              item.mime_type?.startsWith("image/")),
         );
 
         if (active) {
@@ -34,11 +46,15 @@ function TelegramGallery({ telegramId, title, onClose }) {
           setIndex(0);
         }
       } catch (err) {
+        console.error("Eroare încărcare galerie:", err);
+
         if (active) {
           setError("Fotografiile nu au putut fi încărcate.");
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
@@ -47,38 +63,48 @@ function TelegramGallery({ telegramId, title, onClose }) {
     return () => {
       active = false;
     };
-  }, [telegramId]);
+  }, [documentId, entityType]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+      }
+
       if (event.key === "ArrowRight") {
         setIndex((current) =>
-          photos.length ? (current + 1) % photos.length : 0
+          photos.length ? (current + 1) % photos.length : 0,
         );
       }
+
       if (event.key === "ArrowLeft") {
         setIndex((current) =>
-          photos.length
-            ? (current - 1 + photos.length) % photos.length
-            : 0
+          photos.length ? (current - 1 + photos.length) % photos.length : 0,
         );
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [photos.length, onClose]);
 
   const currentPhoto = photos[index];
 
   return (
-    <div className="telegram-gallery-overlay" role="dialog" aria-modal="true">
+    <div
+      className="telegram-gallery-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || "Galerie foto"}
+    >
       <div className="telegram-gallery">
         <div className="telegram-gallery-header">
           <div>
             <h2>{title}</h2>
+
             <span>
               {photos.length > 0
                 ? `${index + 1} din ${photos.length} fotografii`
@@ -105,7 +131,10 @@ function TelegramGallery({ telegramId, title, onClose }) {
                   type="button"
                   className="telegram-gallery-arrow"
                   onClick={() =>
-                    setIndex((index - 1 + photos.length) % photos.length)
+                    setIndex(
+                      (current) =>
+                        (current - 1 + photos.length) % photos.length,
+                    )
                   }
                   aria-label="Fotografia anterioară"
                 >
@@ -123,7 +152,7 @@ function TelegramGallery({ telegramId, title, onClose }) {
                   type="button"
                   className="telegram-gallery-arrow"
                   onClick={() =>
-                    setIndex((index + 1) % photos.length)
+                    setIndex((current) => (current + 1) % photos.length)
                   }
                   aria-label="Fotografia următoare"
                 >

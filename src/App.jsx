@@ -10,7 +10,7 @@ import Telegrame from "./pages/Telegrame";
 
 import EditTelegram from "./pages/EditTelegram";
 import Ordine from "./pages/Ordine";
-import OrderDetails from "./pages/OrderDetails";
+
 import EditOrder from "./pages/EditOrder";
 import Legislatie from "./pages/Legislatie";
 import LegislationDetails from "./pages/LegislationDetails";
@@ -37,7 +37,7 @@ function App() {
 
               <Route path="/telegrame/:id/edit" element={<EditTelegram />} />
               <Route path="/ordine" element={<Ordine />} />
-              <Route path="/ordine/:id" element={<OrderDetails />} />
+              
               <Route path="/ordine/:id/edit" element={<EditOrder />} />
               <Route path="/legislatie" element={<Legislatie />} />
               <Route path="/legislatie/:id" element={<LegislationDetails />} />
