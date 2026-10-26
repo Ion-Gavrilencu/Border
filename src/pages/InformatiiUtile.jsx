@@ -31,6 +31,7 @@ import { useAuth } from "../context/AuthContext";
 import "./InformatiiUtile.css";
 
 import DocumentUploader from "../components/DocumentUploader";
+import TelegramGallery from "../components/TelegramGallery";
 
 const getFileCategory = (file) => {
   if (file.type?.startsWith("image/")) return "image";
@@ -91,6 +92,7 @@ function InformatiiUtile() {
 
   const [sort, setSort] = useState("recent");
   const [viewer, setViewer] = useState(null);
+  const [gallery, setGallery] = useState(null);
   const [openingId, setOpeningId] = useState(null);
   const [openingCardId, setOpeningCardId] = useState(null);
 
@@ -169,6 +171,17 @@ function InformatiiUtile() {
 
   // Fișierele sunt private: le cerem cu tokenul Axios și le deschidem ca Blob.
   const openMaterial = async (attachment) => {
+    if (
+      attachment.attachment_type === "file" &&
+      (attachment.file_category === "image" ||
+        attachment.mime_type?.startsWith("image/"))
+    ) {
+      if (viewer?.item) {
+        setGallery({ item: viewer.item, initialAttachmentId: attachment.id });
+        setViewer(null);
+      }
+      return;
+    }
     if (attachment.attachment_type === "link") {
       try {
         const target = new URL(attachment.url);
@@ -235,6 +248,12 @@ function InformatiiUtile() {
             throw new Error("Link invalid");
           if (preopenedTab) preopenedTab.location.replace(url.href);
           else window.open(url.href, "_blank", "noopener,noreferrer");
+        } else if (
+          attachment.file_category === "image" ||
+          attachment.mime_type?.startsWith("image/")
+        ) {
+          preopenedTab?.close();
+          setGallery({ item, initialAttachmentId: attachment.id });
         } else {
           const fileResponse = await api.get(
             `/attachments/file/${attachment.id}`,
@@ -814,6 +833,16 @@ function InformatiiUtile() {
             </article>
           ))}
         </section>
+      )}
+
+      {gallery && (
+        <TelegramGallery
+          entityType="informatii_utile"
+          entityId={gallery.item.id}
+          title={gallery.item.title}
+          initialAttachmentId={gallery.initialAttachmentId}
+          onClose={() => setGallery(null)}
+        />
       )}
 
       {viewer && (
