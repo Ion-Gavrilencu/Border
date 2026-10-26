@@ -226,69 +226,112 @@ function InformatiiUtile() {
     }
   };
 
-  const openUsefulInfo = async (item) => {
-    if (openingCardId !== null) return;
-    // Deschidem anticipat o filă pentru unicul fișier/link; dacă există
-    // mai multe materiale, o închidem și prezentăm lista în dialog.
-    const preopenedTab = window.open("", "_blank");
-    try {
-      setOpeningCardId(item.id);
-      const response = await api.get(
-        `/attachments/informatii_utile/${item.id}`,
-      );
-      const attachments = Array.isArray(response.data?.attachments)
-        ? response.data.attachments
-        : [];
+ 
+const openUsefulInfo = async (item) => {
+  if (openingCardId !== null) return;
 
-      if (attachments.length === 1) {
-        const attachment = attachments[0];
-        if (attachment.attachment_type === "link") {
-          const url = new URL(attachment.url);
-          if (!["https:", "http:"].includes(url.protocol))
-            throw new Error("Link invalid");
-          if (preopenedTab) preopenedTab.location.replace(url.href);
-          else window.open(url.href, "_blank", "noopener,noreferrer");
-        } else if (
-          attachment.file_category === "image" ||
-          attachment.mime_type?.startsWith("image/")
-        ) {
-          preopenedTab?.close();
-          setGallery({ item, initialAttachmentId: attachment.id });
-        } else {
-          const fileResponse = await api.get(
-            `/attachments/file/${attachment.id}`,
-            {
-              responseType: "blob",
-            },
-          );
-          const blobUrl = URL.createObjectURL(fileResponse.data);
-          if (preopenedTab) preopenedTab.location.replace(blobUrl);
-          else {
-            const a = document.createElement("a");
-            a.href = blobUrl;
-            a.download =
-              attachment.original_name || attachment.name || "document";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-          }
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
-        }
-      } else {
-        preopenedTab?.close();
-        setViewer({ item, attachments });
-      }
-    } catch (error) {
+  // Deschidem anticipat fila pentru linkuri și documente.
+  const preopenedTab = window.open("", "_blank");
+
+  try {
+    setOpeningCardId(item.id);
+
+    const response = await api.get(
+      `/attachments/informatii_utile/${item.id}`
+    );
+
+    const attachments = Array.isArray(response.data?.attachments)
+      ? response.data.attachments
+      : [];
+
+    const images = attachments.filter(
+      (attachment) =>
+        attachment.attachment_type === "file" &&
+        (attachment.file_category === "image" ||
+          attachment.mime_type?.startsWith("image/"))
+    );
+
+    // Dacă toate materialele sunt fotografii,
+    // deschidem direct galeria, indiferent de numărul lor.
+    if (
+      attachments.length > 0 &&
+      images.length === attachments.length
+    ) {
       preopenedTab?.close();
-      console.error("OPEN USEFUL INFO:", error);
-      notify(
-        error.response?.data?.message || "Nu s-a putut deschide materialul.",
-        "error",
-      );
-    } finally {
-      setOpeningCardId(null);
+      setViewer(null);
+      setGallery({ item, initialAttachmentId: images[0].id });
+      return;
     }
-  };
+
+    // Un singur material: îl deschidem direct.
+    if (attachments.length === 1) {
+      const attachment = attachments[0];
+
+      if (attachment.attachment_type === "link") {
+        const url = new URL(attachment.url);
+
+        if (!["http:", "https:"].includes(url.protocol)) {
+          throw new Error("Link invalid.");
+        }
+
+        if (preopenedTab) {
+          preopenedTab.location.replace(url.href);
+        } else {
+          window.open(url.href, "_blank", "noopener,noreferrer");
+        }
+
+        return;
+      }
+
+      const fileResponse = await api.get(
+        `/attachments/file/${attachment.id}`,
+        { responseType: "blob" }
+      );
+
+      const blobUrl = URL.createObjectURL(fileResponse.data);
+
+      if (preopenedTab) {
+        preopenedTab.location.replace(blobUrl);
+      } else {
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download =
+          attachment.original_name ||
+          attachment.name ||
+          "document";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 120000);
+
+      return;
+    }
+
+    // Materiale mixte sau informație numai text.
+    preopenedTab?.close();
+    setGallery(null);
+    setViewer({ item, attachments });
+  } catch (error) {
+    preopenedTab?.close();
+
+    console.error("OPEN USEFUL INFO:", error);
+
+    notify(
+      error.response?.data?.message ||
+        error.message ||
+        "Nu s-a putut deschide materialul.",
+      "error"
+    );
+  } finally {
+    setOpeningCardId(null);
+  }
+};
+
 
   const resetForm = () => {
     setFormData({ ...emptyForm });
