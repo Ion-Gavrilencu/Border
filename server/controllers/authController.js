@@ -97,8 +97,9 @@ const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 8 * 60 * 60 * 1000,
+      path: "/",
     });
 
     return res.json({
@@ -120,12 +121,15 @@ const login = async (req, res) => {
   }
 };
 const logout = (req, res) => {
-  res.cookie("token", "", {
-    httpOnly: true,
-    expires: new Date(0),
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+  
+res.clearCookie("token", {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite:
+    process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/",
+});
+
 
   return res.status(200).json({
     message: "Deconectare reușită.",
