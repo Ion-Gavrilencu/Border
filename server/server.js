@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -25,9 +24,8 @@ const searchRoutes = require("./routes/searchRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const newsRoutes = require("./routes/newsRoutes");
-
-// Nou: fișiere private pentru știri
 const newsFileRoutes = require("./routes/newsFileRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -101,6 +99,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/attachments", attachmentRoutes);
 app.use("/api/news", newsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Nou: upload și acces securizat la fișierele știrilor
 app.use("/api/news-files", newsFileRoutes);

@@ -1,7 +1,7 @@
 
 const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
-
+const { notifyUsers } = require("../services/notificationService");
 // LISTA TELEGRAMELOR
 const getTelegrame = async (req, res) => {
   try {
@@ -126,6 +126,26 @@ const createTelegram = async (req, res) => {
       description: `A creat telegrama "${result.rows[0].title}"`,
     });
 
+    
+    // Notificăm utilizatorii despre telegrama nouă.
+    try {
+      await notifyUsers({
+        actorId: req.user.id,
+        title: "Telegramă nouă",
+        message: `A fost adăugată telegrama „${result.rows[0].title}”.`,
+        type: "telegrama",
+        link: `/telegrame/${result.rows[0].id}`,
+      });
+    } catch (notificationError) {
+      // Telegrama a fost deja salvată.
+      // O eroare de notificare nu trebuie să anuleze răspunsul.
+      console.error(
+        "CREATE TELEGRAM NOTIFICATION ERROR:",
+        notificationError
+      );
+    }
+
+    
     return res.status(201).json({
       message: "Telegrama a fost adăugată.",
       telegram: result.rows[0],

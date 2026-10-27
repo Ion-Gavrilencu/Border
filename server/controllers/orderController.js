@@ -1,5 +1,7 @@
+
 const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
+const { notifyUsers } = require("../services/notificationService");
 
 // LISTA ORDINELOR
 const getOrders = async (req, res) => {
@@ -81,7 +83,6 @@ const createOrder = async (req, res) => {
   try {
     const { title, number, orderDate, content } = req.body || {};
 
-    // Doar denumirea este obligatorie.
     if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
         message: "Denumirea ordinului este obligatorie.",
@@ -117,17 +118,40 @@ const createOrder = async (req, res) => {
       ],
     );
 
+    const order = result.rows[0];
+
     await createAuditLog({
       userId: req.user.id,
       action: "CREATE",
       entityType: "ordin",
-      entityId: result.rows[0].id,
-      description: `A creat ordinul "${result.rows[0].title}"`,
+      entityId: order.id,
+      description: `A creat ordinul "${order.title}"`,
     });
+
+    // NOTIFICARE AUTOMATĂ PENTRU ORDIN NOU
+    try {
+      const orderNumber = order.number
+        ? ` nr. ${order.number}`
+        : "";
+
+      await notifyUsers({
+        actorId: req.user.id,
+        title: "Ordin nou",
+        message: `A fost adăugat ordinul${orderNumber} „${order.title}”.`,
+        type: "ordin",
+        link: `/ordine/${order.id}`,
+      });
+    } catch (notificationError) {
+      // Ordinul rămâne salvat chiar dacă notificarea eșuează.
+      console.error(
+        "CREATE ORDER NOTIFICATION ERROR:",
+        notificationError,
+      );
+    }
 
     return res.status(201).json({
       message: "Ordinul a fost adăugat.",
-      order: result.rows[0],
+      order,
     });
   } catch (error) {
     console.error("CREATE ORDER ERROR:", error);

@@ -1,6 +1,6 @@
 
-const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { Readable } = require("stream");
 const { put, get, del } = require("@vercel/blob");
 const pool = require("../config/database");
@@ -20,6 +20,19 @@ const allowedFileCategories = [
   "word",
   "other",
 ];
+
+const MAX_NEWS_FILES = 10;
+const MAX_NEWS_FILE_SIZE = 4 * 1024 * 1024;
+
+const newsMimeCategories = {
+  "image/jpeg": "image",
+  "image/png": "image",
+  "image/webp": "image",
+  "application/pdf": "pdf",
+  "application/msword": "word",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "word",
+};
 
 const getEntityTable = (entityType) => {
   const tables = {
@@ -56,9 +69,12 @@ const getBlobPath = (attachment) => {
 // ÎNCĂRCARE FIȘIER
 const uploadAttachment = async (req, res) => {
   let uploadedBlobPath = null;
+  let client = null;
+  let transactionStarted = false;
 
   try {
-    const { entityType, entityId, fileCategory } = req.body;
+    const { entityType, entityId, fileCategory } =
+      req.body || {};
 
     if (
       !allowedEntityTypes.includes(entityType) ||
@@ -81,34 +97,106 @@ const uploadAttachment = async (req, res) => {
       });
     }
 
+    if (entityType === "news") {
+      if (
+        req.file.size <= 0 ||
+        req.file.size > MAX_NEWS_FILE_SIZE
+      ) {
+        return res.status(400).json({
+          message: "Fișierul trebuie să aibă maximum 4 MB.",
+        });
+      }
+
+      const expectedCategory =
+        newsMimeCategories[req.file.mimetype];
+
+      if (!expectedCategory) {
+        return res.status(400).json({
+          message:
+            "Sunt permise doar JPG, PNG, WEBP, PDF, DOC și DOCX.",
+        });
+      }
+
+      if (expectedCategory !== fileCategory) {
+        return res.status(400).json({
+          message:
+            "Categoria fișierului nu corespunde formatului.",
+        });
+      }
+    }
+
     const tableName = getEntityTable(entityType);
 
-    const entityResult = await pool.query(
-      `SELECT id FROM ${tableName} WHERE id = $1`,
+    client = await pool.connect();
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    // Blocăm entitatea pentru a serializa încărcările
+    // simultane ale aceleiași noutăți.
+    const entityResult = await client.query(
+      `SELECT id FROM ${tableName}
+       WHERE id = $1
+       FOR UPDATE`,
       [entityId]
     );
 
     if (entityResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+
       return res.status(404).json({
         message: "Elementul nu există.",
       });
     }
 
-    const filename = getSafeFilename(req.file.originalname);
+    if (entityType === "news") {
+      const countResult = await client.query(
+        `
+        SELECT COUNT(*)::integer AS total
+        FROM attachments
+        WHERE entity_type = 'news'
+          AND entity_id = $1
+          AND attachment_type = 'file'
+        `,
+        [entityId]
+      );
+
+      const total = Number(
+        countResult.rows[0]?.total || 0
+      );
+
+      if (total >= MAX_NEWS_FILES) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+
+        return res.status(409).json({
+          message:
+            "Pentru o noutate sunt permise maximum 10 fișiere.",
+        });
+      }
+    }
+
+    const filename = getSafeFilename(
+      req.file.originalname
+    );
 
     const blobPath =
       `attachments/${entityType}/${entityId}/` +
-      `${Date.now()}-${require("crypto").randomUUID()}-${filename}`;
+      `${Date.now()}-${crypto.randomUUID()}-${filename}`;
 
-    const blob = await put(blobPath, req.file.buffer, {
-      access: "private",
-      contentType: req.file.mimetype,
-      addRandomSuffix: false,
-    });
+    const blob = await put(
+      blobPath,
+      req.file.buffer,
+      {
+        access: "private",
+        contentType: req.file.mimetype,
+        addRandomSuffix: false,
+      }
+    );
 
     uploadedBlobPath = blob.pathname;
 
-    const result = await pool.query(
+    const result = await client.query(
       `
       INSERT INTO attachments (
         entity_type,
@@ -138,12 +226,24 @@ const uploadAttachment = async (req, res) => {
       ]
     );
 
+    await client.query("COMMIT");
+    transactionStarted = false;
+    uploadedBlobPath = null;
+
     return res.status(201).json({
       message: "Fișierul a fost încărcat cu succes.",
       attachment: result.rows[0],
     });
   } catch (error) {
     console.error("UPLOAD ATTACHMENT ERROR:", error);
+
+    if (transactionStarted && client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("ROLLBACK ERROR:", rollbackError);
+      }
+    }
 
     if (uploadedBlobPath) {
       try {
@@ -156,13 +256,16 @@ const uploadAttachment = async (req, res) => {
     return res.status(500).json({
       message: "Fișierul nu a putut fi încărcat.",
     });
+  } finally {
+    if (client) client.release();
   }
 };
 
 // ADAUGĂ LINK
 const createAttachmentLink = async (req, res) => {
   try {
-    const { entityType, entityId, name, url } = req.body;
+    const { entityType, entityId, name, url } =
+      req.body || {};
 
     if (
       !allowedEntityTypes.includes(entityType) ||
@@ -170,6 +273,13 @@ const createAttachmentLink = async (req, res) => {
     ) {
       return res.status(400).json({
         message: "Tipul sau ID-ul entității este invalid.",
+      });
+    }
+
+    if (entityType === "news") {
+      return res.status(400).json({
+        message:
+          "Pentru noutăți, fotografiile și documentele trebuie încărcate direct.",
       });
     }
 
@@ -267,7 +377,7 @@ const getAttachments = async (req, res) => {
       LEFT JOIN users u ON u.id = a.uploaded_by
       WHERE a.entity_type = $1
         AND a.entity_id = $2
-      ORDER BY a.created_at DESC
+      ORDER BY a.created_at DESC, a.id DESC
       `,
       [entityType, entityId]
     );
@@ -350,10 +460,12 @@ const getAttachmentFile = async (req, res) => {
       `inline; filename="${filename}"`
     );
 
-    Readable.fromWeb(blob.stream).on("error", (error) => {
-      console.error("BLOB STREAM ERROR:", error);
-      res.destroy(error);
-    }).pipe(res);
+    Readable.fromWeb(blob.stream)
+      .on("error", (error) => {
+        console.error("BLOB STREAM ERROR:", error);
+        res.destroy(error);
+      })
+      .pipe(res);
   } catch (error) {
     console.error("GET ATTACHMENT FILE ERROR:", error);
 
@@ -372,7 +484,8 @@ const deleteAttachment = async (req, res) => {
   try {
     if (req.user?.role !== "ADMIN") {
       return res.status(403).json({
-        message: "Doar administratorul poate șterge atașamente.",
+        message:
+          "Doar administratorul poate șterge atașamente.",
       });
     }
 

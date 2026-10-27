@@ -1,5 +1,5 @@
-
 const pool = require("../config/database");
+const { notifyUsers } = require("../services/notificationService");
 
 const allowedCategories = [
   "documente",
@@ -27,33 +27,21 @@ const validUrl = (value) => {
 };
 
 const validateNews = (body) => {
-  const title =
-    typeof body.title === "string" ? body.title.trim() : "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
 
   const type = body.type ?? "external";
 
-  const url =
-    typeof body.url === "string" ? body.url.trim() : "";
+  const url = typeof body.url === "string" ? body.url.trim() : "";
 
-  const content =
-    typeof body.content === "string"
-      ? body.content.trim()
-      : "";
+  const content = typeof body.content === "string" ? body.content.trim() : "";
 
   const category =
-    typeof body.category === "string"
-      ? body.category.trim()
-      : "altele";
+    typeof body.category === "string" ? body.category.trim() : "altele";
 
-  const source =
-    typeof body.source === "string"
-      ? body.source.trim()
-      : "";
+  const source = typeof body.source === "string" ? body.source.trim() : "";
 
   const imageUrl =
-    typeof body.image_url === "string"
-      ? body.image_url.trim()
-      : "";
+    typeof body.image_url === "string" ? body.image_url.trim() : "";
 
   const images = body.images ?? [];
 
@@ -77,10 +65,7 @@ const validateNews = (body) => {
     };
   }
 
-  if (
-    imageUrl &&
-    (imageUrl.length > 2048 || !validUrl(imageUrl))
-  ) {
+  if (imageUrl && (imageUrl.length > 2048 || !validUrl(imageUrl))) {
     return {
       error: "Linkul imaginii trebuie să fie un URL HTTP/HTTPS valid.",
     };
@@ -91,14 +76,11 @@ const validateNews = (body) => {
     images.length > 10 ||
     images.some(
       (item) =>
-        typeof item !== "string" ||
-        item.length > 2048 ||
-        !validUrl(item)
+        typeof item !== "string" || item.length > 2048 || !validUrl(item),
     )
   ) {
     return {
-      error:
-        "Galeria poate conține cel mult 10 linkuri HTTP/HTTPS valide.",
+      error: "Galeria poate conține cel mult 10 linkuri HTTP/HTTPS valide.",
     };
   }
 
@@ -114,10 +96,7 @@ const validateNews = (body) => {
     };
   }
 
-  if (
-    type === "internal" &&
-    (!content || content.length > 20000)
-  ) {
+  if (type === "internal" && (!content || content.length > 20000)) {
     return {
       error:
         "Textul știrii proprii trebuie să aibă între 1 și 20000 de caractere.",
@@ -187,10 +166,9 @@ const getNewsById = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      "SELECT * FROM news WHERE id = $1",
-      [req.params.id]
-    );
+    const result = await pool.query("SELECT * FROM news WHERE id = $1", [
+      req.params.id,
+    ]);
 
     if (!result.rows.length) {
       return res.status(404).json({
@@ -221,16 +199,8 @@ const createNews = async (req, res) => {
   }
 
   try {
-    const {
-      title,
-      type,
-      url,
-      content,
-      category,
-      source,
-      image_url,
-      images,
-    } = validation.data;
+    const { title, type, url, content, category, source, image_url, images } =
+      validation.data;
 
     const result = await pool.query(
       `INSERT INTO news (
@@ -256,12 +226,28 @@ const createNews = async (req, res) => {
         image_url,
         JSON.stringify(images),
         req.user.id,
-      ]
+      ],
     );
+
+    const article = result.rows[0];
+
+    // NOTIFICARE AUTOMATĂ PENTRU ȘTIRE NOUĂ
+    try {
+      await notifyUsers({
+        actorId: req.user.id,
+        title: "Știre nouă",
+        message: `A fost publicată știrea „${article.title}”.`,
+        type: "stire",
+        link: `/stiri/${article.id}`,
+      });
+    } catch (notificationError) {
+      // Știrea rămâne salvată dacă notificarea eșuează.
+      console.error("CREATE NEWS NOTIFICATION ERROR:", notificationError);
+    }
 
     return res.status(201).json({
       message: "Noutatea a fost adăugată.",
-      article: result.rows[0],
+      article,
     });
   } catch (error) {
     console.error("CREATE NEWS ERROR:", error);
@@ -281,10 +267,9 @@ const updateNews = async (req, res) => {
   }
 
   try {
-    const existing = await pool.query(
-      "SELECT * FROM news WHERE id = $1",
-      [req.params.id]
-    );
+    const existing = await pool.query("SELECT * FROM news WHERE id = $1", [
+      req.params.id,
+    ]);
 
     if (!existing.rows.length) {
       return res.status(404).json({
@@ -311,16 +296,8 @@ const updateNews = async (req, res) => {
       });
     }
 
-    const {
-      title,
-      type,
-      url,
-      content,
-      category,
-      source,
-      image_url,
-      images,
-    } = validation.data;
+    const { title, type, url, content, category, source, image_url, images } =
+      validation.data;
 
     const result = await pool.query(
       `UPDATE news
@@ -346,7 +323,7 @@ const updateNews = async (req, res) => {
         image_url,
         JSON.stringify(images),
         req.params.id,
-      ]
+      ],
     );
 
     return res.json({
@@ -373,7 +350,7 @@ const deleteNews = async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM news WHERE id = $1 RETURNING id",
-      [req.params.id]
+      [req.params.id],
     );
 
     if (!result.rows.length) {

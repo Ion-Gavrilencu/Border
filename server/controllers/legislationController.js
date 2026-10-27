@@ -1,6 +1,6 @@
-
 const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
+const { notifyUsers } = require("../services/notificationService");
 
 // LISTA ACTELOR NORMATIVE
 const getLegislation = async (req, res) => {
@@ -56,7 +56,7 @@ const getLegislationById = async (req, res) => {
       LEFT JOIN users u ON l.created_by = u.id
       WHERE l.id = $1
       `,
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -80,12 +80,7 @@ const getLegislationById = async (req, res) => {
 // ADAUGĂ ACT NORMATIV
 const createLegislation = async (req, res) => {
   try {
-    const {
-      title,
-      lawNumber,
-      lawDate,
-      content,
-    } = req.body || {};
+    const { title, lawNumber, lawDate, content } = req.body || {};
 
     // Doar denumirea este obligatorie.
     if (typeof title !== "string" || !title.trim()) {
@@ -116,27 +111,51 @@ const createLegislation = async (req, res) => {
       `,
       [
         title.trim(),
-        typeof lawNumber === "string"
-          ? lawNumber.trim() || null
-          : null,
+        typeof lawNumber === "string" ? lawNumber.trim() || null : null,
         lawDate || null,
         typeof content === "string" ? content : "",
         req.user.id,
-      ]
+      ],
     );
 
+    const legislation = result.rows[0];
+
+    // ÎNREGISTRARE ÎN JURNALUL DE AUDIT
     await createAuditLog({
       userId: req.user.id,
       action: "CREATE",
       entityType: "legislatie",
-      entityId: result.rows[0].id,
-      description:
-        `A creat actul normativ "${result.rows[0].title}"`,
+      entityId: legislation.id,
+      description: `A creat actul normativ "${legislation.title}"`,
     });
+
+    // NOTIFICARE AUTOMATĂ PENTRU ACT NORMATIV NOU
+    try {
+      const lawNumberText = legislation.law_number
+        ? ` nr. ${legislation.law_number}`
+        : "";
+
+      await notifyUsers({
+        actorId: req.user.id,
+        title: "Act normativ nou",
+        message:
+          `A fost adăugat actul normativ${lawNumberText} ` +
+          `„${legislation.title}”.`,
+        type: "legislatie",
+        link: `/legislatie/${legislation.id}`,
+      });
+    } catch (notificationError) {
+      // Salvarea actului normativ nu este anulată
+      // dacă serviciul de notificări întâmpină o eroare.
+      console.error(
+        "CREATE LEGISLATION NOTIFICATION ERROR:",
+        notificationError,
+      );
+    }
 
     return res.status(201).json({
       message: "Actul normativ a fost adăugat.",
-      legislation: result.rows[0],
+      legislation,
     });
   } catch (error) {
     console.error("CREATE LEGISLATION ERROR:", error);
@@ -152,12 +171,7 @@ const updateLegislation = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      title,
-      lawNumber,
-      lawDate,
-      content,
-    } = req.body || {};
+    const { title, lawNumber, lawDate, content } = req.body || {};
 
     if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
@@ -187,13 +201,11 @@ const updateLegislation = async (req, res) => {
       `,
       [
         title.trim(),
-        typeof lawNumber === "string"
-          ? lawNumber.trim() || null
-          : null,
+        typeof lawNumber === "string" ? lawNumber.trim() || null : null,
         lawDate || null,
         typeof content === "string" ? content : "",
         id,
-      ]
+      ],
     );
 
     if (result.rows.length === 0) {
@@ -207,8 +219,7 @@ const updateLegislation = async (req, res) => {
       action: "UPDATE",
       entityType: "legislatie",
       entityId: result.rows[0].id,
-      description:
-        `A modificat actul normativ "${result.rows[0].title}"`,
+      description: `A modificat actul normativ "${result.rows[0].title}"`,
     });
 
     return res.status(200).json({
@@ -235,7 +246,7 @@ const deleteLegislation = async (req, res) => {
       WHERE id = $1
       RETURNING id, title
       `,
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -249,8 +260,7 @@ const deleteLegislation = async (req, res) => {
       action: "DELETE",
       entityType: "legislatie",
       entityId: result.rows[0].id,
-      description:
-        `A șters actul normativ "${result.rows[0].title}"`,
+      description: `A șters actul normativ "${result.rows[0].title}"`,
     });
 
     return res.status(200).json({

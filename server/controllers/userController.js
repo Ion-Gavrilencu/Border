@@ -8,11 +8,14 @@ const createUser = async (req, res) => {
     const { username, email, fullName, role = "USER" } = req.body || {};
 
     const normalizedUsername = String(username || "").trim();
+
     const normalizedEmail = String(email || "")
       .trim()
       .toLowerCase();
+
     const normalizedFullName = String(fullName || "").trim();
 
+    // VALIDARE DATE
     if (!normalizedUsername || !normalizedEmail || !normalizedFullName) {
       return res.status(400).json({
         message: "Completează toate câmpurile obligatorii.",
@@ -31,22 +34,72 @@ const createUser = async (req, res) => {
       });
     }
 
-    // Generăm tokenul pentru activarea contului
+    // VERIFICARE CONFIGURAȚIE FRONTEND
+    const frontendUrl = process.env.FRONTEND_URL?.trim();
+
+    if (!frontendUrl) {
+      console.error("CREATE USER: FRONTEND_URL lipsește.");
+
+      return res.status(503).json({
+        message:
+          "Serviciul de activare nu este configurat. Contactează administratorul.",
+      });
+    }
+
+    let activationLink;
+
+    try {
+      const frontendOrigin = new URL(frontendUrl);
+
+      if (frontendOrigin.protocol !== "https:") {
+        throw new Error("FRONTEND_URL trebuie să folosească HTTPS.");
+      }
+
+      activationLink = new URL("/activate", frontendOrigin.origin);
+    } catch (urlError) {
+      console.error("FRONTEND URL ERROR:", urlError);
+
+      return res.status(503).json({
+        message: "Adresa aplicației pentru activare este configurată incorect.",
+      });
+    }
+
+    // VERIFICĂM DACĂ UTILIZATORUL EXISTĂ
+    const existingUser = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE LOWER(username) = LOWER($1)
+         OR LOWER(email) = LOWER($2)
+      LIMIT 1
+      `,
+      [normalizedUsername, normalizedEmail],
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({
+        message: "Numele de utilizator sau adresa de e-mail există deja.",
+      });
+    }
+
+    // GENERARE TOKEN ACTIVARE
     const activationToken = crypto.randomBytes(32).toString("hex");
 
-    // În baza de date păstrăm numai hash-ul tokenului
     const activationTokenHash = crypto
       .createHash("sha256")
       .update(activationToken)
       .digest("hex");
 
-    // Linkul va expira după 24 de ore
     const activationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Parolă aleatorie, necunoscută utilizatorului
+    // PAROLĂ ALEATORIE
     const randomPassword = crypto.randomBytes(32).toString("hex");
+
     const passwordHash = await bcrypt.hash(randomPassword, 12);
 
+    activationLink.searchParams.set("token", activationToken);
+
+    // CREARE UTILIZATOR
     const result = await pool.query(
       `
       INSERT INTO users (
@@ -81,13 +134,9 @@ const createUser = async (req, res) => {
       ],
     );
 
-    
-    const activationLink = new URL(
-      `${process.env.FRONTEND_URL.replace(/\/$/, "")}/activate`
-    );
+    const user = result.rows[0];
 
-    activationLink.searchParams.set("token", activationToken);
-
+    // TRIMITERE EMAIL DE ACTIVARE
     try {
       await sendActivationEmail({
         email: normalizedEmail,
@@ -99,25 +148,22 @@ const createUser = async (req, res) => {
 
       return res.status(502).json({
         message:
-          "Contul a fost creat, dar e-mailul de activare nu a putut fi trimis. Contactează administratorul pentru retrimiterea linkului.",
+          "Contul a fost creat, dar e-mailul de activare nu a putut fi trimis. Este necesară retrimiterea linkului de activare.",
+        user,
+        emailSent: false,
       });
     }
 
+    // SUCCES
     return res.status(201).json({
       message: "Contul a fost creat. E-mailul de activare a fost trimis.",
-      user: result.rows[0],
-    });
-
-
-    return res.status(201).json({
-      message:
-        "Contul a fost creat, dar activarea prin e-mail nu este încă disponibilă.",
-      user: result.rows[0],
+      user,
+      emailSent: true,
     });
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
-        message: "Username-ul sau adresa de e-mail există deja.",
+        message: "Numele de utilizator sau adresa de e-mail există deja.",
       });
     }
 

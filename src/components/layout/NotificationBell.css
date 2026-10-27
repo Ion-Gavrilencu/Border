@@ -1,0 +1,105 @@
+/* Clopoțel și indicator notificări */
+.notification-bell { position: relative; flex-shrink: 0; }
+.notification-bell-trigger { position: relative; }
+.notification-bell-count {
+  position: absolute; top: -5px; right: -7px;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 19px; height: 19px; padding: 0 4px;
+  border: 2px solid #fff; border-radius: 999px;
+  background: #d93636; color: #fff; font-size: 10px; font-weight: 800;
+}
+
+/* Meniu notificări */
+.notification-panel {
+  position: absolute; z-index: 1200; top: calc(100% + 12px); right: 0;
+  width: min(380px, calc(100vw - 24px)); overflow: hidden;
+  border: 1px solid #dfe8f3; border-radius: 14px;
+  background: #fff; box-shadow: 0 18px 45px rgba(15, 42, 76, .18);
+}
+.notification-panel-header, .notification-panel-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 16px;
+}
+.notification-panel-header { border-bottom: 1px solid #e9eff6; color: #15375b; }
+.notification-panel-footer { justify-content: flex-end; border-top: 1px solid #e9eff6; }
+.notification-text-button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px; border: 0; background: transparent;
+  color: #176cb4; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.notification-text-button:disabled { opacity: .5; cursor: not-allowed; }
+.notification-text-button:focus-visible, .notification-item:focus-visible { outline: 2px solid #1675d1; outline-offset: -2px; }
+.notification-list { max-height: 370px; overflow-y: auto; }
+.notification-item {
+  display: flex; flex-direction: column; align-items: stretch; gap: 5px;
+  width: 100%; padding: 13px 16px; border: 0; border-bottom: 1px solid #edf1f6;
+  background: #fff; color: #264869; font: inherit; text-align: left; cursor: pointer;
+}
+.notification-item:last-child { border-bottom: 0; }
+.notification-item:hover { background: #f3f8fe; }
+.notification-item--unread { background: #eaf4ff; box-shadow: inset 3px 0 #1675d1; }
+.notification-item:disabled { cursor: wait; }
+.notification-item-title { font-size: 13px; font-weight: 750; overflow-wrap: anywhere; }
+.notification-item-message { color: #5b728b; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.notification-item-time { color: #8295aa; font-size: 11px; }
+.notification-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 30px 16px; color: #7b8ea3; font-size: 13px; text-align: center; }
+.notification-empty p { margin: 0; }
+.notification-error { margin: 10px 14px; padding: 10px; border-radius: 8px; background: #fff0f0; color: #b62b2b; font-size: 12px; }
+@media (max-width: 480px) { .notification-panel { right: -54px; } }
+
+/* Selectarea atașamentelor din notificări */
+
+.notification-attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notification-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.notification-attachment-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.notification-attachment-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.notification-attachment-item > svg:first-child {
+  flex-shrink: 0;
+  color: #2563eb;
+}
+
+.notification-attachment-item > svg:last-child {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #64748b;
+}
+
+.notification-attachment-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 500;
+}
