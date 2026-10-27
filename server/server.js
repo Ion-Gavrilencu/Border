@@ -1,12 +1,19 @@
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
-const newsRoutes = require("./routes/newsRoutes");
-dotenv.config();
+const path = require("path");
 
+// Încărcăm .env înaintea conexiunii DB și a rutelor
+dotenv.config({
+  path: path.join(__dirname, ".env"),
+});
+
+// Conexiunea PostgreSQL
 const pool = require("./config/database");
 
+// Rutele aplicației
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const telegramRoutes = require("./routes/telegramRoutes");
@@ -17,14 +24,16 @@ const usefulInfoRoutes = require("./routes/usefulInfoRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
+const newsRoutes = require("./routes/newsRoutes");
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // Domenii autorizate
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "https://ion-gavrilencu.github.io",
   "https://border-4391.vercel.app",
 ];
@@ -46,8 +55,9 @@ app.use(
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Necesar pentru citirea cookie-urilor de autentificare
 app.use(cookieParser());
-app.use("/api/news", newsRoutes);
 
 // Verificare API
 app.get("/", (req, res) => {
@@ -67,7 +77,7 @@ app.get("/api/health", async (req, res) => {
       databaseTime: result.rows[0].now,
     });
   } catch (error) {
-    console.error("HEALTH ERROR:", error);
+    console.error("HEALTH ERROR:", error.message);
 
     res.status(500).json({
       status: "ERROR",
@@ -87,6 +97,7 @@ app.use("/api/informatii-utile", usefulInfoRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/attachments", attachmentRoutes);
+app.use("/api/news", newsRoutes);
 
 // Export pentru Vercel
 module.exports = app;

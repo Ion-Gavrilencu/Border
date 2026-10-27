@@ -1,7 +1,23 @@
-
 const { Pool } = require("pg");
+const dotenv = require("dotenv");
+const path = require("path");
+
+// Asigurăm încărcarea configurației și în alte puncte de intrare
+dotenv.config({
+  path: path.join(__dirname, "../.env"),
+});
 
 const isProduction = process.env.NODE_ENV === "production";
+
+const requiredVariables = ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"];
+
+const missingVariables = requiredVariables.filter((name) => !process.env[name]);
+
+if (missingVariables.length > 0) {
+  throw new Error(
+    `Lipsesc variabilele PostgreSQL: ${missingVariables.join(", ")}`,
+  );
+}
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -10,7 +26,6 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 
-  // Neon necesită conexiune SSL
   ssl: isProduction
     ? {
         rejectUnauthorized: true,
@@ -27,7 +42,7 @@ pool.on("connect", () => {
 });
 
 pool.on("error", (error) => {
-  console.error("Eroare PostgreSQL:", error);
+  console.error("Eroare PostgreSQL:", error.message);
 });
 
 module.exports = pool;

@@ -1,39 +1,45 @@
 
 const express = require("express");
-const pool = require("../config/database");
+
+const {
+  getNews,
+  getNewsById,
+  createNews,
+  updateNews,
+  deleteNews,
+} = require("../controllers/newsController");
+
+const authenticate = require("../middleware/authMiddleware");
+const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// Obține ultimele noutăți
-router.get("/", async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        id,
-        title,
-        url,
-        category,
-        source,
-        created_at
-      FROM news
-      ORDER BY created_at DESC, id DESC
-      LIMIT 5
-    `);
+// Vizualizare: toți utilizatorii autentificați
+router.get("/", authenticate, getNews);
+router.get("/:id", authenticate, getNewsById);
 
-    res.json({
-      articles: result.rows,
-    });
-  } catch (error) {
-  console.error("NEWS GET ERROR:", {
-    message: error.message,
-    code: error.code,
-    detail: error.detail,
-  });
+// Adăugare: EDITOR și ADMIN
+router.post(
+  "/",
+  authenticate,
+  authorizeRoles("EDITOR", "ADMIN"),
+  createNews
+);
 
-    res.status(500).json({
-      message: "Noutățile nu au putut fi încărcate.",
-    });
-  }
-});
+// Modificare: EDITOR și ADMIN
+router.patch(
+  "/:id",
+  authenticate,
+  authorizeRoles("EDITOR", "ADMIN"),
+  updateNews
+);
+
+// Ștergere: doar ADMIN
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeRoles("ADMIN"),
+  deleteNews
+);
 
 module.exports = router;
