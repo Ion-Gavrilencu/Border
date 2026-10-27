@@ -26,6 +26,9 @@ const auditRoutes = require("./routes/auditRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const newsRoutes = require("./routes/newsRoutes");
 
+// Nou: fișiere private pentru știri
+const newsFileRoutes = require("./routes/newsFileRoutes");
+
 const app = express();
 
 const PORT = Number(process.env.PORT) || 5000;
@@ -98,6 +101,9 @@ app.use("/api/search", searchRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/attachments", attachmentRoutes);
 app.use("/api/news", newsRoutes);
+
+// Nou: upload și acces securizat la fișierele știrilor
+app.use("/api/news-files", newsFileRoutes);
 
 // Export pentru Vercel
 module.exports = app;

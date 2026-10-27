@@ -1,184 +1,2035 @@
-/* BORDER — Dashboard | stiluri consolidate */
-.dashboard{box-sizing:border-box;width:100%;min-width:0;padding:18px 24px 40px;color:#102747}
-.dashboard *, .dashboard *::before, .dashboard *::after{box-sizing:border-box}
 
-/* Banner */
-.border-hero{position:relative;isolation:isolate;display:flex;align-items:flex-start;width:100%;height:400px;margin-bottom:20px;overflow:hidden;border-radius:14px;background:#061c39;box-shadow:0 8px 24px rgba(6,29,65,.12)}
-.border-hero::before{content:"";position:absolute;inset:0;z-index:-1;background-image:var(--border-banner-url);background-repeat:no-repeat;background-position:center;background-size:100% 100%}
-.border-hero-content{position:relative;width:100%;padding:24px 30px}
-.border-hero-description{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:0;color:#fff;font-size:16px;font-weight:600;line-height:1.5;text-shadow:0 2px 8px rgba(0,0,0,.8)}
-.border-hero-description span{padding:0 7px;color:#c4d8f2}
+/* =========================================
+   BORDER — DASHBOARD
+   ========================================= */
 
-/* Statistici */
-.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px}
-.stat-card{position:relative;display:flex;align-items:center;gap:16px;width:100%;min-width:0;min-height:108px;padding:18px;overflow:hidden;border:1px solid #d7e8ff;border-radius:13px;background:linear-gradient(120deg,#f2f8ff,#edf5ff);color:#102747;text-align:left;box-shadow:0 4px 15px rgba(15,40,75,.04);transition:transform .2s ease,box-shadow .2s ease}
-.stat-card-clickable{font:inherit;cursor:pointer}
-.stat-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,40,75,.1)}
-.stat-card:focus-visible{outline:2px solid #1674df;outline-offset:3px}
-.stat-card:nth-child(2){background:linear-gradient(120deg,#f2fcf8,#ecfaf4);border-color:#d5f2e5}
-.stat-card:nth-child(3){background:linear-gradient(120deg,#f8f6ff,#f2efff);border-color:#e2d9ff}
-.stat-card:nth-child(4){background:linear-gradient(120deg,#fffcf4,#fff8e9);border-color:#f9ecd0}
-.stat-icon{display:flex;align-items:center;justify-content:center;flex:0 0 60px;width:60px;height:60px;border-radius:14px;background:#dcecff;color:#1674ef}
-.stat-card:nth-child(2) .stat-icon{background:#dff7ec;color:#08ad7a}
-.stat-card:nth-child(3) .stat-icon{background:#eae3ff;color:#6739ec}
-.stat-card:nth-child(4) .stat-icon{background:#fff0d1;color:#e4960b}
-.stat-icon svg{width:29px;height:29px;stroke-width:2.2}
-.stat-content{display:flex;flex:1;flex-direction:column;justify-content:center;gap:5px;min-width:0}
-.stat-content span{color:#526b8b;font-size:13px;font-weight:500}
-.stat-content strong{color:#071e42;font-size:32px;font-weight:800;line-height:1.1}
-.stat-arrow{flex-shrink:0;margin-left:auto;color:#829bb9;opacity:.8;transition:transform .2s ease}
-.stat-card:hover .stat-arrow{transform:translateX(4px)}
-
-/* Panouri — două coloane egale pe desktop */
-.dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
-.dashboard-card{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;border:1px solid #e5edf7;border-radius:14px;background:#fff;box-shadow:0 5px 18px rgba(14,41,78,.045)}
-.card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:70px;padding:17px 20px;border-bottom:1px solid #e8eef6}
-.card-header h2{margin:0;color:#102747;font-size:18px;font-weight:800}
-.card-header p{margin:5px 0 0;color:#8090a5;font-size:12px}
-.dashboard-refresh-button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:#1675d1;cursor:pointer}
-.dashboard-refresh-button:hover:not(:disabled){background:#eef5fc}
-.dashboard-refresh-button:disabled{opacity:.55;cursor:not-allowed}
-.refresh-spin{animation:dashboard-spin 1s linear infinite}
-@keyframes dashboard-spin{to{transform:rotate(360deg)}}
-
-/* Ultimele informații */
-.information-list{flex:1;min-height:0;padding:4px 0}
-.information-item{display:flex;align-items:center;gap:13px;width:100%;min-width:0;padding:14px 20px;border:0;border-bottom:1px solid #edf2f8;background:transparent;color:#102747;text-align:left;cursor:pointer;transition:background-color .2s ease,padding-left .2s ease}
-.information-item:last-child{border-bottom:0}
-.information-item:hover{padding-left:23px;background:#f6faff}
-.information-item-button{font:inherit}
-.information-item-button:focus-visible{outline:2px solid #1674df;outline-offset:-3px}
-.item-icon{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;border-radius:10px}
-.item-icon.telegram{background:#e8f3ff;color:#1674ef}
-.item-icon.order{background:#e3f8ef;color:#08a879}
-.item-icon.law{background:#eee8ff;color:#6739ec}
-.item-icon.info{background:#fff2d9;color:#e4960b}
-.information-content{flex:1;min-width:0}
-.information-item strong{display:block;margin-bottom:4px;color:#102747;font-size:13px;font-weight:700;line-height:1.35}
-.information-item p{margin:0;overflow:hidden;color:#526b8b;font-size:13px;line-height:1.45;white-space:nowrap;text-overflow:ellipsis}
-.information-item small{display:block;margin-top:5px;color:#879bb3;font-size:11px}
-.information-arrow{flex-shrink:0;margin-left:auto;color:#94a8c1;opacity:.7;transition:transform .2s ease}
-.information-item:hover .information-arrow{transform:translateX(3px)}
-.dashboard-empty{margin:0;padding:28px 20px;color:#71839a;font-size:13px;text-align:center}
-/* Acceptă denumirile de clasă pentru butonul de jos din Dashboard.jsx */
-.information-show-all,.dashboard-info-show-all,.dashboard-show-all,.border-news-show-all{display:flex;align-items:center;justify-content:center;gap:9px;width:calc(100% - 32px);min-height:44px;margin:10px 16px;padding:11px 13px;border:0;border-radius:9px;background:#edf5ff;color:#1476d4;font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background-color .2s ease}
-.information-show-all:hover,.dashboard-info-show-all:hover,.dashboard-show-all:hover,.border-news-show-all:hover{background:#dcecff}
-.information-show-all:focus-visible,.dashboard-info-show-all:focus-visible,.dashboard-show-all:focus-visible,.border-news-show-all:focus-visible{outline:2px solid #1675d1;outline-offset:2px}
-/* Dacă butonul de informații folosește o clasă proprie, se aliniază la baza panoului */
-.information-show-all,.dashboard-info-show-all,.dashboard-show-all{margin-top:auto}
-
-/* Noutăți */
-.border-news-card{min-width:0}
-.border-news-heading{display:flex;align-items:center;gap:9px}
-.border-news-heading svg{flex-shrink:0;color:#1675d1}
-.border-news-header-actions{display:flex;align-items:center;flex-shrink:0;gap:10px}
-.border-news-add{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 15px;border:0;border-radius:9px;background:#084578;color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.border-news-add:hover:not(:disabled){background:#0b5a9b}
-.border-news-add:disabled{opacity:.6;cursor:not-allowed}
-.border-news-list{display:flex;flex:1;flex-direction:column;min-width:0}
-.border-news-article{display:flex;align-items:flex-start;gap:12px;min-width:0;padding:12px 14px;border-bottom:1px solid #e9eef5;background:#fff;transition:background-color .2s ease,box-shadow .2s ease}
-.border-news-article:last-child{border-bottom:0}
-.border-news-clickable{cursor:pointer}
-.border-news-clickable:hover{background:#f0f7ff;box-shadow:inset 3px 0 0 #1675d1}
-.border-news-clickable:focus-visible{outline:2px solid #1675d1;outline-offset:-2px}
-.border-news-clickable:hover h3{color:#1675d1}
-.border-news-photo{flex:0 0 110px;width:110px;height:85px;overflow:hidden;border-radius:11px;background:#eaf2fb}
-.border-news-photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .3s ease}
-.border-news-article:hover .border-news-photo img{transform:scale(1.04)}
-.border-news-placeholder{display:flex;align-items:center;justify-content:center;color:#4d8ac8}
-.border-news-article-body{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0}
-.border-news-meta{display:flex;align-items:center;flex-wrap:wrap;gap:7px 10px;font-size:11px}
-.border-news-category{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:#e8f2ff;color:#1769bd;font-size:10px;font-weight:750}
-.border-news-category.category-contrabanda{background:#ffebeb;color:#cb3939}
-.border-news-category.category-migratie{background:#eaf1ff;color:#3565cb}
-.border-news-category.category-documente{background:#fff1da;color:#b57912}
-.border-news-category.category-transport{background:#e7f7ee;color:#16804c}
-.border-news-source-name{color:#6383a3;font-size:11px;font-weight:600;overflow-wrap:anywhere}
-.border-news-meta time{margin-left:auto;color:#8a9bb0;font-size:11px;white-space:nowrap}
-.border-news-article h3{margin:0;color:#0b2b50;font-size:13px;font-weight:750;line-height:1.4;overflow-wrap:anywhere}
-.border-news-read{display:inline-flex;align-items:center;gap:6px;width:fit-content;color:#1476d4;font-size:12px;font-weight:700;text-decoration:none}
-.border-news-read:hover{text-decoration:underline}
-.border-news-open-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#9bb1c9;text-decoration:none}
-.border-news-open-icon:hover{color:#1476d4}
-.border-news-article-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:0}
-.border-news-article-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:31px;padding:6px 10px;border:1px solid #d8e4f1;border-radius:8px;background:#fff;color:#345b86;font-size:11px;cursor:pointer}
-.border-news-article-actions button:hover{background:#eef5fd}
-.border-news-article-actions .border-news-delete{color:#cf3535}
-.border-news-article-actions .border-news-delete:hover{background:#fff1f1}
-.border-news-show-all{margin-top:auto}
-.border-news-success,.border-news-error{margin:12px 16px;padding:12px 14px;border-radius:9px;font-size:12px}
-.border-news-success{background:#e9f8ef;color:#137341}
-.border-news-error{display:flex;align-items:center;gap:8px;background:#fff0f0;color:#c53030}
-.border-news-state{display:flex;align-items:center;justify-content:center;min-height:150px;padding:20px;color:#8496aa;font-size:12px;text-align:center}
-
-/* Formular adăugare / editare știri */
-.border-news-form{display:flex;flex-direction:column;gap:15px;margin:16px;padding:20px;border:1px solid #dce8f5;border-radius:12px;background:#f8fbff}
-.border-news-form h3{margin:0 0 3px;color:#0b2b50;font-size:16px}
-.border-news-form label{display:flex;flex-direction:column;gap:7px;min-width:0;color:#385574;font-size:12px;font-weight:650}
-.border-news-form input,.border-news-form select{width:100%;min-width:0;height:42px;padding:0 12px;border:1px solid #d3e0ef;border-radius:8px;background:#fff;color:#183650;font:inherit;font-size:13px;outline:none}
-.border-news-form input:focus,.border-news-form select:focus{border-color:#2785dc;box-shadow:0 0 0 3px rgba(39,133,220,.1)}
-.border-news-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.border-news-preview .border-news-photo{width:190px;height:125px}
-.border-news-form-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px}
-.border-news-cancel{min-height:39px;padding:9px 15px;border:1px solid #d6e2ef;border-radius:9px;background:#fff;color:#46627f;font-size:12px;font-weight:650;cursor:pointer}
-.border-news-cancel:hover:not(:disabled){background:#f0f6fd}
-.border-news-cancel:disabled{opacity:.6;cursor:not-allowed}
-
-/* Mesaj de eroare dashboard */
-.dashboard-error{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:12px 15px;border:1px solid #fecaca;border-radius:9px;background:#fff5f5;color:#b91c1c;font-size:14px}
-.dashboard-error button{margin-left:auto;border:0;background:transparent;color:#b91c1c;font-weight:700;cursor:pointer}
-
-/* Tabletă */
-@media(max-width:1250px){
- .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
- .dashboard-grid{grid-template-columns:minmax(0,1fr)}
- .border-news-photo{flex-basis:120px;width:120px;height:95px}
+.dashboard {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 18px 24px 40px;
+  color: #102747;
 }
-@media(max-width:850px){
- .dashboard{padding:18px 18px 30px}
- .border-hero{height:200px}
- .border-hero-content{padding:18px 20px}
- .border-hero-description{font-size:13px}
+
+.dashboard *,
+.dashboard *::before,
+.dashboard *::after {
+  box-sizing: border-box;
 }
-@media(max-width:768px){
- .border-news-header-actions{gap:5px}
- .border-news-add{padding:8px 11px;font-size:12px}
- .border-news-article{gap:11px;padding:13px}
- .border-news-photo{flex-basis:105px;width:105px;height:92px}
- .border-news-meta time{margin-left:0}
- .border-news-form{margin:12px;padding:14px}
- .border-news-form-grid{grid-template-columns:1fr}
+
+/* =========================================
+   BANNER
+   ========================================= */
+
+.border-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  height: 400px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #061c39;
+  box-shadow: 0 8px 24px rgba(6, 29, 65, 0.12);
 }
-/* Telefon */
-@media(max-width:600px){
- .dashboard{padding:14px 12px 24px}
- .border-hero{height:auto;aspect-ratio:2/1;border-radius:11px}
- .border-hero-content{padding:12px}
- .border-hero-description{font-size:11px}
- .border-hero-description span{padding:0 3px}
- .stats-grid{grid-template-columns:1fr;gap:12px}
- .stat-card{min-height:92px;padding:14px}
- .stat-icon{flex-basis:52px;width:52px;height:52px}
- .stat-content strong{font-size:27px}
- .dashboard-grid{gap:14px}
- .card-header{padding:15px}
- .card-header h2{font-size:16px}
- .information-item{padding:13px 15px}
- .information-item:hover{padding-left:15px}
- .dashboard-error{flex-wrap:wrap}
+
+.border-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--border-banner-url);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
 }
-@media(max-width:480px){
- .border-news-article{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px}
- .border-news-photo{flex-basis:auto;width:100px;height:82px}
- .border-news-article-body{grid-column:2;grid-row:1}
- .border-news-open-icon{display:none}
- .border-news-article-actions{justify-content:flex-start}
- .border-news-source-name{font-size:10px}
- .border-news-article h3{font-size:12px}
- .border-news-read{font-size:11px}
- .border-news-preview .border-news-photo{max-width:100%}
+
+.border-hero-content {
+  position: relative;
+  width: 100%;
+  padding: 24px 30px;
 }
-@media(prefers-reduced-motion:reduce){
- .refresh-spin{animation:none}
- .stat-card,.stat-arrow,.information-item,.information-arrow,.border-news-article,.border-news-photo img{transition:none}
+
+.border-hero-description {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.border-hero-description span {
+  padding: 0 7px;
+  color: #c4d8f2;
+}
+
+/* =========================================
+   STATISTICI
+   ========================================= */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  min-height: 108px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid #d7e8ff;
+  border-radius: 13px;
+  background: linear-gradient(120deg, #f2f8ff, #edf5ff);
+  color: #102747;
+  text-align: left;
+  box-shadow: 0 4px 15px rgba(15, 40, 75, 0.04);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.stat-card-clickable {
+  font: inherit;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 40, 75, 0.1);
+}
+
+.stat-card:focus-visible {
+  outline: 2px solid #1674df;
+  outline-offset: 3px;
+}
+
+.stat-card:nth-child(2) {
+  background: linear-gradient(120deg, #f2fcf8, #ecfaf4);
+  border-color: #d5f2e5;
+}
+
+.stat-card:nth-child(3) {
+  background: linear-gradient(120deg, #f8f6ff, #f2efff);
+  border-color: #e2d9ff;
+}
+
+.stat-card:nth-child(4) {
+  background: linear-gradient(120deg, #fffcf4, #fff8e9);
+  border-color: #f9ecd0;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #dcecff;
+  color: #1674ef;
+}
+
+.stat-card:nth-child(2) .stat-icon {
+  background: #dff7ec;
+  color: #08ad7a;
+}
+
+.stat-card:nth-child(3) .stat-icon {
+  background: #eae3ff;
+  color: #6739ec;
+}
+
+.stat-card:nth-child(4) .stat-icon {
+  background: #fff0d1;
+  color: #e4960b;
+}
+
+.stat-icon svg {
+  width: 29px;
+  height: 29px;
+  stroke-width: 2.2;
+}
+
+.stat-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.stat-content span {
+  color: #526b8b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stat-content strong {
+  color: #071e42;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stat-arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #829bb9;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover .stat-arrow {
+  transform: translateX(4px);
+}
+
+/* =========================================
+   PANOURI DASHBOARD
+   ========================================= */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #e5edf7;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(14, 41, 78, 0.045);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 70px;
+  padding: 17px 20px;
+  border-bottom: 1px solid #e8eef6;
+}
+
+.card-header h2 {
+  margin: 0;
+  color: #102747;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.card-header p {
+  margin: 5px 0 0;
+  color: #8090a5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dashboard-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #1675d1;
+  cursor: pointer;
+}
+
+.dashboard-refresh-button:hover:not(:disabled) {
+  background: #eef5fc;
+}
+
+.dashboard-refresh-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.refresh-spin {
+  animation: dashboard-spin 1s linear infinite;
+}
+
+@keyframes dashboard-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   ULTIMELE INFORMAȚII
+   ========================================= */
+
+.information-list {
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.information-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px 20px;
+  border: 0;
+  border-bottom: 1px solid #edf2f8;
+  background: transparent;
+  color: #102747;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    padding-left 0.2s ease;
+}
+
+.information-item:last-child {
+  border-bottom: 0;
+}
+
+.information-item:hover {
+  padding-left: 23px;
+  background: #f6faff;
+}
+
+.information-item-button {
+  font: inherit;
+}
+
+.information-item-button:focus-visible {
+  outline: 2px solid #1674df;
+  outline-offset: -3px;
+}
+
+.item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.item-icon.telegram {
+  background: #e8f3ff;
+  color: #1674ef;
+}
+
+.item-icon.order {
+  background: #e3f8ef;
+  color: #08a879;
+}
+
+.item-icon.law {
+  background: #eee8ff;
+  color: #6739ec;
+}
+
+.item-icon.info {
+  background: #fff2d9;
+  color: #e4960b;
+}
+
+.information-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.information-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #102747;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.information-item p {
+  margin: 0;
+  overflow: hidden;
+  color: #526b8b;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.information-item small {
+  display: block;
+  margin-top: 5px;
+  color: #879bb3;
+  font-size: 11px;
+}
+
+.information-arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #94a8c1;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.information-item:hover .information-arrow {
+  transform: translateX(3px);
+}
+
+.dashboard-empty {
+  margin: 0;
+  padding: 28px 20px;
+  color: #71839a;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* =========================================
+   BUTOANELE DE JOS
+   ========================================= */
+
+.border-news-show-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex-shrink: 0;
+  width: calc(100% - 32px);
+  min-height: 44px;
+  margin: auto 16px 10px;
+  padding: 11px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: #edf5ff;
+  color: #1476d4;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.border-news-show-all:hover {
+  background: #dcecff;
+}
+
+.border-news-show-all:focus-visible {
+  outline: 2px solid #1675d1;
+  outline-offset: 2px;
+}
+
+/* =========================================
+   ȘTIRI — ANTET
+   ========================================= */
+
+.border-news-card {
+  min-width: 0;
+}
+
+.border-news-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.border-news-heading svg {
+  flex-shrink: 0;
+  color: #1675d1;
+}
+
+.border-news-header-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.border-news-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 39px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 9px;
+  background: #084578;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.border-news-add:hover:not(:disabled) {
+  background: #0b5a9b;
+}
+
+.border-news-add:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   LISTA ȘTIRILOR
+   ========================================= */
+
+.border-news-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.border-news-article {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e9eef5;
+  background: #fff;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.border-news-article:last-child {
+  border-bottom: 0;
+}
+
+.border-news-clickable {
+  cursor: pointer;
+}
+
+.border-news-clickable:hover {
+  background: #f0f7ff;
+  box-shadow: inset 3px 0 0 #1675d1;
+}
+
+.border-news-clickable:focus-visible {
+  outline: 2px solid #1675d1;
+  outline-offset: -2px;
+}
+
+.border-news-clickable:hover h3 {
+  color: #1675d1;
+}
+
+.border-news-photo {
+  flex: 0 0 110px;
+  width: 110px;
+  height: 85px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #eaf2fb;
+}
+
+.border-news-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.border-news-article:hover .border-news-photo img {
+  transform: scale(1.04);
+}
+
+.border-news-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4d8ac8;
+}
+
+.border-news-article-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.border-news-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  font-size: 11px;
+}
+
+.border-news-category {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #e8f2ff;
+  color: #1769bd;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.border-news-category.category-contrabanda {
+  background: #ffebeb;
+  color: #cb3939;
+}
+
+.border-news-category.category-migratie {
+  background: #eaf1ff;
+  color: #3565cb;
+}
+
+.border-news-category.category-documente {
+  background: #fff1da;
+  color: #b57912;
+}
+
+.border-news-category.category-transport {
+  background: #e7f7ee;
+  color: #16804c;
+}
+
+.border-news-source-name {
+  color: #6383a3;
+  font-size: 11px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.border-news-meta time {
+  margin-left: auto;
+  color: #8a9bb0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.border-news-article h3 {
+  margin: 0;
+  color: #0b2b50;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.border-news-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: #60758e;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.border-news-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  color: #1476d4;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.border-news-read:hover {
+  text-decoration: underline;
+}
+
+.border-news-open-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #9bb1c9;
+  text-decoration: none;
+}
+
+.border-news-open-icon:hover {
+  color: #1476d4;
+}
+
+/* =========================================
+   ACȚIUNI ȘTIRI
+   ========================================= */
+
+.border-news-article-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.border-news-article-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 31px;
+  padding: 6px 10px;
+  border: 1px solid #d8e4f1;
+  border-radius: 8px;
+  background: #fff;
+  color: #345b86;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.border-news-article-actions button:hover {
+  background: #eef5fd;
+}
+
+.border-news-article-actions .border-news-delete {
+  color: #cf3535;
+}
+
+.border-news-article-actions .border-news-delete:hover {
+  background: #fff1f1;
+}
+
+.border-news-article-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   MESAJE ȘI STĂRI
+   ========================================= */
+
+.border-news-success,
+.border-news-error {
+  margin: 12px 16px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+}
+
+.border-news-success {
+  background: #e9f8ef;
+  color: #137341;
+}
+
+.border-news-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff0f0;
+  color: #c53030;
+}
+
+.border-news-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  padding: 20px;
+  color: #8496aa;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* =========================================
+   FORMULAR ȘTIRI
+   ========================================= */
+
+.border-news-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 16px;
+  padding: 20px;
+  border: 1px solid #dce8f5;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.border-news-form h3 {
+  margin: 0 0 3px;
+  color: #0b2b50;
+  font-size: 16px;
+}
+
+.border-news-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  color: #385574;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.border-news-form input,
+.border-news-form select,
+.border-news-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid #d3e0ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #183650;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.border-news-form input,
+.border-news-form select {
+  height: 42px;
+}
+
+.border-news-form textarea {
+  min-height: 160px;
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.65;
+}
+
+.border-news-form input:focus,
+.border-news-form select:focus,
+.border-news-form textarea:focus {
+  border-color: #2785dc;
+  box-shadow: 0 0 0 3px rgba(39, 133, 220, 0.1);
+}
+
+.border-news-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.border-news-preview .border-news-photo {
+  width: 190px;
+  height: 125px;
+  flex: none;
+}
+
+.border-news-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.border-news-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 39px;
+  padding: 9px 15px;
+  border: 1px solid #d6e2ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #46627f;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.border-news-cancel:hover:not(:disabled) {
+  background: #f0f6fd;
+}
+
+.border-news-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   GALERIE — FORMULAR
+   ========================================= */
+
+.border-news-gallery-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.border-news-gallery-editor > .border-news-cancel {
+  align-self: flex-start;
+}
+
+.border-news-gallery {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(130px, 1fr)
+  );
+  gap: 12px;
+}
+
+.border-news-gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #e1eaf5;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.border-news-gallery-item .border-news-photo {
+  width: 100%;
+  height: 105px;
+  flex: none;
+}
+
+.border-news-gallery-item button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid #f2cccc;
+  border-radius: 7px;
+  background: #fff7f7;
+  color: #c53030;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.border-news-gallery-item button:hover {
+  background: #ffeaea;
+}
+
+/* =========================================
+   FEREASTRĂ DETALII ȘTIRE
+   ========================================= */
+
+.border-news-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5, 20, 43, 0.72);
+  backdrop-filter: blur(5px);
+}
+
+.border-news-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 850px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #e1eaf5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+}
+
+.border-news-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid #e8eef6;
+}
+
+.border-news-modal-header small {
+  color: #7890aa;
+  font-size: 12px;
+}
+
+.border-news-modal-header h2 {
+  margin: 8px 0 0;
+  color: #102747;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.border-news-modal-header button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: #eef4fb;
+  color: #345b86;
+  cursor: pointer;
+}
+
+.border-news-modal-header button:hover {
+  background: #dcecff;
+}
+
+.border-news-modal-main-image {
+  padding: 20px 24px 0;
+}
+
+.border-news-modal-main-image img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #edf3fa;
+}
+
+.border-news-modal-content {
+  padding: 24px;
+}
+
+.border-news-modal-content > p {
+  margin: 0;
+  color: #334c69;
+  font-size: 15px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.border-news-modal-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.border-news-modal-gallery img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #edf3fa;
+}
+
+/* =========================================
+   EROARE DASHBOARD
+   ========================================= */
+
+.dashboard-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fff5f5;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.dashboard-error button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #b91c1c;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* =========================================
+   TABLETĂ
+   ========================================= */
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .border-news-photo {
+    flex-basis: 120px;
+    width: 120px;
+    height: 95px;
+  }
+}
+
+@media (max-width: 850px) {
+  .dashboard {
+    padding: 18px 18px 30px;
+  }
+
+  .border-hero {
+    height: 200px;
+  }
+
+  .border-hero-content {
+    padding: 18px 20px;
+  }
+
+  .border-hero-description {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 768px) {
+  .border-news-header-actions {
+    gap: 5px;
+  }
+
+  .border-news-add {
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  .border-news-article {
+    gap: 11px;
+    padding: 13px;
+  }
+
+  .border-news-photo {
+    flex-basis: 105px;
+    width: 105px;
+    height: 92px;
+  }
+
+  .border-news-meta time {
+    margin-left: 0;
+  }
+
+  .border-news-form {
+    margin: 12px;
+    padding: 14px;
+  }
+
+  .border-news-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .border-news-modal-overlay {
+    padding: 12px;
+  }
+
+  .border-news-modal {
+    max-height: 94vh;
+    border-radius: 12px;
+  }
+
+  .border-news-modal-header {
+    padding: 18px;
+  }
+
+  .border-news-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .border-news-modal-content {
+    padding: 18px;
+  }
+
+  .border-news-modal-main-image {
+    padding: 16px 18px 0;
+  }
+
+  .border-news-modal-gallery img {
+    height: 170px;
+  }
+}
+
+/* =========================================
+   TELEFON
+   ========================================= */
+
+@media (max-width: 600px) {
+  .dashboard {
+    padding: 14px 12px 24px;
+  }
+
+  .border-hero {
+    height: auto;
+    aspect-ratio: 2 / 1;
+    border-radius: 11px;
+  }
+
+  .border-hero-content {
+    padding: 12px;
+  }
+
+  .border-hero-description {
+    font-size: 11px;
+  }
+
+  .border-hero-description span {
+    padding: 0 3px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    min-height: 92px;
+    padding: 14px;
+  }
+
+  .stat-icon {
+    flex-basis: 52px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .stat-content strong {
+    font-size: 27px;
+  }
+
+  .dashboard-grid {
+    gap: 14px;
+  }
+
+  .card-header {
+    padding: 15px;
+  }
+
+  .card-header h2 {
+    font-size: 16px;
+  }
+
+  .information-item {
+    padding: 13px 15px;
+  }
+
+  .information-item:hover {
+    padding-left: 15px;
+  }
+
+  .dashboard-error {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .border-news-article {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .border-news-photo {
+    flex-basis: auto;
+    width: 100px;
+    height: 82px;
+  }
+
+  .border-news-article-body {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .border-news-open-icon {
+    display: none;
+  }
+
+  .border-news-article-actions {
+    justify-content: flex-start;
+  }
+
+  .border-news-source-name {
+    font-size: 10px;
+  }
+
+  .border-news-article h3 {
+    font-size: 12px;
+  }
+
+  .border-news-read {
+    font-size: 11px;
+  }
+
+  .border-news-preview .border-news-photo {
+    max-width: 100%;
+  }
+
+  .border-news-modal-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .border-news-modal-gallery img {
+    height: auto;
+    max-height: 280px;
+  }
+
+  .border-news-modal-header h2 {
+    font-size: 17px;
+  }
+
+  .border-news-modal-content > p {
+    font-size: 14px;
+  }
+
+  .border-news-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================
+   ACCESIBILITATE
+   ========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh-spin {
+    animation: none;
+  }
+
+  .stat-card,
+  .stat-arrow,
+  .information-item,
+  .information-arrow,
+  .border-news-article,
+  .border-news-photo img {
+    transition: none;
+  }
+}
+
+
+/* ATAȘAMENTE PRIVATE - DASHBOARD */
+
+.border-news-saved-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.border-news-saved-attachments h4,
+.border-news-private-section h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #123557;
+}
+
+.border-news-saved-attachments > p {
+  margin: 0;
+  font-size: 13px;
+  color: #7b8fa7;
+}
+
+.border-news-saved-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dfe9f5;
+  border-radius: 12px;
+  background: #fff;
+  color: #3370a5;
+}
+
+.border-news-saved-file-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.border-news-saved-file-info strong {
+  overflow: hidden;
+  color: #183b60;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.border-news-saved-file-info small {
+  color: #8094ab;
+  font-size: 11px;
+}
+
+.border-news-saved-file > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dce7f4;
+  border-radius: 9px;
+  background: #f4f8ff;
+  color: #1b619f;
+  cursor: pointer;
+}
+
+.border-news-saved-file > button:hover {
+  background: #e5f1ff;
+}
+
+.border-news-saved-file > button:last-child {
+  color: #c63b3b;
+}
+
+.border-news-private-thumbnail {
+  width: 58px !important;
+  height: 50px !important;
+  flex: 0 0 58px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.border-news-private-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #edf5ff;
+  color: #37648c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.border-news-private-note svg {
+  flex-shrink: 0;
+}
+
+.border-news-private-section {
+  margin-top: 24px;
+}
+
+.border-news-private-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.border-news-private-gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e0e9f4;
+  border-radius: 12px;
+  background: #f7faff;
+  min-width: 0;
+}
+
+.border-news-private-gallery-image {
+  width: 100% !important;
+  height: 210px !important;
+  border-radius: 9px;
+  object-fit: contain;
+  background: #eaf0f7;
+}
+
+.border-news-private-gallery-item button,
+.border-news-private-document button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #cfe1f2;
+  border-radius: 9px;
+  background: #fff;
+  color: #15568d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.border-news-private-gallery-item button:hover,
+.border-news-private-document button:hover {
+  background: #eaf4ff;
+}
+
+.border-news-private-documents {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.border-news-private-document {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e0e9f4;
+  border-radius: 11px;
+  background: #f7faff;
+  color: #3370a5;
+}
+
+.border-news-private-document > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.border-news-private-document strong {
+  overflow: hidden;
+  color: #193d60;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.border-news-private-document small {
+  color: #8194a8;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .border-news-private-gallery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .border-news-private-gallery-image {
+    height: 190px !important;
+  }
+
+  .border-news-private-document {
+    flex-wrap: wrap;
+  }
+
+  .border-news-private-document button {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   BORDER - FORMULAR MODERN DE PUBLICARE
+   ========================================== */
+
+.border-news-card .border-news-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin: 18px;
+  padding: 28px;
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #f6f9ff 100%
+  );
+  border: 1px solid #dbe6f3;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(15, 45, 85, 0.06);
+}
+
+.border-news-card .border-news-form h3 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #102b4c;
+  letter-spacing: -0.5px;
+}
+
+.border-news-card .border-news-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #294769;
+}
+
+.border-news-card .border-news-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.border-news-card .border-news-form input:not([type="file"]),
+.border-news-card .border-news-form select,
+.border-news-card .border-news-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 13px 15px;
+  background: #ffffff;
+  border: 1px solid #d4e1f0;
+  border-radius: 11px;
+  outline: none;
+  color: #183b60;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.border-news-card .border-news-form input:focus,
+.border-news-card .border-news-form select:focus,
+.border-news-card .border-news-form textarea:focus {
+  border-color: #247bd1;
+  box-shadow: 0 0 0 4px rgba(36, 123, 209, 0.10);
+}
+
+.border-news-card .border-news-form textarea {
+  min-height: 190px;
+  resize: vertical;
+}
+
+.border-news-card .border-news-form input::placeholder,
+.border-news-card .border-news-form textarea::placeholder {
+  color: #93a5b9;
+}
+
+/* SECȚIUNEA DE UPLOAD */
+
+.border-news-card .border-news-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  margin-top: 6px;
+  padding-top: 24px;
+  border-top: 1px solid #e2eaf5;
+}
+
+.border-news-card .border-news-upload-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.border-news-card .border-news-upload-heading h4 {
+  margin: 0;
+  color: #102b4c;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.border-news-card .border-news-upload-heading p {
+  margin: 7px 0 0;
+  color: #7c91a9;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.border-news-card .border-news-upload-heading > svg {
+  flex-shrink: 0;
+  color: #5386b9;
+}
+
+/* ZONA MARE DE ÎNCĂRCARE */
+
+.border-news-card .border-news-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 240px;
+  box-sizing: border-box;
+  padding: 30px 20px;
+  background: linear-gradient(
+    135deg,
+    #fafdff,
+    #edf5ff
+  );
+  border: 2px dashed #a8c8e9;
+  border-radius: 17px;
+  color: #466b91;
+  font-family: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.border-news-card .border-news-upload-zone:hover:not(:disabled) {
+  background: #eaf4ff;
+  border-color: #2078cf;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(30, 102, 178, 0.09);
+}
+
+.border-news-card .border-news-upload-zone:focus-visible {
+  outline: 3px solid #5ca5ee;
+  outline-offset: 3px;
+}
+
+.border-news-card .border-news-upload-zone:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.border-news-card .border-news-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 19px;
+  background: #e0efff;
+  color: #1674cc;
+}
+
+.border-news-card .border-news-upload-zone > strong {
+  color: #123c64;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.border-news-card .border-news-upload-zone > span:not(.border-news-upload-icon):not(.border-news-upload-button) {
+  color: #7b93ad;
+  font-size: 12px;
+}
+
+.border-news-card .border-news-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 7px;
+  padding: 12px 22px;
+  background: #0c4b82;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  box-shadow: 0 5px 13px rgba(12, 75, 130, 0.17);
+}
+
+/* FIȘIERE SELECTATE */
+
+.border-news-card .border-news-selected-files {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.border-news-card .border-news-selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #1c654d;
+  font-size: 13px;
+}
+
+.border-news-card .border-news-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #e0e9f4;
+  border-radius: 12px;
+  color: #3979b1;
+  box-shadow: 0 3px 10px rgba(20, 58, 99, 0.025);
+}
+
+.border-news-card .border-news-selected-item > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.border-news-card .border-news-selected-item strong {
+  overflow: hidden;
+  color: #1b3d60;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.border-news-card .border-news-selected-item small {
+  color: #8296ad;
+  font-size: 11px;
+}
+
+.border-news-card .border-news-selected-item > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: #fff0f1;
+  border: 0;
+  border-radius: 9px;
+  color: #c73d49;
+  cursor: pointer;
+}
+
+.border-news-card .border-news-selected-item > button:hover {
+  background: #ffe0e3;
+}
+
+/* ATAȘAMENTE SALVATE */
+
+.border-news-card .border-news-saved-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.border-news-card .border-news-saved-attachments h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #183c61;
+}
+
+.border-news-card .border-news-saved-attachments > p {
+  margin: 0;
+  color: #8294a9;
+  font-size: 12px;
+}
+
+/* INFORMAȚIE DESPRE CONFIDENȚIALITATE */
+
+.border-news-card .border-news-private-note {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 16px;
+  background: #eaf3ff;
+  border: 1px solid #d8e8fb;
+  border-radius: 11px;
+  color: #37648b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.border-news-card .border-news-private-note svg {
+  flex-shrink: 0;
+}
+
+/* BUTOANELE FORMULARULUI */
+
+.border-news-card .border-news-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e2eaf5;
+}
+
+.border-news-card .border-news-form-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.border-news-card .border-news-form-actions .border-news-cancel {
+  background: #ffffff;
+  border: 1px solid #d5e1f0;
+  color: #3a5b7e;
+}
+
+.border-news-card .border-news-form-actions .border-news-add {
+  background: #0c4b82;
+  border: 1px solid #0c4b82;
+  color: #ffffff;
+  box-shadow: 0 5px 12px rgba(12, 75, 130, 0.12);
+}
+
+/* ADAPTARE TABLETĂ ȘI TELEFON */
+
+@media (max-width: 768px) {
+  .border-news-card .border-news-form {
+    margin: 12px;
+    padding: 20px;
+    gap: 18px;
+    border-radius: 15px;
+  }
+
+  .border-news-card .border-news-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .border-news-card .border-news-upload-zone {
+    min-height: 210px;
+  }
+}
+
+@media (max-width: 480px) {
+  .border-news-card .border-news-form {
+    padding: 15px;
+  }
+
+  .border-news-card .border-news-form h3 {
+    font-size: 19px;
+  }
+
+  .border-news-card .border-news-upload-zone {
+    min-height: 190px;
+    padding: 20px 12px;
+  }
+
+  .border-news-card .border-news-upload-zone > strong {
+    font-size: 14px;
+  }
+
+  .border-news-card .border-news-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .border-news-card .border-news-form-actions button {
+    width: 100%;
+  }
+}
+
+/* SELECTOR MODERN - TIPUL PUBLICAȚIEI */
+
+.border-news-publication-type {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+.border-news-field-label {
+  color: #294769;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.border-news-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.border-news-type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  min-height: 110px;
+  padding: 20px;
+  background: #ffffff;
+  border: 2px solid #dce6f2;
+  border-radius: 15px;
+  color: #71859c;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.border-news-type-option:hover:not(:disabled) {
+  border-color: #91bce6;
+  transform: translateY(-2px);
+}
+
+.border-news-type-option.active {
+  background: #eef6ff;
+  border-color: #1675cf;
+  box-shadow: 0 0 0 3px rgba(22, 117, 207, 0.07);
+}
+
+.border-news-type-option:focus-visible {
+  outline: 3px solid #75b4ed;
+  outline-offset: 3px;
+}
+
+.border-news-type-option:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.border-news-type-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #173d65;
+}
+
+.border-news-type-title strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.border-news-type-option.active .border-news-type-title {
+  color: #0c5fa8;
+}
+
+.border-news-type-option > span {
+  color: #7489a1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .border-news-type-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .border-news-type-option {
+    min-height: 95px;
+    padding: 16px;
+  }
+
+  .border-news-type-title strong {
+    font-size: 15px;
+  }
 }

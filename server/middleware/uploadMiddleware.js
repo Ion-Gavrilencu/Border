@@ -1,7 +1,7 @@
 
 const multer = require("multer");
 
-const allowedMimeTypes = [
+const allowedMimeTypes = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -11,26 +11,31 @@ const allowedMimeTypes = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
+]);
+
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (req, file, cb) => {
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(
-      new Error("Format neacceptat. Sunt permise imagini, video, PDF și Word."),
-      false
+const fileFilter = (req, file, callback) => {
+  if (!allowedMimeTypes.has(file.mimetype)) {
+    return callback(
+      new Error(
+        "Format neacceptat. Sunt permise imagini, video, PDF și Word."
+      )
     );
   }
+
+  callback(null, true);
 };
 
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 4 * 1024 * 1024,
+    fileSize: MAX_FILE_SIZE,
+    files: 1,
+    fields: 10,
   },
 });
 

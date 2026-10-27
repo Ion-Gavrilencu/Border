@@ -10,6 +10,7 @@ const allowedEntityTypes = [
   "ordine",
   "legislatie",
   "informatii_utile",
+  "news",
 ];
 
 const allowedFileCategories = [
@@ -26,6 +27,7 @@ const getEntityTable = (entityType) => {
     ordine: "ordine",
     legislatie: "legislatie",
     informatii_utile: "informatii_utile",
+    news: "news",
   };
 
   return tables[entityType];

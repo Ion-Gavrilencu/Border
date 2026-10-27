@@ -30,8 +30,15 @@ const validateNews = (body) => {
   const title =
     typeof body.title === "string" ? body.title.trim() : "";
 
+  const type = body.type ?? "external";
+
   const url =
     typeof body.url === "string" ? body.url.trim() : "";
+
+  const content =
+    typeof body.content === "string"
+      ? body.content.trim()
+      : "";
 
   const category =
     typeof body.category === "string"
@@ -39,12 +46,16 @@ const validateNews = (body) => {
       : "altele";
 
   const source =
-    typeof body.source === "string" ? body.source.trim() : "";
+    typeof body.source === "string"
+      ? body.source.trim()
+      : "";
 
   const imageUrl =
     typeof body.image_url === "string"
       ? body.image_url.trim()
       : "";
+
+  const images = body.images ?? [];
 
   if (!title || title.length > 300) {
     return {
@@ -52,10 +63,8 @@ const validateNews = (body) => {
     };
   }
 
-  if (!url || url.length > 2048 || !validUrl(url)) {
-    return {
-      error: "Introdu un link HTTP/HTTPS valid către articol.",
-    };
+  if (!["external", "internal"].includes(type)) {
+    return { error: "Tipul știrii nu este valid." };
   }
 
   if (!allowedCategories.includes(category)) {
@@ -73,17 +82,64 @@ const validateNews = (body) => {
     (imageUrl.length > 2048 || !validUrl(imageUrl))
   ) {
     return {
-      error: "Linkul imaginii trebuie să fie un URL valid.",
+      error: "Linkul imaginii trebuie să fie un URL HTTP/HTTPS valid.",
+    };
+  }
+
+  if (
+    !Array.isArray(images) ||
+    images.length > 10 ||
+    images.some(
+      (item) =>
+        typeof item !== "string" ||
+        item.length > 2048 ||
+        !validUrl(item)
+    )
+  ) {
+    return {
+      error:
+        "Galeria poate conține cel mult 10 linkuri HTTP/HTTPS valide.",
+    };
+  }
+
+  if (type === "external") {
+    if (!url || url.length > 2048 || !validUrl(url)) {
+      return {
+        error: "Introdu un link HTTP/HTTPS valid către articol.",
+      };
+    }
+  } else if (url) {
+    return {
+      error: "Știrile proprii nu necesită link extern.",
+    };
+  }
+
+  if (
+    type === "internal" &&
+    (!content || content.length > 20000)
+  ) {
+    return {
+      error:
+        "Textul știrii proprii trebuie să aibă între 1 și 20000 de caractere.",
+    };
+  }
+
+  if (type === "external" && content.length > 20000) {
+    return {
+      error: "Textul nu poate depăși 20000 de caractere.",
     };
   }
 
   return {
     data: {
       title,
-      url,
+      type,
+      url: url || null,
+      content: content || null,
       category,
       source: source || null,
-      image_url: imageUrl || null,
+      image_url: imageUrl || images[0] || null,
+      images,
     },
   };
 };
@@ -93,14 +149,26 @@ const getNews = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
-        id, title, url, category, source,
-        image_url, created_by, created_at, updated_at
+        id,
+        title,
+        type,
+        url,
+        content,
+        category,
+        source,
+        image_url,
+        images,
+        created_by,
+        created_at,
+        updated_at
       FROM news
       ORDER BY created_at DESC, id DESC
       LIMIT 100
     `);
 
-    return res.json({ articles: result.rows });
+    return res.json({
+      articles: result.rows,
+    });
   } catch (error) {
     console.error("GET NEWS ERROR:", error);
 
@@ -112,16 +180,16 @@ const getNews = async (req, res) => {
 
 // GET /api/news/:id
 const getNewsById = async (req, res) => {
-  try {
-    if (!validId(req.params.id)) {
-      return res.status(400).json({
-        message: "Identificator invalid.",
-      });
-    }
+  if (!validId(req.params.id)) {
+    return res.status(400).json({
+      message: "Identificator invalid.",
+    });
+  }
 
+  try {
     const result = await pool.query(
       "SELECT * FROM news WHERE id = $1",
-      [req.params.id],
+      [req.params.id]
     );
 
     if (!result.rows.length) {
@@ -130,7 +198,9 @@ const getNewsById = async (req, res) => {
       });
     }
 
-    return res.json({ article: result.rows[0] });
+    return res.json({
+      article: result.rows[0],
+    });
   } catch (error) {
     console.error("GET NEWS BY ID ERROR:", error);
 
@@ -142,36 +212,51 @@ const getNewsById = async (req, res) => {
 
 // POST /api/news
 const createNews = async (req, res) => {
+  const validation = validateNews(req.body || {});
+
+  if (validation.error) {
+    return res.status(400).json({
+      message: validation.error,
+    });
+  }
+
   try {
-    const validation = validateNews(req.body || {});
-
-    if (validation.error) {
-      return res.status(400).json({
-        message: validation.error,
-      });
-    }
-
     const {
       title,
+      type,
       url,
+      content,
       category,
       source,
       image_url,
+      images,
     } = validation.data;
 
     const result = await pool.query(
-      `INSERT INTO news
-        (title, url, category, source, image_url, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [
+      `INSERT INTO news (
         title,
+        type,
         url,
+        content,
         category,
         source,
         image_url,
+        images,
+        created_by
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)
+      RETURNING *`,
+      [
+        title,
+        type,
+        url,
+        content,
+        category,
+        source,
+        image_url,
+        JSON.stringify(images),
         req.user.id,
-      ],
+      ]
     );
 
     return res.status(201).json({
@@ -189,16 +274,16 @@ const createNews = async (req, res) => {
 
 // PATCH /api/news/:id
 const updateNews = async (req, res) => {
-  try {
-    if (!validId(req.params.id)) {
-      return res.status(400).json({
-        message: "Identificator invalid.",
-      });
-    }
+  if (!validId(req.params.id)) {
+    return res.status(400).json({
+      message: "Identificator invalid.",
+    });
+  }
 
+  try {
     const existing = await pool.query(
       "SELECT * FROM news WHERE id = $1",
-      [req.params.id],
+      [req.params.id]
     );
 
     if (!existing.rows.length) {
@@ -211,10 +296,13 @@ const updateNews = async (req, res) => {
 
     const validation = validateNews({
       title: req.body?.title ?? current.title,
+      type: req.body?.type ?? current.type,
       url: req.body?.url ?? current.url,
+      content: req.body?.content ?? current.content,
       category: req.body?.category ?? current.category,
       source: req.body?.source ?? current.source,
       image_url: req.body?.image_url ?? current.image_url,
+      images: req.body?.images ?? current.images,
     });
 
     if (validation.error) {
@@ -225,30 +313,40 @@ const updateNews = async (req, res) => {
 
     const {
       title,
+      type,
       url,
+      content,
       category,
       source,
       image_url,
+      images,
     } = validation.data;
 
     const result = await pool.query(
       `UPDATE news
-       SET title = $1,
-           url = $2,
-           category = $3,
-           source = $4,
-           image_url = $5,
-           updated_at = NOW()
-       WHERE id = $6
+       SET
+         title = $1,
+         type = $2,
+         url = $3,
+         content = $4,
+         category = $5,
+         source = $6,
+         image_url = $7,
+         images = $8::jsonb,
+         updated_at = NOW()
+       WHERE id = $9
        RETURNING *`,
       [
         title,
+        type,
         url,
+        content,
         category,
         source,
         image_url,
+        JSON.stringify(images),
         req.params.id,
-      ],
+      ]
     );
 
     return res.json({
@@ -266,16 +364,16 @@ const updateNews = async (req, res) => {
 
 // DELETE /api/news/:id
 const deleteNews = async (req, res) => {
-  try {
-    if (!validId(req.params.id)) {
-      return res.status(400).json({
-        message: "Identificator invalid.",
-      });
-    }
+  if (!validId(req.params.id)) {
+    return res.status(400).json({
+      message: "Identificator invalid.",
+    });
+  }
 
+  try {
     const result = await pool.query(
       "DELETE FROM news WHERE id = $1 RETURNING id",
-      [req.params.id],
+      [req.params.id]
     );
 
     if (!result.rows.length) {
