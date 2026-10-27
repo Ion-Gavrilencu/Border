@@ -1,650 +1,1469 @@
 
+
 /* =========================================
+
    TELEGRAME — MODERN ADMIN DASHBOARD
+
 ========================================= */
 
+
+
 .telegrame-page {
+
   width: 100%;
+
   max-width: 1500px;
+
   margin: 0 auto;
+
   padding: 32px 36px 48px;
+
   box-sizing: border-box;
+
   color: #172b45;
+
 }
+
+
 
 /* HEADER */
 
+
+
 .telegrame-header {
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   gap: 24px;
+
   margin-bottom: 28px;
+
 }
+
+
 
 .telegrame-header h1 {
+
   margin: 0;
+
   color: #102b4b;
+
   font-size: 30px;
+
   font-weight: 750;
+
   letter-spacing: -0.8px;
+
   line-height: 1.2;
+
 }
+
+
 
 .telegrame-description {
+
   margin: 9px 0 0;
+
   color: #8290a3;
+
   font-size: 14px;
+
   line-height: 1.5;
+
 }
 
+
+
 .telegram-header-actions {
+
   display: flex;
+
   align-items: center;
+
   gap: 12px;
+
 }
+
+
 
 /* BUTOANE PRINCIPALE */
 
+
+
 .telegram-add-button,
+
 .telegram-save-button {
+
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
+
   gap: 9px;
+
   min-height: 44px;
+
   padding: 0 20px;
+
   border: 1px solid #123a61;
+
   border-radius: 10px;
+
   background: #123a61;
+
   color: #fff;
+
   font-size: 13px;
+
   font-weight: 700;
+
   white-space: nowrap;
+
   cursor: pointer;
+
   box-shadow: 0 4px 10px rgba(18, 58, 97, 0.12);
+
   transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+
 }
+
+
 
 .telegram-add-button:hover,
+
 .telegram-save-button:hover:not(:disabled) {
+
   background: #19517f;
+
   box-shadow: 0 7px 16px rgba(18, 58, 97, 0.18);
+
   transform: translateY(-1px);
+
 }
+
+
 
 .telegram-add-button:active,
+
 .telegram-save-button:active {
+
   transform: translateY(0);
+
 }
+
+
 
 .telegram-cancel-button {
+
   min-height: 44px;
+
   padding: 0 20px;
+
   border: 1px solid #dce4ee;
+
   border-radius: 10px;
+
   background: #fff;
+
   color: #52657b;
+
   font-size: 13px;
+
   font-weight: 650;
+
   cursor: pointer;
+
   transition: background 0.2s;
+
 }
+
+
 
 .telegram-cancel-button:hover {
+
   background: #f2f6fa;
+
 }
 
+
+
 .telegram-save-button:disabled,
+
 .telegram-cancel-button:disabled {
+
   opacity: 0.55;
+
   cursor: not-allowed;
+
   transform: none;
+
 }
+
+
 
 /* TABEL */
 
+
+
 .telegrame-table-wrapper {
+
   overflow-x: auto;
+
   border: 1px solid #e2e8f0;
+
   border-radius: 14px;
+
   background: #fff;
+
   box-shadow:
+
     0 3px 6px rgba(20, 43, 70, 0.025),
+
     0 12px 28px rgba(20, 43, 70, 0.035);
+
 }
+
+
 
 .telegrame-table {
+
   width: 100%;
+
   min-width: 760px;
+
   border-collapse: collapse;
+
   table-layout: fixed;
+
 }
+
+
 
 .telegrame-table thead {
+
   background: #f6f9fc;
+
 }
+
+
 
 .telegrame-table th {
+
   padding: 18px 20px;
+
   border-bottom: 1px solid #e3eaf2;
+
   color: #788ba0;
+
   font-size: 11px;
+
   font-weight: 750;
+
   letter-spacing: 0.07em;
+
   text-align: left;
+
   text-transform: uppercase;
+
 }
+
+
 
 .telegrame-table td {
+
   height: 64px;
+
   padding: 12px 20px;
+
   border-bottom: 1px solid #edf1f6;
+
   color: #425771;
+
   font-size: 13px;
+
   font-weight: 500;
+
   vertical-align: middle;
+
   overflow-wrap: anywhere;
+
 }
+
+
 
 .telegrame-table tbody tr:last-child td {
+
   border-bottom: none;
+
 }
+
+
 
 .telegram-row {
+
   cursor: pointer;
+
   transition: background 0.18s;
+
 }
+
+
 
 .telegram-row:hover {
+
   background: #f4f8fd;
+
 }
 
+
+
 .telegram-row:hover td {
+
   border-bottom-color: #e4ecf5;
+
 }
+
+
 
 /* DIMENSIUNI COLOANE */
 
+
+
 .telegrame-table th:nth-child(1),
+
 .telegrame-table td:nth-child(1) {
+
   width: 68px;
+
   color: #94a3b5;
+
 }
+
+
 
 .telegrame-table th:nth-child(2),
+
 .telegrame-table td:nth-child(2) {
+
   width: 175px;
+
 }
+
+
 
 .telegrame-table th:nth-child(4),
+
 .telegrame-table td:nth-child(4) {
+
   width: 150px;
+
 }
 
+
+
 .telegrame-table th:nth-child(5),
+
 .telegrame-table td:nth-child(5) {
+
   width: 170px;
+
 }
+
+
 
 /* NUMĂR TELEGRAMĂ */
 
+
+
 .telegrame-table td:nth-child(2) {
+
   color: #315778;
+
   font-weight: 650;
+
 }
+
+
 
 /* TITLU CLICKABIL */
 
+
+
 .telegram-title-link {
+
   display: inline-block;
+
   max-width: 100%;
+
   padding: 0;
+
   border: none;
+
   background: transparent;
+
   color: #123a61;
+
   font-size: 14px;
+
   font-weight: 700;
+
   line-height: 1.5;
+
   text-align: left;
+
   overflow-wrap: anywhere;
+
   cursor: pointer;
+
   transition: color 0.2s;
+
 }
+
+
 
 .telegram-title-link:hover {
+
   color: #1673b9;
+
   text-decoration: underline;
+
   text-underline-offset: 4px;
+
 }
 
+
+
 .telegram-title-link:focus-visible,
+
 .telegram-add-button:focus-visible {
+
   outline: 3px solid rgba(35, 117, 192, 0.25);
+
   outline-offset: 4px;
+
 }
+
+
 
 /* FORMULAR */
 
+
+
 .telegram-form {
+
   margin-bottom: 28px;
+
   overflow: hidden;
+
   border: 1px solid #e2e8f0;
+
   border-radius: 14px;
+
   background: #fff;
+
   box-shadow: 0 10px 30px rgba(20, 43, 70, 0.05);
+
 }
+
+
 
 .telegram-form-header {
+
   padding: 22px 26px;
+
   border-bottom: 1px solid #e8edf4;
+
   background: #fbfcfe;
+
 }
+
+
 
 .telegram-form-header h2 {
+
   margin: 0;
+
   color: #143454;
+
   font-size: 19px;
+
   font-weight: 700;
+
 }
+
+
 
 .telegram-form-body {
+
   display: grid;
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
+
   gap: 22px;
+
   padding: 26px;
+
 }
+
+
 
 .telegram-form-group {
+
   display: flex;
+
   flex-direction: column;
+
   gap: 9px;
+
   min-width: 0;
+
 }
+
+
 
 .telegram-form-group:nth-child(n + 4) {
+
   grid-column: 1 / -1;
+
 }
+
+
 
 .telegram-form-group label {
+
   color: #30465e;
+
   font-size: 13px;
+
   font-weight: 650;
+
 }
+
+
 
 .telegram-form-group input,
+
 .telegram-form-group textarea {
+
   box-sizing: border-box;
+
   width: 100%;
+
   border: 1px solid #dbe4ed;
+
   border-radius: 9px;
+
   background: #fff;
+
   color: #17324d;
+
   font: inherit;
+
   font-size: 14px;
+
   outline: none;
+
   transition: border-color 0.2s, box-shadow 0.2s;
+
 }
+
+
 
 .telegram-form-group input:not([type="file"]) {
+
   min-height: 44px;
+
   padding: 10px 13px;
+
 }
+
+
 
 .telegram-form-group textarea {
+
   min-height: 100px;
+
   padding: 13px;
+
   resize: vertical;
+
   line-height: 1.6;
+
 }
+
+
 
 .telegram-form-group input:focus,
+
 .telegram-form-group textarea:focus {
+
   border-color: #5694c8;
+
   box-shadow: 0 0 0 3px rgba(49, 123, 189, 0.1);
+
 }
 
+
+
 .telegram-form-group input::placeholder,
+
 .telegram-form-group textarea::placeholder {
+
   color: #a0adbc;
+
 }
+
+
 
 /* ÎNCĂRCARE FIȘIERE */
 
+
+
 .telegram-file-input {
+
   display: block;
+
   padding: 13px;
+
   border: 1px dashed #b9cbdc !important;
+
   border-radius: 10px !important;
+
   background: #f8fbfe !important;
+
   cursor: pointer;
+
 }
+
+
 
 .telegram-file-input::file-selector-button {
+
   margin-right: 12px;
+
   padding: 10px 16px;
+
   border: 1px solid #d7e6f4;
+
   border-radius: 7px;
+
   background: #e9f2fa;
+
   color: #184b76;
+
   font-size: 13px;
+
   font-weight: 700;
+
   cursor: pointer;
+
 }
+
+
 
 .telegram-file-input::file-selector-button:hover {
+
   background: #dbeaf7;
+
 }
 
+
+
 .telegram-file-help {
+
   margin: 3px 0 0;
+
   color: #8392a5;
+
   font-size: 12px;
+
   line-height: 1.6;
+
 }
+
+
 
 /* FIȘIERE SELECTATE */
 
+
+
 .telegram-selected-file {
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
   gap: 14px;
+
   margin-top: 8px;
+
   padding: 12px 15px;
+
   border: 1px solid #e2eaf2;
+
   border-radius: 9px;
+
   background: #f8fafc;
+
   color: #334b63;
+
   font-size: 13px;
+
 }
+
+
 
 .telegram-selected-file span {
+
   min-width: 0;
+
   overflow-wrap: anywhere;
+
 }
+
+
 
 .telegram-remove-file {
+
   flex-shrink: 0;
+
   padding: 7px 12px;
+
   border: 1px solid #f1caca;
+
   border-radius: 7px;
+
   background: #fff;
+
   color: #ba4040;
+
   font-size: 12px;
+
   font-weight: 650;
+
   cursor: pointer;
+
 }
 
+
+
 .telegram-remove-file:hover {
+
   background: #fff2f2;
+
 }
+
+
 
 /* ACȚIUNI FORMULAR */
 
+
+
 .telegram-form-actions {
+
   display: flex;
+
   justify-content: flex-end;
+
   gap: 12px;
+
   padding: 20px 26px;
+
   border-top: 1px solid #e8edf4;
+
   background: #fbfcfe;
+
 }
+
+
 
 /* MESAJE */
 
+
+
 .telegram-error {
+
   margin-bottom: 20px;
+
   padding: 13px 16px;
+
   border: 1px solid #f0caca;
+
   border-radius: 9px;
+
   background: #fff2f2;
+
   color: #b83d3d;
+
   font-size: 13px;
+
 }
 
+
+
 .telegram-empty,
+
 .telegram-no-results,
+
 .telegram-loading {
+
   padding: 56px 20px;
+
   color: #8392a5;
+
   font-size: 14px;
+
   text-align: center;
+
 }
+
+
 
 /* RESPONSIVE */
 
+
+
 @media (max-width: 1000px) {
+
   .telegrame-page {
+
     padding: 24px 22px 36px;
+
   }
 
+
+
   .telegram-form-body {
+
     grid-template-columns: 1fr;
+
   }
+
+
 
   .telegram-form-group:nth-child(n + 4) {
+
     grid-column: auto;
+
   }
+
 }
+
+
 
 @media (max-width: 600px) {
+
   .telegrame-page {
+
     padding: 18px 14px 28px;
+
   }
+
+
 
   .telegrame-header {
+
     align-items: stretch;
+
     flex-direction: column;
+
     gap: 18px;
+
   }
+
+
 
   .telegrame-header h1 {
+
     font-size: 25px;
+
   }
+
+
 
   .telegram-header-actions,
+
   .telegram-add-button {
+
     width: 100%;
+
   }
+
+
 
   .telegram-form-header,
+
   .telegram-form-body {
+
     padding: 18px;
+
   }
+
+
 
   .telegram-form-actions {
+
     flex-direction: column-reverse;
+
     padding: 16px 18px;
+
   }
+
+
 
   .telegram-save-button,
+
   .telegram-cancel-button {
+
     width: 100%;
+
   }
+
+
 
   .telegram-selected-file {
+
     align-items: flex-start;
+
     flex-direction: column;
+
   }
 
+
+
   .telegram-remove-file {
+
     width: 100%;
+
   }
+
 }
+
+
+
 
 
 /* FORMULAR COMPACT */
 
+
+
 .telegram-form-header {
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
 }
+
+
 
 .telegram-form-close {
+
   border: none;
+
   background: transparent;
+
   color: #8292a6;
+
   font-size: 26px;
+
   line-height: 1;
+
   cursor: pointer;
+
 }
+
+
 
 .telegram-form-close:hover {
+
   color: #123a61;
+
 }
+
+
 
 .telegram-form-body {
+
   display: grid;
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
+
   gap: 18px;
+
   padding: 24px;
+
 }
 
+
+
 .telegram-form-full {
+
   grid-column: 1 / -1;
+
 }
+
+
 
 /* ZONA ÎNCĂRCARE */
 
+
+
 .telegram-upload-area {
+
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
   gap: 9px;
+
   padding: 24px;
+
   border: 1.5px dashed #b9cde0;
+
   border-radius: 12px;
+
   background: #f8fbff;
+
   text-align: center;
+
 }
+
+
 
 .telegram-upload-icon {
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
+
   width: 42px;
+
   height: 42px;
+
   border-radius: 11px;
+
   background: #e6f0fa;
+
   color: #195b94;
+
   font-size: 25px;
+
   font-weight: 700;
+
 }
+
+
 
 .telegram-upload-area strong {
+
   color: #183c5e;
+
   font-size: 14px;
+
 }
+
+
 
 .telegram-upload-area p {
+
   margin: 0;
+
   color: #74869a;
+
   font-size: 12px;
+
 }
+
+
 
 .telegram-upload-area small {
+
   color: #8798aa;
+
   font-size: 11px;
+
 }
 
+
+
 .telegram-upload-area .telegram-file-input {
+
   box-sizing: border-box;
+
   width: auto;
+
   max-width: 100%;
+
   padding: 8px;
+
   border: none !important;
+
   background: transparent !important;
+
 }
+
+
 
 /* LINK */
 
+
+
 .telegram-link-field {
+
   display: flex;
+
   flex-direction: column;
+
   gap: 8px;
+
   margin-top: 16px;
+
 }
+
+
 
 .telegram-link-field span {
+
   color: #526780;
+
   font-size: 12px;
+
   font-weight: 600;
+
 }
 
+
+
 .telegram-link-field input {
+
   width: 100%;
+
 }
+
+
 
 /* RESPONSIVE */
 
+
+
 @media (max-width: 700px) {
+
   .telegram-form-body {
+
     grid-template-columns: 1fr;
+
     padding: 18px;
+
   }
+
+
 
   .telegram-form-full {
+
     grid-column: 1;
+
   }
 
+
+
   .telegram-upload-area {
+
     padding: 20px 12px;
+
   }
+
 }
+
+
+
 
 
 /* ACȚIUNI TELEGRAME */
 
+
+
 .telegram-actions-heading {
+
   width: 125px;
+
   text-align: center;
+
 }
+
+
 
 .telegram-actions-cell {
+
   width: 125px;
+
 }
+
+
 
 .telegram-row-actions {
+
   display: flex;
+
   justify-content: center;
+
   align-items: center;
+
   gap: 8px;
+
 }
+
+
 
 .telegram-action-button {
+
   width: 34px;
+
   height: 34px;
+
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
+
   border: 1px solid #dce5ef;
+
   border-radius: 8px;
+
   background: #fff;
+
   cursor: pointer;
+
   transition: background 0.2s, border-color 0.2s;
+
 }
+
+
 
 .telegram-action-edit {
+
   color: #1763a6;
+
 }
+
+
 
 .telegram-action-edit:hover {
+
   background: #eaf3ff;
+
   border-color: #a8caee;
+
 }
+
+
 
 .telegram-action-delete {
+
   color: #dc3545;
+
 }
+
+
 
 .telegram-action-delete:hover {
+
   background: #fff0f0;
+
   border-color: #f4b7bc;
+
 }
 
+
+
 .telegram-action-button:focus-visible {
+
   outline: 2px solid #1763a6;
+
   outline-offset: 2px;
+
+}
+
+/* ============================================
+   TELEGRAME — CARDURI RESPONSIVE PE MOBIL
+   Tabelul desktop rămâne neschimbat.
+   ============================================ */
+@media (max-width: 760px) {
+  .telegrame-page {
+    width: 100%;
+    min-width: 0;
+    padding: 20px 14px 32px;
+  }
+
+  .telegrame-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .telegrame-header h1 { font-size: clamp(24px, 6vw, 29px); }
+  .telegrame-description { line-height: 1.6; }
+  .telegram-header-actions,
+  .telegram-add-button { width: 100%; }
+  .telegram-add-button { min-height: 48px; }
+
+  .telegrame-table-wrapper {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .telegrame-table,
+  .telegrame-table tbody,
+  .telegrame-table tr,
+  .telegrame-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .telegrame-table { min-width: 0; table-layout: auto; }
+  .telegrame-table thead { display: none; }
+  .telegrame-table tbody { display: grid; gap: 14px; }
+
+  .telegrame-table .telegram-row {
+    overflow: hidden;
+    border: 1px solid #dfe8f2;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(19, 48, 83, 0.055);
+  }
+
+  .telegrame-table .telegram-row td,
+  .telegrame-table .telegram-row td:nth-child(n) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 9px 16px;
+    border: 0;
+    color: #425771;
+    font-size: 13px;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .telegrame-table .telegram-row td::before {
+    content: attr(data-label);
+    flex: 0 0 78px;
+    color: #8293a8;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  .telegrame-table .telegram-row td:first-child {
+    padding-top: 17px;
+  }
+
+  .telegrame-table .telegram-row .telegram-title-cell {
+    align-items: flex-start;
+  }
+
+  .telegrame-table .telegram-title-link {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 92px);
+    font-size: 15px;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .telegrame-table .telegram-row .telegram-actions-cell {
+    align-items: center;
+    margin-top: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #edf1f6;
+    background: #f8fafc;
+  }
+
+  .telegram-row-actions { justify-content: flex-end; }
+  .telegram-action-button { width: 40px; height: 40px; }
+
+  .telegram-form-body {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px;
+    gap: 16px;
+  }
+  .telegram-form-full { grid-column: 1; }
+  .telegram-form-header { padding: 18px; }
+  .telegram-form-actions {
+    flex-direction: column-reverse;
+    padding: 16px 18px;
+  }
+  .telegram-save-button,
+  .telegram-cancel-button { width: 100%; }
+}
+
+
+/* Corectare tabel Telegrame - Desktop */
+
+@media (min-width: 769px) {
+  .telegrame-page table {
+    width: 100%;
+    min-width: 900px;
+    table-layout: auto;
+  }
+
+  .telegrame-page th:nth-child(1),
+  .telegrame-page td:nth-child(1) {
+    width: 65px;
+    min-width: 65px;
+  }
+
+  .telegrame-page th:nth-child(2),
+  .telegrame-page td:nth-child(2) {
+    width: 145px;
+    min-width: 145px;
+  }
+
+  .telegrame-page th:nth-child(3),
+  .telegrame-page td:nth-child(3) {
+    width: auto;
+    min-width: 280px;
+    max-width: none;
+    overflow-wrap: normal;
+    word-break: normal;
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  .telegrame-page th:nth-child(4),
+  .telegrame-page td:nth-child(4) {
+    min-width: 125px;
+    white-space: nowrap;
+  }
+
+  .telegrame-page th:nth-child(5),
+  .telegrame-page td:nth-child(5) {
+    min-width: 145px;
+    white-space: nowrap;
+  }
 }

@@ -1,9 +1,8 @@
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
-
+const newsRoutes = require("./routes/newsRoutes");
 dotenv.config();
 
 const pool = require("./config/database");
@@ -41,13 +40,14 @@ app.use(
       return callback(new Error("Origine neautorizată"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use("/api/news", newsRoutes);
 
 // Verificare API
 app.get("/", (req, res) => {

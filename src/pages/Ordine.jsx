@@ -468,77 +468,86 @@ function Ordine() {
               </tr>
             </thead>
 
-            <tbody>
-              {ordine.map((order) => (
-                <tr
-                  key={order.id}
-                  className="ordine-row"
-                  onClick={() => handleOpenOrder(order)}
-                >
-                  <td>{order.id}</td>
+            
+<tbody>
+  {ordine.map((order) => (
+    <tr
+      key={order.id}
+      className="ordine-row"
+      onClick={() => handleOpenOrder(order)}
+    >
+      <td data-label="ID">{order.id}</td>
 
-                  <td>{order.number || "-"}</td>
+      <td data-label="Număr">
+        {order.number || "-"}
+      </td>
 
-                  <td>
-                    <button
-                      type="button"
-                      className="ordine-title-link"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleOpenOrder(order);
-                      }}
-                    >
-                      {order.title}
-                    </button>
-                  </td>
+      <td data-label="Titlu" className="ordine-title-cell">
+        <button
+          type="button"
+          className="ordine-title-link"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleOpenOrder(order);
+          }}
+        >
+          {order.title}
+        </button>
+      </td>
 
-                  <td>{formatDate(order.order_date)}</td>
+      <td data-label="Data">
+        {formatDate(order.order_date)}
+      </td>
 
-                  <td>
-                    {order.created_by_name ||
-                      order.created_by_username ||
-                      "-"}
-                  </td>
+      <td data-label="Creat de">
+        {order.created_by_name ||
+          order.created_by_username ||
+          "-"}
+      </td>
 
-                  {(canEdit || canDelete) && (
-                    <td>
-                      <div className="ordine-actions">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            className="ordine-icon-button"
-                            title="Editează ordinul"
-                            aria-label="Editează ordinul"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleEditOrder(order);
-                            }}
-                          >
-                            <Pencil size={17} />
-                          </button>
-                        )}
+      {(canEdit || canDelete) && (
+        <td
+          data-label="Acțiuni"
+          className="ordine-actions-cell"
+        >
+          <div className="ordine-actions">
+            {canEdit && (
+              <button
+                type="button"
+                className="ordine-icon-button"
+                title="Editează ordinul"
+                aria-label="Editează ordinul"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleEditOrder(order);
+                }}
+              >
+                <Pencil size={17} />
+              </button>
+            )}
 
-                        {canDelete && (
-                          <button
-                            type="button"
-                            className="ordine-icon-button ordine-delete-button"
-                            title="Șterge ordinul"
-                            aria-label="Șterge ordinul"
-                            disabled={deletingId !== null}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleDeleteOrder(order);
-                            }}
-                          >
-                            <Trash2 size={17} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
+            {canDelete && (
+              <button
+                type="button"
+                className="ordine-icon-button ordine-delete-button"
+                title="Șterge ordinul"
+                aria-label="Șterge ordinul"
+                disabled={deletingId !== null}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleDeleteOrder(order);
+                }}
+              >
+                <Trash2 size={17} />
+              </button>
+            )}
+          </div>
+        </td>
+      )}
+    </tr>
+  ))}
+</tbody>
+
           </table>
         </div>
       )}

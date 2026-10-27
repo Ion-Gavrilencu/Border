@@ -338,3 +338,328 @@
     width: 100%;
   }
 }
+
+
+/* ==========================================
+   ORDINE - CORECTARE DESKTOP
+========================================== */
+
+.ordine-page {
+  min-width: 0;
+}
+
+.ordine-table-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.ordine-table {
+  table-layout: auto;
+  min-width: 900px;
+}
+
+.ordine-table th,
+.ordine-table td {
+  box-sizing: border-box;
+}
+
+.ordine-table th:nth-child(3),
+.ordine-table td:nth-child(3) {
+  min-width: 260px;
+  width: auto;
+}
+
+.ordine-table td:nth-child(3) {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.ordine-title-link {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.5;
+}
+
+/* ==========================================
+   ORDINE - TABLETĂ
+========================================== */
+
+@media (max-width: 1000px) {
+  .ordine-page {
+    padding: 24px 20px 36px;
+  }
+
+  .ordine-header {
+    gap: 16px;
+  }
+}
+
+/* ==========================================
+   ORDINE - TELEFON
+========================================== */
+
+@media (max-width: 768px) {
+  .ordine-page {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 14px 32px;
+    overflow-x: hidden;
+  }
+
+  /* Titlu și buton adăugare */
+
+  .ordine-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .ordine-header h1 {
+    font-size: 27px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+
+  .ordine-description {
+    margin-top: 9px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .ordine-add-button {
+    width: 100%;
+    min-height: 52px;
+    font-size: 14px;
+    border-radius: 12px;
+    box-shadow: 0 5px 12px rgba(18, 58, 97, 0.12);
+  }
+
+  /* Containerul devine o listă de carduri */
+
+  .ordine-table-container {
+    width: 100%;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .ordine-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .ordine-table thead {
+    display: none;
+  }
+
+  .ordine-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .ordine-table .ordine-row {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #dce6f1;
+    border-radius: 17px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(20, 43, 70, 0.055);
+  }
+
+  .ordine-table .ordine-row:hover {
+    background: #ffffff;
+  }
+
+  /* ID și număr */
+
+  .ordine-table .ordine-row td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto;
+    padding: 9px 18px;
+    border: none;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+    word-break: normal;
+    text-align: right;
+  }
+
+  .ordine-table .ordine-row td:first-child {
+    padding-top: 22px;
+  }
+
+  .ordine-table .ordine-row td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: #8294aa;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  .ordine-table .ordine-row td:nth-child(2) {
+    color: #123a61;
+    font-weight: 700;
+  }
+
+  /* Titlul ocupă toată lățimea */
+
+  .ordine-table .ordine-row td.ordine-title-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 17px;
+    padding-bottom: 14px;
+    text-align: left;
+  }
+
+  .ordine-table .ordine-row td.ordine-title-cell::before {
+    display: none;
+  }
+
+  .ordine-title-link {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    color: #10375b;
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  /* Data și autorul */
+
+  .ordine-table .ordine-row td:nth-child(4),
+  .ordine-table .ordine-row td:nth-child(5) {
+    color: #526983;
+    font-size: 13px;
+  }
+
+  .ordine-table .ordine-row td:nth-child(5) {
+    padding-bottom: 20px;
+  }
+
+  /* Acțiuni */
+
+  .ordine-table .ordine-row td.ordine-actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 0;
+    padding: 13px 18px;
+    border-top: 1px solid #edf1f6;
+    background: #f8fafc;
+  }
+
+  .ordine-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .ordine-icon-button {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  /* Formular adăugare */
+
+  .ordine-form {
+    width: 100%;
+    margin-bottom: 22px;
+    border-radius: 14px;
+  }
+
+  .ordine-form-header {
+    padding: 18px;
+  }
+
+  .ordine-form-header h2 {
+    font-size: 17px;
+  }
+
+  .ordine-form-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 17px;
+    padding: 18px;
+  }
+
+  .ordine-form-full {
+    grid-column: auto;
+  }
+
+  .ordine-form-group {
+    min-width: 0;
+  }
+
+  .ordine-form-group > input {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .ordine-form-actions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    padding: 16px 18px;
+  }
+
+  .ordine-save-button,
+  .ordine-cancel-button {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .ordine-empty,
+  .ordine-loading {
+    padding: 38px 16px;
+  }
+}
+
+/* Telefoane foarte înguste */
+
+@media (max-width: 380px) {
+  .ordine-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .ordine-table .ordine-row td {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .ordine-title-link {
+    font-size: 16px;
+  }
+}

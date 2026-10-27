@@ -1297,3 +1297,320 @@
   outline-offset: 2px;
 
 }
+
+
+/* ==========================================
+   ACTE NORMATIVE - DESKTOP
+========================================== */
+
+.legislatie-page {
+  min-width: 0;
+}
+
+.legislatie-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.legislatie-table {
+  min-width: 900px;
+  table-layout: auto;
+}
+
+.legislatie-table th,
+.legislatie-table td {
+  box-sizing: border-box;
+}
+
+.legislatie-table th:nth-child(3),
+.legislatie-table td:nth-child(3) {
+  width: auto;
+  min-width: 270px;
+}
+
+.legislatie-table td:nth-child(3) {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.legislation-title-link {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.5;
+}
+
+/* ==========================================
+   ACTE NORMATIVE - TELEFON
+========================================== */
+
+@media (max-width: 768px) {
+  .legislatie-page {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 14px 32px;
+    overflow-x: hidden;
+  }
+
+  /* Antet */
+
+  .legislatie-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .legislatie-header h1 {
+    font-size: 27px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+
+  .legislatie-description {
+    margin-top: 9px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .legislation-header-actions {
+    width: 100%;
+  }
+
+  .legislation-add-button {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 12px;
+    font-size: 14px;
+    white-space: normal;
+  }
+
+  /* Transformarea tabelului în carduri */
+
+  .legislatie-table-wrapper {
+    width: 100%;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .legislatie-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .legislatie-table thead {
+    display: none;
+  }
+
+  .legislatie-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .legislatie-table .legislation-row {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #dce6f1;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(20, 43, 70, 0.055);
+  }
+
+  .legislatie-table .legislation-row:hover {
+    background: #fff;
+  }
+
+  /* Câmpuri card */
+
+  .legislatie-table .legislation-row td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto;
+    padding: 9px 18px;
+    border: none;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+    word-break: normal;
+    text-align: right;
+  }
+
+  .legislatie-table .legislation-row td:first-child {
+    padding-top: 22px;
+  }
+
+  .legislatie-table .legislation-row td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: #8294aa;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  .legislatie-table .legislation-row td:nth-child(2) {
+    color: #123a61;
+    font-weight: 700;
+  }
+
+  /* Titlu pe toată lățimea */
+
+  .legislatie-table .legislation-row td.legislation-title-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 17px;
+    padding-bottom: 14px;
+    text-align: left;
+  }
+
+  .legislatie-table .legislation-row td.legislation-title-cell::before {
+    display: none;
+  }
+
+  .legislation-title-link {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    color: #10375b;
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  /* Data și autorul */
+
+  .legislatie-table .legislation-row td:nth-child(4),
+  .legislatie-table .legislation-row td:nth-child(5) {
+    color: #526983;
+    font-size: 13px;
+  }
+
+  .legislatie-table .legislation-row td:nth-child(5) {
+    padding-bottom: 20px;
+  }
+
+  /* Butoane editare / ștergere */
+
+  .legislatie-table .legislation-row td.legislation-actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 0;
+    padding: 13px 18px;
+    border-top: 1px solid #edf1f6;
+    background: #f8fafc;
+  }
+
+  .legislation-row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+  }
+
+  .legislation-action-button {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  /* Formular adăugare */
+
+  .legislation-form {
+    width: 100%;
+    margin-bottom: 22px;
+    border-radius: 14px;
+  }
+
+  .legislation-form-header {
+    padding: 18px;
+  }
+
+  .legislation-form-header h2 {
+    font-size: 17px;
+  }
+
+  .legislation-form-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 17px;
+    padding: 18px;
+  }
+
+  .legislation-form-full,
+  .legislation-form-group:nth-child(n + 4) {
+    grid-column: auto;
+  }
+
+  .legislation-form-group {
+    min-width: 0;
+  }
+
+  .legislation-form-group input:not([type="file"]) {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .legislation-form-actions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    padding: 16px 18px;
+  }
+
+  .legislation-save-button,
+  .legislation-cancel-button {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .legislation-empty,
+  .legislation-loading {
+    padding: 38px 16px;
+  }
+}
+
+/* Telefoane foarte înguste */
+
+@media (max-width: 380px) {
+  .legislatie-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .legislatie-table .legislation-row td {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .legislation-title-link {
+    font-size: 16px;
+  }
+}

@@ -1,18 +1,22 @@
-
 import {
   Megaphone,
   FileText,
   Scale,
   Info,
   ArrowRight,
+  ArrowUpRight,
   RefreshCw,
   AlertCircle,
+  Newspaper,
+  ExternalLink,
 } from "lucide-react";
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./Dashboard.css";
+
+const NEWS_SOURCE = "https://www.border.gov.md/noutati";
 
 const initialStats = {
   telegrame: 0,
@@ -76,15 +80,42 @@ const recentTypes = {
   },
 };
 
+const formatDate = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ro-RO");
+};
+
+const isOfficialNewsUrl = (value) => {
+  try {
+    const url = new URL(value);
+
+    return (
+      url.protocol === "https:" &&
+      ["border.gov.md", "www.border.gov.md"].includes(
+        url.hostname.toLowerCase(),
+      )
+    );
+  } catch {
+    return false;
+  }
+};
+
 function Dashboard() {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState(initialStats);
   const [recent, setRecent] = useState([]);
+  const [news, setNews] = useState([]);
 
   const [loadingStats, setLoadingStats] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingNews, setLoadingNews] = useState(true);
+
   const [error, setError] = useState("");
+  const [newsError, setNewsError] = useState("");
 
   const loadDashboard = useCallback(async (showLoading = false) => {
     try {
@@ -97,7 +128,6 @@ function Dashboard() {
       setError("");
 
       const response = await api.get("/dashboard/stats");
-
       const data = response.data;
 
       if (!data || !data.stats) {
@@ -120,75 +150,97 @@ function Dashboard() {
           "Datele nu au putut fi încărcate. Verifică conexiunea cu serverul.",
       );
     } finally {
-  console.log("Dashboard: cererea s-a terminat");
-  setLoadingStats(false);
-  setRefreshing(false);
-}
+      setLoadingStats(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  const loadNews = useCallback(async () => {
+    try {
+      setLoadingNews(true);
+      setNewsError("");
+
+      const response = await api.get("/news");
+
+      const articles = Array.isArray(response.data?.articles)
+        ? response.data.articles
+        : [];
+
+      const validArticles = articles.filter(
+        (article) =>
+          typeof article.title === "string" &&
+          article.title.trim() &&
+          isOfficialNewsUrl(article.url),
+      );
+
+      setNews(validArticles.slice(0, 5));
+    } catch (err) {
+      console.error("Eroare la încărcarea știrilor:", err);
+
+      setNewsError("Noutățile nu sunt disponibile momentan.");
+    } finally {
+      setLoadingNews(false);
+    }
   }, []);
 
   useEffect(() => {
     loadDashboard(true);
-  }, [loadDashboard]);
+    loadNews();
+  }, [loadDashboard, loadNews]);
 
   useEffect(() => {
-    const handleFocus = () => {
+    const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         loadDashboard(false);
       }
     };
 
-    document.addEventListener("visibilitychange", handleFocus);
-console.log("Dashboard render:", {
-  loadingStats,
-  refreshing,
-  stats,
-  recentCount: recent.length,
-});
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      document.removeEventListener("visibilitychange", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [loadDashboard]);
 
+  const handleRefresh = () => {
+    loadDashboard(false);
+    loadNews();
+  };
+
   return (
     <div className="dashboard">
-      
-
-
-{/* BANNER BORDER */}
-<div
-  className="border-hero"
-  style={{
-    "--border-banner-url": `url("${import.meta.env.BASE_URL}images/border-banner.png")`,
-  }}
->
-  <div className="border-hero-content">
-    <p className="border-hero-description">
-      Documente
-      <span>•</span>
-      Legislație
-      <span>•</span>
-      Informații
-      <span>•</span>
-      Suport operațional
-    </p>
-  </div>
-</div>
-
-
+      {/* Banner FRONTIERĂ */}
+      <div
+        className="border-hero"
+        style={{
+          "--border-banner-url": `url("${import.meta.env.BASE_URL}images/border-banner.png")`,
+        }}
+      >
+        <div className="border-hero-content">
+          <p className="border-hero-description">
+            Documente
+            <span>•</span>
+            Legislație
+            <span>•</span>
+            Informații
+            <span>•</span>
+            Suport operațional
+          </p>
+        </div>
+      </div>
 
       {error && (
         <div className="dashboard-error" role="alert">
           <AlertCircle size={18} />
           <span>{error}</span>
-          <button
-            type="button"
-            onClick={() => loadDashboard(true)}
-          >
+
+          <button type="button" onClick={() => loadDashboard(true)}>
             Reîncearcă
           </button>
         </div>
       )}
 
+      {/* Statistici */}
       <div className="stats-grid">
         {sections.map((section) => {
           const Icon = section.icon;
@@ -207,21 +259,17 @@ console.log("Dashboard render:", {
 
               <div className="stat-content">
                 <span>{section.title}</span>
-                <strong>
-                  {loadingStats ? "..." : stats[section.key]}
-                </strong>
+                <strong>{loadingStats ? "..." : stats[section.key]}</strong>
               </div>
 
-              <ArrowRight
-                size={17}
-                className="stat-arrow"
-              />
+              <ArrowRight size={17} className="stat-arrow" />
             </button>
           );
         })}
       </div>
 
       <div className="dashboard-grid">
+        {/* Ultimele informații */}
         <section className="dashboard-card">
           <div className="card-header">
             <div>
@@ -229,24 +277,26 @@ console.log("Dashboard render:", {
               <p>Documente adăugate recent</p>
             </div>
 
-            <RefreshCw
-              size={19}
-              className={refreshing ? "refresh-spin" : ""}
-              style={{ cursor: "pointer" }}
+            <button
+              type="button"
+              className="dashboard-refresh-button"
               onClick={() => loadDashboard(false)}
+              disabled={refreshing}
               aria-label="Actualizează informațiile"
-            />
+              title="Actualizează informațiile"
+            >
+              <RefreshCw
+                size={19}
+                className={refreshing ? "refresh-spin" : ""}
+              />
+            </button>
           </div>
 
           <div className="information-list">
             {loadingStats ? (
-              <p className="dashboard-empty">
-                Se încarcă informațiile...
-              </p>
+              <p className="dashboard-empty">Se încarcă informațiile...</p>
             ) : recent.length === 0 ? (
-              <p className="dashboard-empty">
-                Nu există documente recente.
-              </p>
+              <p className="dashboard-empty">Nu există documente recente.</p>
             ) : (
               recent.map((item) => {
                 const config = recentTypes[item.type];
@@ -260,32 +310,19 @@ console.log("Dashboard render:", {
                     key={`${item.type}-${item.id}`}
                     type="button"
                     className="information-item information-item-button"
-                    onClick={() =>
-                      navigate(`${config.path}/${item.id}`)
-                    }
+                    onClick={() => navigate(`${config.path}/${item.id}`)}
                   >
-                    <div
-                      className={`item-icon ${config.className}`}
-                    >
+                    <div className={`item-icon ${config.className}`}>
                       <Icon size={19} />
                     </div>
 
                     <div className="information-content">
                       <strong>{config.label}</strong>
                       <p>{item.title}</p>
-                      <small>
-                        {item.created_at
-                          ? new Date(
-                              item.created_at,
-                            ).toLocaleDateString("ro-RO")
-                          : ""}
-                      </small>
+                      <small>{formatDate(item.created_at)}</small>
                     </div>
 
-                    <ArrowRight
-                      size={17}
-                      className="information-arrow"
-                    />
+                    <ArrowRight size={17} className="information-arrow" />
                   </button>
                 );
               })
@@ -293,31 +330,86 @@ console.log("Dashboard render:", {
           </div>
         </section>
 
-        <section className="dashboard-card">
+        {/* Noutăți de frontieră */}
+        <section className="dashboard-card border-news-card">
           <div className="card-header">
             <div>
-              <h2>Acces rapid</h2>
-              <p>Secțiuni utilizate frecvent</p>
+              <h2 className="border-news-heading">
+                <Newspaper size={19} />
+                Noutăți de frontieră
+              </h2>
+
+              <p>Controale, depistări și evenimente recente</p>
             </div>
+
+            <button
+              type="button"
+              className="dashboard-refresh-button"
+              onClick={handleRefresh}
+              disabled={loadingNews}
+              aria-label="Actualizează noutățile"
+              title="Actualizează noutățile"
+            >
+              <RefreshCw
+                size={19}
+                className={loadingNews ? "refresh-spin" : ""}
+              />
+            </button>
           </div>
 
-          <div className="quick-links">
-            {sections.map((section) => {
-              const Icon = section.icon;
-
-              return (
-                <button
-                  key={section.key}
-                  type="button"
-                  onClick={() => navigate(section.path)}
-                >
-                  <Icon size={20} />
-                  <span>{section.title}</span>
-                  <ArrowRight size={17} />
+          <div className="border-news-list">
+            {loadingNews ? (
+              <div className="border-news-state">Se încarcă noutățile...</div>
+            ) : newsError ? (
+              <div className="border-news-state">
+                <AlertCircle size={20} />
+                <span>{newsError}</span>
+                <button type="button" onClick={loadNews}>
+                  Reîncearcă
                 </button>
-              );
-            })}
+              </div>
+            ) : news.length === 0 ? (
+              <div className="border-news-state">
+                Nu există noutăți disponibile.
+              </div>
+            ) : (
+              news.map((article, index) => (
+                <a
+                  key={article.id || article.url || index}
+                  className="border-news-item"
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="border-news-icon">
+                    <Newspaper size={19} />
+                  </div>
+
+                  <div className="border-news-content">
+                    <span className="border-news-source">
+                      POLIȚIA DE FRONTIERĂ
+                    </span>
+
+                    <strong>{article.title}</strong>
+
+                    <small>{formatDate(article.published_at)}</small>
+                  </div>
+
+                  <ArrowUpRight size={17} className="border-news-arrow" />
+                </a>
+              ))
+            )}
           </div>
+
+          <a
+            className="border-news-footer"
+            href={NEWS_SOURCE}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Vezi toate știrile oficiale
+            <ExternalLink size={16} />
+          </a>
         </section>
       </div>
     </div>
@@ -325,4 +417,3 @@ console.log("Dashboard render:", {
 }
 
 export default Dashboard;
-

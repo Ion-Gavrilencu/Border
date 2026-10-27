@@ -804,153 +804,94 @@ function Legislatie() {
 
             </thead>
 
-            <tbody>
+            
+<tbody>
+  {legislatie.map((legislation) => (
+    <tr
+      key={legislation.id}
+      className="legislation-row"
+      onClick={() => handleOpenLegislation(legislation)}
+    >
+      <td data-label="ID">
+        {legislation.id}
+      </td>
+
+      <td data-label="Număr">
+        {legislation.law_number || "—"}
+      </td>
+
+      <td
+        data-label="Titlu"
+        className="legislation-title-cell"
+      >
+        <button
+          type="button"
+          className="legislation-title-link"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleOpenLegislation(legislation);
+          }}
+        >
+          {legislation.title}
+        </button>
+      </td>
+
+      <td data-label="Data">
+        {legislation.law_date
+          ? new Date(
+              legislation.law_date
+            ).toLocaleDateString("ro-RO")
+          : "—"}
+      </td>
+
+      <td data-label="Creat de">
+        {legislation.created_by_name ||
+          legislation.created_by_username ||
+          "—"}
+      </td>
+
+      {(canEdit || canDelete) && (
+        <td
+          data-label="Acțiuni"
+          className="legislation-actions-cell"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="legislation-row-actions">
+            {canEdit && (
+              <button
+                type="button"
+                className="legislation-action-button legislation-action-edit"
+                title="Editează actul normativ"
+                aria-label={`Editează ${legislation.title}`}
+                onClick={() =>
+                  handleEditLegislation(legislation)
+                }
+              >
+                <Pencil size={17} />
+              </button>
+            )}
+
+            {canDelete && (
+              <button
+                type="button"
+                className="legislation-action-button legislation-action-delete"
+                title="Șterge actul normativ"
+                aria-label={`Șterge ${legislation.title}`}
+                disabled={deletingId !== null}
+                onClick={() =>
+                  handleDeleteLegislation(legislation)
+                }
+              >
+                <Trash2 size={17} />
+              </button>
+            )}
+          </div>
+        </td>
+      )}
+    </tr>
+  ))}
+</tbody>
 
-              {legislatie.map((legislation) => (
-
-                <tr
-
-                  key={legislation.id}
-
-                  className="legislation-row"
-
-                  onClick={() => handleOpenLegislation(legislation)}
-
-                >
-
-                  <td>{legislation.id}</td>
-
-                  <td>{legislation.law_number || "—"}</td>
-
-                  <td>
-
-                    <button
-
-                      type="button"
-
-                      className="legislation-title-link"
-
-                      onClick={(event) => {
-
-                        event.stopPropagation();
-
-                        handleOpenLegislation(legislation);
-
-                      }}
-
-                    >
-
-                      {legislation.title}
-
-                    </button>
-
-                  </td>
-
-                  <td>
-
-                    {legislation.law_date
-
-                      ? new Date(
-
-                          legislation.law_date
-
-                        ).toLocaleDateString("ro-RO")
-
-                      : "—"}
-
-                  </td>
-
-                  <td>
-
-                    {legislation.created_by_name ||
-
-                      legislation.created_by_username ||
-
-                      "—"}
-
-                  </td>
-
-                  {(canEdit || canDelete) && (
-
-                    <td
-
-                      className="legislation-actions-cell"
-
-                      onClick={(event) =>
-
-                        event.stopPropagation()
-
-                      }
-
-                    >
-
-                      <div className="legislation-row-actions">
-
-                        {canEdit && (
-
-                          <button
-
-                            type="button"
-
-                            className="legislation-action-button legislation-action-edit"
-
-                            title="Editează actul normativ"
-
-                            aria-label={`Editează ${legislation.title}`}
-
-                            onClick={() =>
-
-                              handleEditLegislation(legislation)
-
-                            }
-
-                          >
-
-                            <Pencil size={17} />
-
-                          </button>
-
-                        )}
-
-                        {canDelete && (
-
-                          <button
-
-                            type="button"
-
-                            className="legislation-action-button legislation-action-delete"
-
-                            title="Șterge actul normativ"
-
-                            aria-label={`Șterge ${legislation.title}`}
-
-                            disabled={deletingId !== null}
-
-                            onClick={() =>
-
-                              handleDeleteLegislation(legislation)
-
-                            }
-
-                          >
-
-                            <Trash2 size={17} />
-
-                          </button>
-
-                        )}
-
-                      </div>
-
-                    </td>
-
-                  )}
-
-                </tr>
-
-              ))}
-
-            </tbody>
 
           </table>
 

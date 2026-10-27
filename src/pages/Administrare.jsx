@@ -357,90 +357,100 @@ function Administrare() {
             </tr>
           </thead>
 
-          <tbody>
-            {filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="admin-no-results">
-                  Nu au fost găsiți utilizatori.
-                </td>
-              </tr>
-            ) : (
-              filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <span className="admin-id">#{user.id}</span>
-                  </td>
+          
+<tbody>
+  {filteredUsers.length === 0 ? (
+    <tr className="admin-empty-row">
+      <td colSpan={7} className="admin-no-results">
+        Nu au fost găsiți utilizatori.
+      </td>
+    </tr>
+  ) : (
+    filteredUsers.map((user) => (
+      <tr key={user.id} className="admin-user-row">
+        <td data-label="ID">
+          <span className="admin-id">#{user.id}</span>
+        </td>
 
-                  <td>
-                    <span className="admin-username">{user.username}</span>
-                  </td>
+        <td data-label="Utilizator">
+          <span className="admin-username">
+            {user.username}
+          </span>
+        </td>
 
-                  <td>{user.full_name || "-"}</td>
+        <td data-label="Nume complet">
+          {user.full_name || "—"}
+        </td>
 
-                  <td>{user.email || "-"}</td>
+        <td data-label="Email" className="admin-email-cell">
+          {user.email || "—"}
+        </td>
 
-                  <td>
-                    <div className="admin-role-control">
-                      <select
-                        value={user.role}
-                        disabled={updatingUserId === user.id}
-                        onChange={(e) =>
-                          handleRoleChange(user.id, e.target.value)
-                        }
-                      >
-                        <option value="USER">USER</option>
+        <td data-label="Rol">
+          <div className="admin-role-control">
+            <select
+              value={user.role}
+              disabled={updatingUserId === user.id}
+              onChange={(e) =>
+                handleRoleChange(user.id, e.target.value)
+              }
+              aria-label={`Rolul utilizatorului ${user.username}`}
+            >
+              <option value="USER">USER</option>
+              <option value="EDITOR">EDITOR</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
 
-                        <option value="EDITOR">EDITOR</option>
-
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-
-                      {updatingUserId === user.id && (
-                        <span className="admin-saving">Se salvează...</span>
-                      )}
-                    </div>
-                  </td>
-
-                  <td>
-                    <div className="admin-status-cell">
-                      <span
-                        className={`admin-status ${
-                          user.is_active
-                            ? "admin-status-active"
-                            : "admin-status-inactive"
-                        }`}
-                      >
-                        <span className="admin-status-dot"></span>
-
-                        {user.is_active ? "Activ" : "Inactiv"}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="admin-status-button"
-                        disabled={updatingUserId === user.id}
-                        onClick={() =>
-                          handleStatusChange(user.id, user.is_active)
-                        }
-                      >
-                        {user.is_active ? "Dezactivează" : "Activează"}
-                      </button>
-                    </div>
-                  </td>
-
-                  <td>
-                    <button
-                      type="button"
-                      className="admin-delete"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      Șterge
-                    </button>
-                  </td>
-                </tr>
-              ))
+            {updatingUserId === user.id && (
+              <span className="admin-saving">
+                Se salvează...
+              </span>
             )}
-          </tbody>
+          </div>
+        </td>
+
+        <td data-label="Status">
+          <div className="admin-status-cell">
+            <span
+              className={`admin-status ${
+                user.is_active
+                  ? "admin-status-active"
+                  : "admin-status-inactive"
+              }`}
+            >
+              <span className="admin-status-dot" />
+              {user.is_active ? "Activ" : "Inactiv"}
+            </span>
+
+            <button
+              type="button"
+              className="admin-status-button"
+              disabled={updatingUserId === user.id}
+              onClick={() =>
+                handleStatusChange(user.id, user.is_active)
+              }
+            >
+              {user.is_active
+                ? "Dezactivează"
+                : "Activează"}
+            </button>
+          </div>
+        </td>
+
+        <td data-label="Acțiuni" className="admin-actions-cell">
+          <button
+            type="button"
+            className="admin-delete"
+            onClick={() => handleDeleteUser(user.id)}
+          >
+            Șterge
+          </button>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
         </table>
       </div>
     </div>

@@ -445,3 +445,644 @@
     border-radius: var(--radius-md);
   }
 }
+
+
+/* ==========================================
+   ADMINISTRARE - RESPONSIVE
+========================================== */
+
+.admin-page {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.admin-page *,
+.admin-page *::before,
+.admin-page *::after {
+  box-sizing: border-box;
+}
+
+/* Desktop */
+
+.admin-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+}
+
+.admin-table {
+  table-layout: auto;
+}
+
+.admin-table td {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.admin-email-cell {
+  overflow-wrap: anywhere;
+}
+
+.admin-header > div:first-child {
+  min-width: 0;
+}
+
+.admin-header > .btn {
+  flex-shrink: 0;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+/* Tablete */
+
+@media (max-width: 1400px) {
+  .admin-page {
+    padding: 24px 20px 36px;
+  }
+
+  .admin-header {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .admin-header > div:first-child {
+    flex: 1 1 100%;
+  }
+
+  .admin-user-count {
+    min-width: 120px;
+  }
+}
+
+/* ==========================================
+   TELEFON - CARDURI UTILIZATORI
+========================================== */
+
+@media (max-width: 1100px) {
+  .admin-page {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 14px 32px;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+
+  .admin-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .admin-header h1 {
+    font-size: 26px;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+  }
+
+  .admin-description {
+    margin-top: 9px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .admin-user-count {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+    min-height: 65px;
+    padding: 12px 18px;
+    border-radius: 13px;
+    text-align: left;
+  }
+
+  .admin-user-count-label {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .admin-user-count strong {
+    font-size: 26px;
+  }
+
+  .admin-header > .btn {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 11px;
+    white-space: normal;
+  }
+
+  /* Formular creare utilizator */
+
+  .admin-page form.card {
+    width: 100%;
+    min-width: 0;
+    padding: 18px !important;
+    border-radius: 14px;
+  }
+
+  .admin-page form.card h2 {
+    font-size: 19px;
+  }
+
+  .admin-page form.card > div[style] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .admin-page form.card label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    color: #30465e;
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .admin-page form.card input,
+  .admin-page form.card select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .admin-page form.card button[type="submit"] {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  /* Căutare */
+
+  .admin-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .admin-search {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .admin-search input {
+    width: 100%;
+    height: 46px;
+    border-radius: 11px;
+    font-size: 16px;
+  }
+
+  .admin-results {
+    text-align: left;
+    font-size: 12px;
+  }
+
+  /* Tabel -> carduri */
+
+  .admin-table-wrapper {
+    width: 100%;
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .admin-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .admin-table .admin-user-row {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #dce6f1;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(20, 43, 70, 0.055);
+  }
+
+  .admin-table .admin-user-row:hover {
+    background: #fff;
+  }
+
+  .admin-table .admin-user-row td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    padding: 10px 17px;
+    border: none;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-table .admin-user-row td::before {
+    content: attr(data-label);
+    flex: 0 0 105px;
+    color: #8192a8;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  .admin-table .admin-user-row td:first-child {
+    padding-top: 20px;
+  }
+
+  .admin-table .admin-user-row td:nth-child(2) {
+    color: #123a61;
+    font-weight: 700;
+  }
+
+  .admin-username {
+    overflow-wrap: anywhere;
+  }
+
+  .admin-email-cell {
+    overflow-wrap: anywhere;
+  }
+
+  /* Rol */
+
+  .admin-role-control {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .admin-role-control select {
+    width: 125px;
+    max-width: 100%;
+    min-height: 40px;
+    font-size: 13px;
+    border-radius: 9px;
+  }
+
+  .admin-saving {
+    font-size: 11px;
+  }
+
+  /* Status */
+
+  .admin-table .admin-user-row td:nth-child(6) {
+    align-items: flex-start;
+  }
+
+  .admin-status-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .admin-status {
+    min-height: 28px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  .admin-status-button {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* Acțiuni */
+
+  .admin-table .admin-user-row td.admin-actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 14px 17px;
+    border-top: 1px solid #edf1f6;
+    background: #f8fafc;
+  }
+
+  .admin-delete {
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 9px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* Fără rezultate */
+
+  .admin-table .admin-empty-row {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table .admin-empty-row td {
+    display: block;
+    width: 100%;
+    padding: 35px 18px !important;
+    border: 1px solid #dce6f1;
+    border-radius: 14px;
+    background: #fff;
+    text-align: center !important;
+  }
+
+  .admin-error {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+/* Telefoane înguste */
+
+@media (max-width: 380px) {
+  .admin-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .admin-table .admin-user-row td {
+    gap: 8px;
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  .admin-table .admin-user-row td::before {
+    flex-basis: 88px;
+  }
+
+  .admin-role-control select {
+    width: 110px;
+  }
+
+  .admin-status-button {
+    padding: 0 9px;
+  }
+}
+
+
+/* Administrare - corecții responsive */
+
+@media (max-width: 1100px) {
+  .admin-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 24px 20px 36px;
+  }
+
+  .admin-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .admin-header > div:first-child {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .admin-user-count {
+    grid-column: 1;
+    width: 160px;
+    max-width: 100%;
+  }
+
+  .admin-header > .btn {
+    grid-column: 2;
+    width: auto;
+    min-height: 46px;
+  }
+
+  .admin-toolbar {
+    width: 100%;
+  }
+
+  .admin-search {
+    max-width: 100%;
+  }
+
+  .admin-table-wrapper {
+    overflow: visible;
+  }
+
+  .admin-table {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-page {
+    padding: 18px 12px 28px;
+  }
+
+  .admin-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .admin-header h1 {
+    font-size: 24px;
+  }
+
+  .admin-user-count {
+    width: 100%;
+  }
+
+  .admin-header > .btn {
+    width: 100%;
+  }
+
+  .admin-table .admin-user-row td::before {
+    flex: 0 0 95px;
+  }
+}
+
+
+/* Corecție pentru laptopuri și ecrane medii */
+
+@media (min-width: 769px) and (max-width: 1400px) {
+  .admin-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 24px;
+  }
+
+  .admin-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .admin-header > div:first-child {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .admin-header h1 {
+    font-size: 25px;
+  }
+
+  .admin-user-count {
+    grid-column: 2;
+    width: 130px;
+    min-width: 0;
+  }
+
+  .admin-header > .btn {
+    grid-column: 3;
+    width: auto;
+    min-height: 46px;
+  }
+
+  .admin-toolbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .admin-search {
+    flex: 1;
+    max-width: 520px;
+  }
+
+  .admin-table-wrapper {
+    overflow: visible;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .admin-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .admin-table .admin-user-row {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid #dce6f1;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(20, 43, 70, 0.05);
+  }
+
+  .admin-table .admin-user-row td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    height: auto;
+    padding: 10px 16px;
+    border: none;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-table .admin-user-row td::before {
+    content: attr(data-label);
+    flex: 0 0 90px;
+    color: #8294aa;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  .admin-table .admin-user-row td:first-child {
+    padding-top: 18px;
+  }
+
+  .admin-table .admin-user-row td.admin-actions-cell {
+    margin-top: auto;
+    padding: 13px 16px;
+    border-top: 1px solid #edf1f6;
+    background: #f8fafc;
+  }
+
+  .admin-role-control,
+  .admin-status-cell {
+    align-items: flex-end;
+  }
+
+  .admin-table .admin-empty-row {
+    display: block;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1050px) {
+  .admin-table tbody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-header > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-user-count {
+    grid-column: 1;
+  }
+
+  .admin-header > .btn {
+    grid-column: 2;
+  }
+}
