@@ -125,6 +125,34 @@ function Administrare() {
     }
   };
 
+  const handleResendActivation = async (userId) => {
+    const confirmed = window.confirm(
+      "Dorești să trimiți un nou link de activare pe e-mailul acestui utilizator?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setUpdatingUserId(userId);
+
+      const response = await api.post(`/users/${userId}/resend-activation`);
+
+      alert(
+        response.data.message ||
+          "Un nou link de activare a fost trimis pe e-mail.",
+      );
+    } catch (error) {
+      console.error("Eroare retrimitere activare:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Nu s-a putut retrimite linkul de activare.",
+      );
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
   const handleDeleteUser = async (userId) => {
     const confirmed = window.confirm(
       "Ești sigur că vrei să ștergi acest utilizator?",
@@ -357,100 +385,123 @@ function Administrare() {
             </tr>
           </thead>
 
-          
-<tbody>
-  {filteredUsers.length === 0 ? (
-    <tr className="admin-empty-row">
-      <td colSpan={7} className="admin-no-results">
-        Nu au fost găsiți utilizatori.
-      </td>
-    </tr>
-  ) : (
-    filteredUsers.map((user) => (
-      <tr key={user.id} className="admin-user-row">
-        <td data-label="ID">
-          <span className="admin-id">#{user.id}</span>
-        </td>
+          <tbody>
+            {filteredUsers.length === 0 ? (
+              <tr className="admin-empty-row">
+                <td colSpan={7} className="admin-no-results">
+                  Nu au fost găsiți utilizatori.
+                </td>
+              </tr>
+            ) : (
+              filteredUsers.map((user) => (
+                <tr key={user.id} className="admin-user-row">
+                  <td data-label="ID">
+                    <span className="admin-id">#{user.id}</span>
+                  </td>
 
-        <td data-label="Utilizator">
-          <span className="admin-username">
-            {user.username}
-          </span>
-        </td>
+                  <td data-label="Utilizator">
+                    <span className="admin-username">{user.username}</span>
+                  </td>
 
-        <td data-label="Nume complet">
-          {user.full_name || "—"}
-        </td>
+                  <td data-label="Nume complet">{user.full_name || "—"}</td>
 
-        <td data-label="Email" className="admin-email-cell">
-          {user.email || "—"}
-        </td>
+                  <td data-label="Email" className="admin-email-cell">
+                    {user.email || "—"}
+                  </td>
 
-        <td data-label="Rol">
-          <div className="admin-role-control">
-            <select
-              value={user.role}
-              disabled={updatingUserId === user.id}
-              onChange={(e) =>
-                handleRoleChange(user.id, e.target.value)
-              }
-              aria-label={`Rolul utilizatorului ${user.username}`}
-            >
-              <option value="USER">USER</option>
-              <option value="EDITOR">EDITOR</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
+                  <td data-label="Rol">
+                    <div className="admin-role-control">
+                      <select
+                        value={user.role}
+                        disabled={updatingUserId === user.id}
+                        onChange={(e) =>
+                          handleRoleChange(user.id, e.target.value)
+                        }
+                        aria-label={`Rolul utilizatorului ${user.username}`}
+                      >
+                        <option value="USER">USER</option>
+                        <option value="EDITOR">EDITOR</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
 
-            {updatingUserId === user.id && (
-              <span className="admin-saving">
-                Se salvează...
-              </span>
+                      {updatingUserId === user.id && (
+                        <span className="admin-saving">Se salvează...</span>
+                      )}
+                    </div>
+                  </td>
+
+                  <td data-label="Status">
+                    <div className="admin-status-cell">
+                      <span
+                        className={`admin-status ${
+                          user.is_active
+                            ? "admin-status-active"
+                            : "admin-status-inactive"
+                        }`}
+                      >
+                        <span className="admin-status-dot" />
+                        {user.is_active ? "Activ" : "Inactiv"}
+                      </span>
+
+                      <button
+                        type="button"
+                        className="admin-status-button"
+                        disabled={updatingUserId === user.id}
+                        onClick={() =>
+                          handleStatusChange(user.id, user.is_active)
+                        }
+                      >
+                        {user.is_active ? "Dezactivează" : "Activează"}
+                      </button>
+                    </div>
+                  </td>
+
+                  <td data-label="Acțiuni" className="admin-actions-cell">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "10px",
+                      }}
+                    >
+                      {!user.is_active && (
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={updatingUserId === user.id}
+                          onClick={() => handleResendActivation(user.id)}
+                          style={{
+                            backgroundColor: "#eaf3ff",
+                            border: "1px solid #b9d7ff",
+                            borderRadius: "8px",
+                            padding: "9px 12px",
+                            color: "#0758a8",
+                            fontWeight: 600,
+                            cursor:
+                              updatingUserId === user.id ? "wait" : "pointer",
+                          }}
+                        >
+                          {updatingUserId === user.id
+                            ? "Se trimite..."
+                            : "Retrimite activarea"}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className="admin-delete"
+                        disabled={updatingUserId === user.id}
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        Șterge
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
-          </div>
-        </td>
-
-        <td data-label="Status">
-          <div className="admin-status-cell">
-            <span
-              className={`admin-status ${
-                user.is_active
-                  ? "admin-status-active"
-                  : "admin-status-inactive"
-              }`}
-            >
-              <span className="admin-status-dot" />
-              {user.is_active ? "Activ" : "Inactiv"}
-            </span>
-
-            <button
-              type="button"
-              className="admin-status-button"
-              disabled={updatingUserId === user.id}
-              onClick={() =>
-                handleStatusChange(user.id, user.is_active)
-              }
-            >
-              {user.is_active
-                ? "Dezactivează"
-                : "Activează"}
-            </button>
-          </div>
-        </td>
-
-        <td data-label="Acțiuni" className="admin-actions-cell">
-          <button
-            type="button"
-            className="admin-delete"
-            onClick={() => handleDeleteUser(user.id)}
-          >
-            Șterge
-          </button>
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
-
+          </tbody>
         </table>
       </div>
     </div>

@@ -349,10 +349,123 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const resendActivation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!/^[1-9]\d*$/.test(String(id))) {
+      return res.status(400).json({
+        message: "ID-ul utilizatorului este invalid.",
+      });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL?.trim();
+
+    if (!frontendUrl) {
+      return res.status(503).json({
+        message: "FRONTEND_URL nu este configurat.",
+      });
+    }
+
+    let activationLink;
+
+    try {
+      const frontendOrigin = new URL(frontendUrl);
+
+      if (frontendOrigin.protocol !== "https:") {
+        throw new Error("Frontend URL invalid.");
+      }
+
+      activationLink = new URL("/activate", frontendOrigin.origin);
+    } catch {
+      return res.status(503).json({
+        message: "FRONTEND_URL este invalid.",
+      });
+    }
+
+    // Verificăm utilizatorul.
+    const userResult = await pool.query(
+      `
+      SELECT id, username, email, is_active
+      FROM users
+      WHERE id = $1
+      `,
+      [id],
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Utilizatorul nu a fost găsit.",
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    if (user.is_active) {
+      return res.status(400).json({
+        message: "Contul este deja activ.",
+      });
+    }
+
+    // Generăm un token nou.
+    const activationToken = crypto.randomBytes(32).toString("hex");
+
+    const activationTokenHash = crypto
+      .createHash("sha256")
+      .update(activationToken)
+      .digest("hex");
+
+    const activationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    activationLink.searchParams.set("token", activationToken);
+
+    // Salvăm tokenul nou și invalidăm tokenul vechi.
+    await pool.query(
+      `
+      UPDATE users
+      SET
+        activation_token_hash = $1,
+        activation_expires_at = $2,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+        AND is_active = FALSE
+      `,
+      [activationTokenHash, activationExpiresAt, id],
+    );
+
+    // Trimitem e-mailul nou.
+    try {
+      await sendActivationEmail({
+        email: user.email,
+        username: user.username,
+        activationLink: activationLink.toString(),
+      });
+    } catch (emailError) {
+      console.error("RESEND ACTIVATION EMAIL ERROR:", emailError);
+
+      return res.status(502).json({
+        message:
+          "Nu s-a putut trimite e-mailul de activare. Verifică serviciul SMTP și încearcă din nou.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Un nou link de activare a fost trimis pe e-mail.",
+    });
+  } catch (error) {
+    console.error("RESEND ACTIVATION ERROR:", error);
+
+    return res.status(500).json({
+      message: "Eroare la retrimiterea activării.",
+    });
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
   updateUserRole,
   updateUserStatus,
   deleteUser,
+  resendActivation,
 };
