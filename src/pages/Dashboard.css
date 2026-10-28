@@ -863,3 +863,173 @@
 
   }
 }
+
+
+/* ========================================
+   BORDER - DASHBOARD MODERN
+======================================== */
+
+.dashboard-modern {
+  --dashboard-accent: #1769bd;
+}
+
+/* Banner */
+
+.dashboard-modern .border-hero {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 32px rgba(6, 29, 65, 0.12);
+}
+
+.dashboard-modern .border-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    rgba(3, 19, 43, 0.25),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+/* Carduri statistici */
+
+.dashboard-modern .stat-card {
+  border-radius: 16px;
+  box-shadow:
+    0 5px 20px rgba(15, 40, 75, 0.055);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.dashboard-modern .stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 14px 30px rgba(15, 40, 75, 0.12);
+}
+
+.dashboard-modern .stat-icon {
+  border-radius: 15px;
+}
+
+.dashboard-modern .stat-content strong {
+  letter-spacing: -0.7px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Panouri */
+
+.dashboard-panel-motion {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+}
+
+.dashboard-panel-motion > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-modern .dashboard-card {
+  border-radius: 16px;
+  box-shadow:
+    0 8px 28px rgba(14, 41, 78, 0.06);
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.dashboard-modern .dashboard-card:hover {
+  border-color: #d4e4f5;
+  box-shadow:
+    0 12px 34px rgba(14, 41, 78, 0.09);
+}
+
+/* Titluri */
+
+.dashboard-modern .card-header h2 {
+  letter-spacing: -0.35px;
+}
+
+/* Buton reîmprospătare */
+
+.dashboard-modern .dashboard-refresh-button {
+  border-radius: 10px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.dashboard-modern .dashboard-refresh-button:hover:not(:disabled) {
+  background: #e8f3ff;
+  color: #0758a8;
+}
+
+/* Informații recente */
+
+.dashboard-modern .information-item {
+  transition:
+    background-color 0.2s ease,
+    padding-left 0.2s ease;
+}
+
+.dashboard-modern .information-item:hover {
+  background: #f4f9ff;
+}
+
+/* Mesaj eroare */
+
+.dashboard-modern .dashboard-error {
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.dashboard-modern .dashboard-error button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+/* Responsive */
+
+@media (max-width: 1100px) {
+  .dashboard-modern .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-modern .border-hero {
+    border-radius: 12px;
+  }
+
+  .dashboard-modern .stat-card {
+    border-radius: 13px;
+  }
+
+  .dashboard-modern .dashboard-card {
+    border-radius: 13px;
+  }
+
+  .dashboard-modern .dashboard-error button {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-modern .stat-card,
+  .dashboard-modern .dashboard-card,
+  .dashboard-modern .information-item {
+    transition: none;
+  }
+
+  .dashboard-modern .stat-card:hover {
+    transform: none;
+  }
+}

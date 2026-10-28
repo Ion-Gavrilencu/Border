@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Plus, X, LoaderCircle, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 import DocumentUploader from "../components/DocumentUploader";
 
@@ -190,9 +193,11 @@ function Telegrame() {
       setTelegrame((current) => [telegram, ...current]);
 
       resetForm();
+      if (failed.length === 0)
+        toast.success("Telegrama a fost salvată cu succes.");
 
       if (failed.length > 0) {
-        alert(
+        toast.warning(
           `Telegrama a fost creată, dar nu s-au salvat: ${failed.join(", ")}`,
         );
       }
@@ -253,7 +258,7 @@ function Telegrame() {
       if (!attachment) {
         newTab?.close();
 
-        alert("Această telegramă nu are documente sau linkuri atașate.");
+        toast.info("Această telegramă nu are documente sau linkuri atașate.");
 
         return;
       }
@@ -281,6 +286,7 @@ function Telegrame() {
       console.error("Eroare deschidere telegramă:", err);
 
       setError("Nu s-a putut deschide documentul sau linkul telegramei.");
+      toast.error("Nu s-a putut deschide documentul sau linkul telegramei.");
     }
   };
 
@@ -297,11 +303,18 @@ function Telegrame() {
   const handleDeleteTelegram = async (telegram) => {
     if (!canDelete || deletingId !== null) return;
 
-    const confirmed = window.confirm(
-      `Sigur dorești să ștergi telegrama "${telegram.title}"?\n\nAceastă acțiune nu poate fi anulată.`,
-    );
-
-    if (!confirmed) return;
+    const result = await Swal.fire({
+      title: "Ștergi telegrama?",
+      text: `„${telegram.title}” va fi ștearsă definitiv.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Da, șterge",
+      cancelButtonText: "Anulează",
+      confirmButtonColor: "#c0394a",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
 
     setDeletingId(telegram.id);
 
@@ -314,6 +327,7 @@ function Telegrame() {
         current.filter((item) => item.id !== telegram.id),
       );
 
+      toast.success("Telegrama a fost ștearsă.");
       if (galleryTelegram?.id === telegram.id) {
         setGalleryTelegram(null);
       }
@@ -330,14 +344,14 @@ function Telegrame() {
 
   if (loading) {
     return (
-      <div className="telegrame-page">
+      <div className="telegrame-page telegrame-modern">
         <div className="telegram-loading">Se încarcă telegramele...</div>
       </div>
     );
   }
 
   return (
-    <div className="telegrame-page">
+    <div className="telegrame-page telegrame-modern">
       {/* ANTET */}
 
       <div className="telegrame-header">
@@ -362,7 +376,15 @@ function Telegrame() {
                 }
               }}
             >
-              {showForm ? "Închide formularul" : "+ Adaugă telegramă"}
+              {showForm ? (
+                <>
+                  <X size={17} /> Închide formularul
+                </>
+              ) : (
+                <>
+                  <Plus size={17} /> Adaugă telegramă
+                </>
+              )}
             </button>
           </div>
         )}
@@ -376,111 +398,130 @@ function Telegrame() {
 
       {/* FORMULAR ADĂUGARE */}
 
-      {showForm && canEdit && (
-        <form className="telegram-form" onSubmit={handleSubmit}>
-          <div className="telegram-form-header">
-            <h2>Adaugă telegramă</h2>
+      <AnimatePresence initial={false}>
+        {showForm && canEdit && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22 }}
+            style={{ overflow: "hidden" }}
+          >
+            <form className="telegram-form" onSubmit={handleSubmit}>
+              <div className="telegram-form-header">
+                <h2>Adaugă telegramă</h2>
 
-            <button
-              type="button"
-              className="telegram-form-close"
-              onClick={resetForm}
-              disabled={saving}
-              aria-label="Închide formularul"
-            >
-              ×
-            </button>
-          </div>
+                <button
+                  type="button"
+                  className="telegram-form-close"
+                  onClick={resetForm}
+                  disabled={saving}
+                  aria-label="Închide formularul"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-          <div className="telegram-form-body">
-            <div className="telegram-form-group">
-              <label htmlFor="telegram-number">Număr telegramă</label>
+              <div className="telegram-form-body">
+                <div className="telegram-form-group">
+                  <label htmlFor="telegram-number">Număr telegramă</label>
 
-              <input
-                id="telegram-number"
-                type="text"
-                placeholder="Ex: 125/2026"
-                value={formData.number}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
+                  <input
+                    id="telegram-number"
+                    type="text"
+                    placeholder="Ex: 125/2026"
+                    value={formData.number}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
 
-                    number: e.target.value,
-                  })
-                }
-              />
-            </div>
+                        number: e.target.value,
+                      })
+                    }
+                  />
+                </div>
 
-            <div className="telegram-form-group">
-              <label htmlFor="telegram-date">Data telegramei</label>
+                <div className="telegram-form-group">
+                  <label htmlFor="telegram-date">Data telegramei</label>
 
-              <input
-                id="telegram-date"
-                type="date"
-                value={formData.telegramDate}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
+                  <input
+                    id="telegram-date"
+                    type="date"
+                    value={formData.telegramDate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
 
-                    telegramDate: e.target.value,
-                  })
-                }
-              />
-            </div>
+                        telegramDate: e.target.value,
+                      })
+                    }
+                  />
+                </div>
 
-            <div className="telegram-form-group telegram-form-full">
-              <label htmlFor="telegram-title">Denumirea telegramei</label>
+                <div className="telegram-form-group telegram-form-full">
+                  <label htmlFor="telegram-title">Denumirea telegramei</label>
 
-              <input
-                id="telegram-title"
-                type="text"
-                required
-                placeholder="Introduceți denumirea telegramei"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
+                  <input
+                    id="telegram-title"
+                    type="text"
+                    required
+                    placeholder="Introduceți denumirea telegramei"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
 
-                    title: e.target.value,
-                  })
-                }
-              />
-            </div>
+                        title: e.target.value,
+                      })
+                    }
+                  />
+                </div>
 
-            <div className="telegram-form-group telegram-form-full">
-              <label>Conținutul telegramei</label>
+                <div className="telegram-form-group telegram-form-full">
+                  <label>Conținutul telegramei</label>
 
-              <DocumentUploader
-                files={selectedFiles}
-                onFilesChange={setSelectedFiles}
-                linkUrl={linkUrl}
-                onLinkChange={setLinkUrl}
-                disabled={saving}
-                onError={setError}
-              />
-            </div>
-          </div>
+                  <DocumentUploader
+                    files={selectedFiles}
+                    onFilesChange={setSelectedFiles}
+                    linkUrl={linkUrl}
+                    onLinkChange={setLinkUrl}
+                    disabled={saving}
+                    onError={setError}
+                  />
+                </div>
+              </div>
 
-          <div className="telegram-form-actions">
-            <button
-              type="button"
-              className="telegram-cancel-button"
-              onClick={resetForm}
-              disabled={saving}
-            >
-              Anulează
-            </button>
+              <div className="telegram-form-actions">
+                <button
+                  type="button"
+                  className="telegram-cancel-button"
+                  onClick={resetForm}
+                  disabled={saving}
+                >
+                  Anulează
+                </button>
 
-            <button
-              type="submit"
-              className="telegram-save-button"
-              disabled={saving}
-            >
-              {saving ? "Se salvează..." : "Salvează telegrama"}
-            </button>
-          </div>
-        </form>
-      )}
+                <button
+                  type="submit"
+                  className="telegram-save-button"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <LoaderCircle className="telegram-spin" size={17} /> Se
+                      salvează...
+                    </>
+                  ) : (
+                    <>
+                      <FileText size={17} /> Salvează telegrama
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* TABEL TELEGRAME */}
 
@@ -518,7 +559,7 @@ function Telegrame() {
 
                   <td data-label="Număr">{telegram.number || "—"}</td>
 
-                  <td>
+                  <td data-label="Titlu" className="telegram-title-cell">
                     <button
                       type="button"
                       className="telegram-title-link"
@@ -532,7 +573,7 @@ function Telegrame() {
                     </button>
                   </td>
 
-                  <td>
+                  <td data-label="Data">
                     {telegram.telegram_date
                       ? new Date(telegram.telegram_date).toLocaleDateString(
                           "ro-RO",
@@ -540,7 +581,7 @@ function Telegrame() {
                       : "—"}
                   </td>
 
-                  <td>
+                  <td data-label="Creat de">
                     {telegram.created_by_name ||
                       telegram.created_by_username ||
                       "—"}
@@ -587,7 +628,7 @@ function Telegrame() {
         </div>
       )}
 
-      {/* GALERIE FOTO */}
+     {/* GALERIE FOTO */}
 
       {galleryTelegram && (
         <TelegramGallery

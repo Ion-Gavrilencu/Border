@@ -1,6 +1,44 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Toaster, toast } from "sonner";
+import Swal from "sweetalert2";
+import {
+  Plus,
+  X,
+  Search,
+  Users,
+  UserPlus,
+  Mail,
+  Trash2,
+  RefreshCw,
+  LoaderCircle,
+} from "lucide-react";
+
 import api from "../services/api";
 import "./Administrare.css";
+
+const emptyUser = {
+  username: "",
+  fullName: "",
+  email: "",
+  role: "USER",
+};
+
+const confirmDialog = (options) =>
+  Swal.fire({
+    background: "#ffffff",
+    color: "#17324d",
+    confirmButtonColor: "#174d79",
+    cancelButtonColor: "#e9eef5",
+    showCancelButton: true,
+    reverseButtons: true,
+    buttonsStyling: true,
+    customClass: {
+      popup: "border-admin-dialog",
+      cancelButton: "border-admin-dialog-cancel",
+    },
+    ...options,
+  });
 
 function Administrare() {
   const [users, setUsers] = useState([]);
@@ -10,32 +48,24 @@ function Administrare() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
-  const [createError, setCreateError] = useState("");
-  const [createSuccess, setCreateSuccess] = useState("");
+  const [newUser, setNewUser] = useState({ ...emptyUser });
 
-  const [newUser, setNewUser] = useState({
-    username: "",
-    fullName: "",
-    email: "",
-    role: "USER",
-  });
-
-  const loadUsers = async () => {
+  const loadUsers = async (showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       setError("");
 
       const response = await api.get("/users");
+      setUsers(response.data.users || []);
+    } catch (err) {
+      console.error("GET USERS ERROR:", err);
+      const message =
+        err.response?.data?.message || "Nu s-au putut încărca utilizatorii.";
 
-      setUsers(response.data.users);
-    } catch (error) {
-      console.error("Eroare utilizatori:", error);
-
-      setError(
-        error.response?.data?.message || "Nu s-au putut încărca utilizatorii.",
-      );
+      setError(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
@@ -43,36 +73,39 @@ function Administrare() {
     loadUsers();
   }, []);
 
-  const handleCreateUser = async (e) => {
-    e.preventDefault();
+  const handleCreateUser = async (event) => {
+    event.preventDefault();
+
+    if (creatingUser) return;
 
     try {
       setCreatingUser(true);
-      setCreateError("");
-      setCreateSuccess("");
 
-      await api.post("/users", {
+      const response = await api.post("/users", {
         username: newUser.username.trim(),
         fullName: newUser.fullName.trim(),
         email: newUser.email.trim(),
         role: newUser.role,
       });
 
-      setNewUser({
-        username: "",
-        fullName: "",
-        email: "",
-        role: "USER",
-      });
-
+      setNewUser({ ...emptyUser });
       setShowCreateForm(false);
-      setCreateSuccess("Contul a fost creat cu succes.");
 
-      await loadUsers();
-    } catch (error) {
-      setCreateError(
-        error.response?.data?.message || "Contul nu a putut fi creat.",
+      toast.success(response.data.message || "Utilizatorul a fost creat.");
+
+      await loadUsers(false);
+    } catch (err) {
+      console.error("CREATE USER ERROR:", err);
+      toast.error(
+        err.response?.data?.message || "Contul nu a putut fi creat.",
+        { duration: 6000 },
       );
+
+      // Dacă backendul a salvat contul, dar e-mailul
+      // a eșuat, actualizăm lista fără a crea duplicate.
+      if (err.response?.status === 502) {
+        await loadUsers(false);
+      }
     } finally {
       setCreatingUser(false);
     }
@@ -86,21 +119,34 @@ function Administrare() {
         role: newRole,
       });
 
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.id === userId ? response.data.user : user,
-        ),
+      setUsers((current) =>
+        current.map((user) => (user.id === userId ? response.data.user : user)),
       );
-    } catch (error) {
-      console.error("Eroare modificare rol:", error);
 
-      alert(error.response?.data?.message || "Rolul nu a putut fi modificat.");
+      toast.success("Rolul utilizatorului a fost actualizat.");
+    } catch (err) {
+      console.error("UPDATE ROLE ERROR:", err);
+      toast.error(
+        err.response?.data?.message || "Rolul nu a putut fi modificat.",
+      );
     } finally {
       setUpdatingUserId(null);
     }
   };
 
   const handleStatusChange = async (userId, currentStatus) => {
+    const action = currentStatus ? "dezactivezi" : "activezi";
+
+    const confirmation = await confirmDialog({
+      title: "Confirmare status",
+      text: `Sigur dorești să ${action} acest utilizator?`,
+      icon: "question",
+      confirmButtonText: "Confirmă",
+      cancelButtonText: "Anulează",
+    });
+
+    if (!confirmation.isConfirmed) return;
+
     try {
       setUpdatingUserId(userId);
 
@@ -108,17 +154,17 @@ function Administrare() {
         isActive: !currentStatus,
       });
 
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.id === userId ? response.data.user : user,
-        ),
+      setUsers((current) =>
+        current.map((user) => (user.id === userId ? response.data.user : user)),
       );
-    } catch (error) {
-      console.error("Eroare modificare status:", error);
 
-      alert(
-        error.response?.data?.message ||
-          "Statusul utilizatorului nu a putut fi modificat.",
+      toast.success(
+        currentStatus ? "Contul a fost dezactivat." : "Contul a fost activat.",
+      );
+    } catch (err) {
+      console.error("UPDATE STATUS ERROR:", err);
+      toast.error(
+        err.response?.data?.message || "Statusul nu a putut fi modificat.",
       );
     } finally {
       setUpdatingUserId(null);
@@ -126,27 +172,28 @@ function Administrare() {
   };
 
   const handleResendActivation = async (userId) => {
-    const confirmed = window.confirm(
-      "Dorești să trimiți un nou link de activare pe e-mailul acestui utilizator?",
-    );
+    const confirmation = await confirmDialog({
+      title: "Retrimite activarea?",
+      text: "Va fi generat un link nou, iar linkul anterior nu va mai funcționa.",
+      icon: "question",
+      confirmButtonText: "Trimite e-mailul",
+      cancelButtonText: "Anulează",
+    });
 
-    if (!confirmed) return;
+    if (!confirmation.isConfirmed) return;
 
     try {
       setUpdatingUserId(userId);
 
       const response = await api.post(`/users/${userId}/resend-activation`);
 
-      alert(
-        response.data.message ||
-          "Un nou link de activare a fost trimis pe e-mail.",
+      toast.success(
+        response.data.message || "E-mailul de activare a fost trimis.",
       );
-    } catch (error) {
-      console.error("Eroare retrimitere activare:", error);
-
-      alert(
-        error.response?.data?.message ||
-          "Nu s-a putut retrimite linkul de activare.",
+    } catch (err) {
+      console.error("RESEND ACTIVATION ERROR:", err);
+      toast.error(
+        err.response?.data?.message || "Nu s-a putut retrimite activarea.",
       );
     } finally {
       setUpdatingUserId(null);
@@ -154,37 +201,41 @@ function Administrare() {
   };
 
   const handleDeleteUser = async (userId) => {
-    const confirmed = window.confirm(
-      "Ești sigur că vrei să ștergi acest utilizator?",
-    );
+    const user = users.find((item) => item.id === userId);
 
-    if (!confirmed) {
-      return;
-    }
+    const confirmation = await confirmDialog({
+      title: "Ștergi utilizatorul?",
+      text: `Contul „${user?.username || userId}” va fi șters. Această acțiune nu poate fi anulată.`,
+      icon: "warning",
+      confirmButtonText: "Da, șterge",
+      cancelButtonText: "Anulează",
+      confirmButtonColor: "#c43d46",
+    });
+
+    if (!confirmation.isConfirmed) return;
 
     try {
-      const response = await api.delete(`/users/${userId}`);
+      setUpdatingUserId(userId);
 
-      setUsers((currentUsers) =>
-        currentUsers.filter((user) => user.id !== userId),
+      await api.delete(`/users/${userId}`);
+
+      setUsers((current) => current.filter((item) => item.id !== userId));
+
+      toast.success("Utilizatorul a fost șters.");
+    } catch (err) {
+      console.error("DELETE USER ERROR:", err);
+      toast.error(
+        err.response?.data?.message || "Utilizatorul nu a putut fi șters.",
       );
-
-      console.log(response.data.message);
-    } catch (error) {
-      console.error("Eroare ștergere utilizator:", error);
-
-      alert(
-        error.response?.data?.message || "Utilizatorul nu a putut fi șters.",
-      );
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const search = searchTerm.toLowerCase().trim();
+  const search = searchTerm.toLowerCase().trim();
 
-    if (!search) {
-      return true;
-    }
+  const filteredUsers = users.filter((user) => {
+    if (!search) return true;
 
     return (
       user.username?.toLowerCase().includes(search) ||
@@ -193,31 +244,13 @@ function Administrare() {
     );
   });
 
-  if (loading) {
-    return (
-      <div className="admin-page">
-        <div className="admin-loading">
-          <div className="admin-loading-spinner"></div>
-          <span>Se încarcă utilizatorii...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="admin-page">
-        <div className="admin-error">{error}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="admin-page">
+    <div className="admin-page border-admin-modern">
+      <Toaster position="top-right" richColors closeButton duration={4000} />
+
       <div className="admin-header">
         <div>
           <h1>Administrare utilizatori</h1>
-
           <p className="admin-description">
             Gestionarea conturilor, rolurilor și drepturilor utilizatorilor
             platformei.
@@ -225,144 +258,150 @@ function Administrare() {
         </div>
 
         <div className="admin-user-count">
-          <span className="admin-user-count-label">Utilizatori</span>
-
+          <span className="admin-user-count-label">
+            <Users size={14} /> Utilizatori
+          </span>
           <strong>{users.length}</strong>
         </div>
 
         <button
           type="button"
-          className="btn btn-primary"
-          onClick={() => {
-            setShowCreateForm((current) => !current);
-            setCreateError("");
-            setCreateSuccess("");
-          }}
+          className="btn btn-primary border-admin-add-button"
+          onClick={() => setShowCreateForm((current) => !current)}
         >
-          {showCreateForm ? "Anulează" : "+ Adaugă utilizator"}
+          {showCreateForm ? <X size={17} /> : <Plus size={17} />}
+          {showCreateForm ? "Anulează" : "Adaugă utilizator"}
         </button>
       </div>
 
-      {createSuccess && (
-        <p role="status" style={{ color: "var(--success)" }}>
-          {createSuccess}
-        </p>
-      )}
-
-      {showCreateForm && (
-        <form
-          onSubmit={handleCreateUser}
-          className="card"
-          style={{
-            padding: "24px",
-            marginBottom: "24px",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Creare utilizator</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "16px",
-            }}
+      <AnimatePresence initial={false}>
+        {showCreateForm && (
+          <motion.div
+            key="create-form"
+            initial={{ opacity: 0, height: 0, y: -8 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -8 }}
+            transition={{ duration: 0.22 }}
+            style={{ overflow: "hidden" }}
           >
-            <label>
-              Nume și prenume
-              <input
-                className="form-input"
-                type="text"
-                required
-                maxLength={150}
-                value={newUser.fullName}
-                onChange={(e) =>
-                  setNewUser({
-                    ...newUser,
-                    fullName: e.target.value,
-                  })
-                }
-              />
-            </label>
-
-            <label>
-              Nume de utilizator
-              <input
-                className="form-input"
-                type="text"
-                required
-                maxLength={50}
-                autoComplete="off"
-                value={newUser.username}
-                onChange={(e) =>
-                  setNewUser({
-                    ...newUser,
-                    username: e.target.value,
-                  })
-                }
-              />
-            </label>
-
-            <label>
-              Adresă de e-mail
-              <input
-                className="form-input"
-                type="email"
-                required
-                maxLength={254}
-                value={newUser.email}
-                onChange={(e) =>
-                  setNewUser({
-                    ...newUser,
-                    email: e.target.value,
-                  })
-                }
-              />
-            </label>
-
-            <label>
-              Rol
-              <select
-                className="form-select"
-                value={newUser.role}
-                onChange={(e) =>
-                  setNewUser({
-                    ...newUser,
-                    role: e.target.value,
-                  })
-                }
-              >
-                <option value="USER">USER</option>
-                <option value="EDITOR">EDITOR</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
-            </label>
-          </div>
-
-          {createError && (
-            <p role="alert" style={{ color: "var(--danger)" }}>
-              {createError}
-            </p>
-          )}
-
-          <div style={{ marginTop: "20px" }}>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={creatingUser}
+            <form
+              className="card border-admin-create-form"
+              onSubmit={handleCreateUser}
             >
-              {creatingUser ? "Se creează..." : "Creează utilizator"}
-            </button>
-          </div>
-        </form>
-      )}
+              <div className="border-admin-form-heading">
+                <UserPlus size={20} />
+                <div>
+                  <h2>Creare utilizator</h2>
+                  <p>Completează datele pentru noul cont.</p>
+                </div>
+              </div>
+
+              <div className="border-admin-form-grid">
+                <label>
+                  Nume și prenume
+                  <input
+                    className="form-input"
+                    type="text"
+                    required
+                    maxLength={150}
+                    value={newUser.fullName}
+                    onChange={(event) =>
+                      setNewUser((current) => ({
+                        ...current,
+                        fullName: event.target.value,
+                      }))
+                    }
+                    placeholder="Nume complet"
+                  />
+                </label>
+
+                <label>
+                  Nume de utilizator
+                  <input
+                    className="form-input"
+                    type="text"
+                    required
+                    maxLength={50}
+                    autoComplete="off"
+                    value={newUser.username}
+                    onChange={(event) =>
+                      setNewUser((current) => ({
+                        ...current,
+                        username: event.target.value,
+                      }))
+                    }
+                    placeholder="Username"
+                  />
+                </label>
+
+                <label>
+                  Adresă de e-mail
+                  <input
+                    className="form-input"
+                    type="email"
+                    required
+                    maxLength={254}
+                    value={newUser.email}
+                    onChange={(event) =>
+                      setNewUser((current) => ({
+                        ...current,
+                        email: event.target.value,
+                      }))
+                    }
+                    placeholder="exemplu@email.com"
+                  />
+                </label>
+
+                <label>
+                  Rol
+                  <select
+                    className="form-select"
+                    value={newUser.role}
+                    onChange={(event) =>
+                      setNewUser((current) => ({
+                        ...current,
+                        role: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="USER">USER</option>
+                    <option value="EDITOR">EDITOR</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary border-admin-submit"
+                disabled={creatingUser}
+              >
+                {creatingUser ? (
+                  <>
+                    <LoaderCircle size={17} className="border-admin-spin" />
+                    Se creează...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={17} />
+                    Creează utilizator
+                  </>
+                )}
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="admin-toolbar">
-        <div className="admin-search">
+        <div className="admin-search border-admin-search">
+          <Search size={18} aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label="Caută utilizatori"
             placeholder="Caută după utilizator, nume sau email..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
 
@@ -371,139 +410,142 @@ function Administrare() {
         </div>
       </div>
 
-      <div className="admin-table-wrapper">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Utilizator</th>
-              <th>Nume complet</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th>Status</th>
-              <th>Acțiuni</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredUsers.length === 0 ? (
-              <tr className="admin-empty-row">
-                <td colSpan={7} className="admin-no-results">
-                  Nu au fost găsiți utilizatori.
-                </td>
+      {loading ? (
+        <div className="admin-loading">
+          <LoaderCircle size={28} className="border-admin-spin" />
+          <span>Se încarcă utilizatorii...</span>
+        </div>
+      ) : error ? (
+        <div className="admin-error">
+          <p>{error}</p>
+          <button type="button" className="btn" onClick={() => loadUsers()}>
+            <RefreshCw size={16} /> Reîncearcă
+          </button>
+        </div>
+      ) : (
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Utilizator</th>
+                <th>Nume complet</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Status</th>
+                <th>Acțiuni</th>
               </tr>
-            ) : (
-              filteredUsers.map((user) => (
-                <tr key={user.id} className="admin-user-row">
-                  <td data-label="ID">
-                    <span className="admin-id">#{user.id}</span>
-                  </td>
+            </thead>
 
-                  <td data-label="Utilizator">
-                    <span className="admin-username">{user.username}</span>
-                  </td>
-
-                  <td data-label="Nume complet">{user.full_name || "—"}</td>
-
-                  <td data-label="Email" className="admin-email-cell">
-                    {user.email || "—"}
-                  </td>
-
-                  <td data-label="Rol">
-                    <div className="admin-role-control">
-                      <select
-                        value={user.role}
-                        disabled={updatingUserId === user.id}
-                        onChange={(e) =>
-                          handleRoleChange(user.id, e.target.value)
-                        }
-                        aria-label={`Rolul utilizatorului ${user.username}`}
-                      >
-                        <option value="USER">USER</option>
-                        <option value="EDITOR">EDITOR</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-
-                      {updatingUserId === user.id && (
-                        <span className="admin-saving">Se salvează...</span>
-                      )}
-                    </div>
-                  </td>
-
-                  <td data-label="Status">
-                    <div className="admin-status-cell">
-                      <span
-                        className={`admin-status ${
-                          user.is_active
-                            ? "admin-status-active"
-                            : "admin-status-inactive"
-                        }`}
-                      >
-                        <span className="admin-status-dot" />
-                        {user.is_active ? "Activ" : "Inactiv"}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="admin-status-button"
-                        disabled={updatingUserId === user.id}
-                        onClick={() =>
-                          handleStatusChange(user.id, user.is_active)
-                        }
-                      >
-                        {user.is_active ? "Dezactivează" : "Activează"}
-                      </button>
-                    </div>
-                  </td>
-
-                  <td data-label="Acțiuni" className="admin-actions-cell">
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: "10px",
-                      }}
-                    >
-                      {!user.is_active && (
-                        <button
-                          type="button"
-                          className="btn"
-                          disabled={updatingUserId === user.id}
-                          onClick={() => handleResendActivation(user.id)}
-                          style={{
-                            backgroundColor: "#eaf3ff",
-                            border: "1px solid #b9d7ff",
-                            borderRadius: "8px",
-                            padding: "9px 12px",
-                            color: "#0758a8",
-                            fontWeight: 600,
-                            cursor:
-                              updatingUserId === user.id ? "wait" : "pointer",
-                          }}
-                        >
-                          {updatingUserId === user.id
-                            ? "Se trimite..."
-                            : "Retrimite activarea"}
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        className="admin-delete"
-                        disabled={updatingUserId === user.id}
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        Șterge
-                      </button>
-                    </div>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr className="admin-empty-row">
+                  <td colSpan={7} className="admin-no-results">
+                    Nu au fost găsiți utilizatori.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                filteredUsers.map((user) => {
+                  const busy = updatingUserId === user.id;
+
+                  return (
+                    <tr key={user.id} className="admin-user-row">
+                      <td data-label="ID">
+                        <span className="admin-id">#{user.id}</span>
+                      </td>
+
+                      <td data-label="Utilizator">
+                        <span className="admin-username">{user.username}</span>
+                      </td>
+
+                      <td data-label="Nume complet">{user.full_name || "—"}</td>
+
+                      <td data-label="Email" className="admin-email-cell">
+                        {user.email || "—"}
+                      </td>
+
+                      <td data-label="Rol">
+                        <div className="admin-role-control">
+                          <select
+                            value={user.role}
+                            disabled={busy}
+                            aria-label={`Rolul utilizatorului ${user.username}`}
+                            onChange={(event) =>
+                              handleRoleChange(user.id, event.target.value)
+                            }
+                          >
+                            <option value="USER">USER</option>
+                            <option value="EDITOR">EDITOR</option>
+                            <option value="ADMIN">ADMIN</option>
+                          </select>
+
+                          {busy && (
+                            <span className="admin-saving">
+                              Se procesează...
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td data-label="Status">
+                        <div className="admin-status-cell">
+                          <span
+                            className={`admin-status ${
+                              user.is_active
+                                ? "admin-status-active"
+                                : "admin-status-inactive"
+                            }`}
+                          >
+                            <span className="admin-status-dot" />
+                            {user.is_active ? "Activ" : "Inactiv"}
+                          </span>
+
+                          <button
+                            type="button"
+                            className="admin-status-button"
+                            disabled={busy}
+                            onClick={() =>
+                              handleStatusChange(user.id, user.is_active)
+                            }
+                          >
+                            {user.is_active ? "Dezactivează" : "Activează"}
+                          </button>
+                        </div>
+                      </td>
+
+                      <td data-label="Acțiuni" className="admin-actions-cell">
+                        <div className="border-admin-actions">
+                          {!user.is_active && (
+                            <button
+                              type="button"
+                              className="border-admin-resend"
+                              disabled={busy}
+                              onClick={() => handleResendActivation(user.id)}
+                            >
+                              <Mail size={15} />
+                              Retrimite activarea
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            className="admin-delete"
+                            disabled={busy}
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <Trash2 size={15} />
+                            Șterge
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

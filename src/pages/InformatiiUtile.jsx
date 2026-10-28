@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 import {
   BookOpen,
@@ -31,6 +34,7 @@ import { useAuth } from "../context/AuthContext";
 import "./InformatiiUtile.css";
 
 import DocumentUploader from "../components/DocumentUploader";
+
 import TelegramGallery from "../components/TelegramGallery";
 
 const getFileCategory = (file) => {
@@ -91,9 +95,13 @@ function InformatiiUtile() {
   const [category, setCategory] = useState("Toate");
 
   const [sort, setSort] = useState("recent");
+
   const [viewer, setViewer] = useState(null);
+
   const [gallery, setGallery] = useState(null);
+
   const [openingId, setOpeningId] = useState(null);
+
   const [openingCardId, setOpeningCardId] = useState(null);
 
   const canEdit = user?.role === "EDITOR" || user?.role === "ADMIN";
@@ -104,6 +112,8 @@ function InformatiiUtile() {
     setMessage(text);
 
     setMessageType(type);
+    if (type === "error") toast.error(text);
+    else toast.success(text);
   };
 
   const loadInformatii = useCallback(async () => {
@@ -170,6 +180,7 @@ function InformatiiUtile() {
   }, [informatii, category, sort]);
 
   // Fișierele sunt private: le cerem cu tokenul Axios și le deschidem ca Blob.
+
   const openMaterial = async (attachment) => {
     if (
       attachment.attachment_type === "file" &&
@@ -178,47 +189,68 @@ function InformatiiUtile() {
     ) {
       if (viewer?.item) {
         setGallery({ item: viewer.item, initialAttachmentId: attachment.id });
+
         setViewer(null);
       }
+
       return;
     }
+
     if (attachment.attachment_type === "link") {
       try {
         const target = new URL(attachment.url);
+
         if (!["https:", "http:"].includes(target.protocol)) throw new Error();
+
         window.open(target.href, "_blank", "noopener,noreferrer");
       } catch {
         notify("Linkul salvat nu este valid.", "error");
       }
+
       return;
     }
 
     // Fila se creează la clic, înainte de așteptarea răspunsului API.
+
     const tab = window.open("", "_blank");
+
     try {
       setOpeningId(attachment.id);
+
       const response = await api.get(`/attachments/file/${attachment.id}`, {
         responseType: "blob",
       });
+
       const blobUrl = URL.createObjectURL(response.data);
+
       if (tab) {
         tab.location.replace(blobUrl);
       } else {
         const link = document.createElement("a");
+
         link.href = blobUrl;
+
         link.download =
           attachment.original_name || attachment.name || "document";
+
         document.body.appendChild(link);
+
         link.click();
+
         link.remove();
       }
+
       // Nu revocăm imediat: browserul are nevoie de URL pentru vizualizare.
+
       setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
     } catch (error) {
       tab?.close();
+
       console.error("OPEN ATTACHMENT:", error);
+
       notify(
         error.response?.data?.message || "Materialul nu a putut fi deschis.",
+
         "error",
       );
     } finally {
@@ -226,112 +258,121 @@ function InformatiiUtile() {
     }
   };
 
- 
-const openUsefulInfo = async (item) => {
-  if (openingCardId !== null) return;
+  const openUsefulInfo = async (item) => {
+    if (openingCardId !== null) return;
 
-  // Deschidem anticipat fila pentru linkuri și documente.
-  const preopenedTab = window.open("", "_blank");
+    // Deschidem anticipat fila pentru linkuri și documente.
 
-  try {
-    setOpeningCardId(item.id);
+    const preopenedTab = window.open("", "_blank");
 
-    const response = await api.get(
-      `/attachments/informatii_utile/${item.id}`
-    );
+    try {
+      setOpeningCardId(item.id);
 
-    const attachments = Array.isArray(response.data?.attachments)
-      ? response.data.attachments
-      : [];
+      const response = await api.get(
+        `/attachments/informatii_utile/${item.id}`,
+      );
 
-    const images = attachments.filter(
-      (attachment) =>
-        attachment.attachment_type === "file" &&
-        (attachment.file_category === "image" ||
-          attachment.mime_type?.startsWith("image/"))
-    );
+      const attachments = Array.isArray(response.data?.attachments)
+        ? response.data.attachments
+        : [];
 
-    // Dacă toate materialele sunt fotografii,
-    // deschidem direct galeria, indiferent de numărul lor.
-    if (
-      attachments.length > 0 &&
-      images.length === attachments.length
-    ) {
-      preopenedTab?.close();
-      setViewer(null);
-      setGallery({ item, initialAttachmentId: images[0].id });
-      return;
-    }
+      const images = attachments.filter(
+        (attachment) =>
+          attachment.attachment_type === "file" &&
+          (attachment.file_category === "image" ||
+            attachment.mime_type?.startsWith("image/")),
+      );
 
-    // Un singur material: îl deschidem direct.
-    if (attachments.length === 1) {
-      const attachment = attachments[0];
+      // Dacă toate materialele sunt fotografii,
 
-      if (attachment.attachment_type === "link") {
-        const url = new URL(attachment.url);
+      // deschidem direct galeria, indiferent de numărul lor.
 
-        if (!["http:", "https:"].includes(url.protocol)) {
-          throw new Error("Link invalid.");
-        }
+      if (attachments.length > 0 && images.length === attachments.length) {
+        preopenedTab?.close();
 
-        if (preopenedTab) {
-          preopenedTab.location.replace(url.href);
-        } else {
-          window.open(url.href, "_blank", "noopener,noreferrer");
-        }
+        setViewer(null);
+
+        setGallery({ item, initialAttachmentId: images[0].id });
 
         return;
       }
 
-      const fileResponse = await api.get(
-        `/attachments/file/${attachment.id}`,
-        { responseType: "blob" }
-      );
+      // Un singur material: îl deschidem direct.
 
-      const blobUrl = URL.createObjectURL(fileResponse.data);
+      if (attachments.length === 1) {
+        const attachment = attachments[0];
 
-      if (preopenedTab) {
-        preopenedTab.location.replace(blobUrl);
-      } else {
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download =
-          attachment.original_name ||
-          attachment.name ||
-          "document";
+        if (attachment.attachment_type === "link") {
+          const url = new URL(attachment.url);
 
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+          if (!["http:", "https:"].includes(url.protocol)) {
+            throw new Error("Link invalid.");
+          }
+
+          if (preopenedTab) {
+            preopenedTab.location.replace(url.href);
+          } else {
+            window.open(url.href, "_blank", "noopener,noreferrer");
+          }
+
+          return;
+        }
+
+        const fileResponse = await api.get(
+          `/attachments/file/${attachment.id}`,
+
+          { responseType: "blob" },
+        );
+
+        const blobUrl = URL.createObjectURL(fileResponse.data);
+
+        if (preopenedTab) {
+          preopenedTab.location.replace(blobUrl);
+        } else {
+          const link = document.createElement("a");
+
+          link.href = blobUrl;
+
+          link.download =
+            attachment.original_name || attachment.name || "document";
+
+          document.body.appendChild(link);
+
+          link.click();
+
+          link.remove();
+        }
+
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 120000);
+
+        return;
       }
 
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 120000);
+      // Materiale mixte sau informație numai text.
 
-      return;
+      preopenedTab?.close();
+
+      setGallery(null);
+
+      setViewer({ item, attachments });
+    } catch (error) {
+      preopenedTab?.close();
+
+      console.error("OPEN USEFUL INFO:", error);
+
+      notify(
+        error.response?.data?.message ||
+          error.message ||
+          "Nu s-a putut deschide materialul.",
+
+        "error",
+      );
+    } finally {
+      setOpeningCardId(null);
     }
-
-    // Materiale mixte sau informație numai text.
-    preopenedTab?.close();
-    setGallery(null);
-    setViewer({ item, attachments });
-  } catch (error) {
-    preopenedTab?.close();
-
-    console.error("OPEN USEFUL INFO:", error);
-
-    notify(
-      error.response?.data?.message ||
-        error.message ||
-        "Nu s-a putut deschide materialul.",
-      "error"
-    );
-  } finally {
-    setOpeningCardId(null);
-  }
-};
-
+  };
 
   const resetForm = () => {
     setFormData({ ...emptyForm });
@@ -371,7 +412,7 @@ const openUsefulInfo = async (item) => {
         if (!["https:", "http:"].includes(url.protocol)) throw new Error();
       } catch {
         notify(
-          "Introdu un link valid, care începe cu https:// sau http://.",
+          "Introdu un link valid, care începe cu https\:// sau http\://.",
 
           "error",
         );
@@ -476,7 +517,18 @@ const openUsefulInfo = async (item) => {
   const handleDelete = async (item) => {
     if (!canDelete || deletingId !== null) return;
 
-    if (!window.confirm(`Sigur dorești să ștergi „${item.title}”?`)) return;
+    const result = await Swal.fire({
+      title: "Ștergi informația?",
+      text: `„${item.title}” va fi eliminată definitiv.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Da, șterge",
+      cancelButtonText: "Anulează",
+      confirmButtonColor: "#c43d52",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
 
     try {
       setDeletingId(item.id);
@@ -504,7 +556,7 @@ const openUsefulInfo = async (item) => {
   };
 
   return (
-    <main className="informatii-page">
+    <main className="informatii-page informatii-modern">
       <header className="informatii-header">
         <div className="informatii-header-copy">
           <div className="informatii-eyebrow">
@@ -556,130 +608,139 @@ const openUsefulInfo = async (item) => {
         </div>
       )}
 
-      {showForm && canEdit && (
-        <form className="informatii-form" onSubmit={handleSubmit}>
-          <div className="informatii-form-heading">
-            <div className="informatii-form-icon">
-              <Plus size={20} />
-            </div>
+      <AnimatePresence initial={false}>
+        {showForm && canEdit && (
+          <motion.form
+            className="informatii-form"
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0, y: -12, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -12, height: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="informatii-form-heading">
+              <div className="informatii-form-icon">
+                <Plus size={20} />
+              </div>
 
-            <div>
-              <h2>Informație nouă</h2>
+              <div>
+                <h2>Informație nouă</h2>
 
-              <p>
-                Completează datele pentru a publica un material în platformă.
-              </p>
-            </div>
-          </div>
-
-          <div className="informatii-form-grid">
-            <div className="informatii-form-group informatii-form-full">
-              <label htmlFor="info-title">
-                Titlu <span>*</span>
-              </label>
-
-              <input
-                id="info-title"
-                name="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((v) => ({ ...v, title: e.target.value }))
-                }
-                placeholder="Ex.: Ghid pentru verificarea documentelor"
-                required
-                disabled={saving}
-              />
-            </div>
-
-            <div className="informatii-form-group informatii-form-full">
-              <label htmlFor="info-category">Categorie</label>
-
-              <input
-                id="info-category"
-                name="category"
-                list="informatii-category-suggestions"
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData((v) => ({ ...v, category: e.target.value }))
-                }
-                placeholder="Ex.: Proceduri, Ghiduri, Contacte"
-                disabled={saving}
-              />
-
-              <datalist id="informatii-category-suggestions">
-                {categories
-
-                  .filter((v) => v !== "Toate")
-
-                  .map((v) => (
-                    <option key={v} value={v} />
-                  ))}
-              </datalist>
-            </div>
-
-            <div className="informatii-form-group informatii-form-full">
-              <label htmlFor="info-content">
-                Conținut (opțional dacă atașezi materiale)
-              </label>
-
-              <textarea
-                id="info-content"
-                name="content"
-                rows={7}
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData((v) => ({ ...v, content: e.target.value }))
-                }
-                placeholder="Scrie aici informațiile care trebuie să fie disponibile colegilor..."
-                disabled={saving}
-              />
-            </div>
-
-            <div className="informatii-form-group informatii-form-full">
-              <div className="informatii-attachments">
-                <div className="informatii-attachments-heading">
-                  <h3>Documente și materiale atașate</h3>
-
-                  <p>
-                    Fotografii, videoclipuri, documente Word, PDF și linkuri.
-                  </p>
-                </div>
-
-                <DocumentUploader
-                  files={selectedFiles}
-                  onFilesChange={setSelectedFiles}
-                  linkUrl={linkUrl}
-                  onLinkChange={setLinkUrl}
-                  disabled={saving}
-                  allowMixed
-                  onError={(error) => {
-                    if (error) notify(error, "error");
-                  }}
-                />
+                <p>
+                  Completează datele pentru a publica un material în platformă.
+                </p>
               </div>
             </div>
-          </div>
 
-          <div className="informatii-form-actions">
-            <button
-              type="button"
-              className="informatii-cancel-button"
-              onClick={resetForm}
-              disabled={saving}
-            >
-              Anulează
-            </button>
+            <div className="informatii-form-grid">
+              <div className="informatii-form-group informatii-form-full">
+                <label htmlFor="info-title">
+                  Titlu <span>*</span>
+                </label>
 
-            <button
-              type="submit"
-              className="informatii-save-button"
-              disabled={saving}
-            >
-              {saving ? "Se salvează..." : "Publică informația"}
-            </button>
-          </div>
-        </form>
-      )}
+                <input
+                  id="info-title"
+                  name="title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, title: e.target.value }))
+                  }
+                  placeholder="Ex.: Ghid pentru verificarea documentelor"
+                  required
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="informatii-form-group informatii-form-full">
+                <label htmlFor="info-category">Categorie</label>
+
+                <input
+                  id="info-category"
+                  name="category"
+                  list="informatii-category-suggestions"
+                  value={formData.category}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, category: e.target.value }))
+                  }
+                  placeholder="Ex.: Proceduri, Ghiduri, Contacte"
+                  disabled={saving}
+                />
+
+                <datalist id="informatii-category-suggestions">
+                  {categories
+
+                    .filter((v) => v !== "Toate")
+
+                    .map((v) => (
+                      <option key={v} value={v} />
+                    ))}
+                </datalist>
+              </div>
+
+              <div className="informatii-form-group informatii-form-full">
+                <label htmlFor="info-content">
+                  Conținut (opțional dacă atașezi materiale)
+                </label>
+
+                <textarea
+                  id="info-content"
+                  name="content"
+                  rows={7}
+                  value={formData.content}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, content: e.target.value }))
+                  }
+                  placeholder="Scrie aici informațiile care trebuie să fie disponibile colegilor..."
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="informatii-form-group informatii-form-full">
+                <div className="informatii-attachments">
+                  <div className="informatii-attachments-heading">
+                    <h3>Documente și materiale atașate</h3>
+
+                    <p>
+                      Fotografii, videoclipuri, documente Word, PDF și linkuri.
+                    </p>
+                  </div>
+
+                  <DocumentUploader
+                    files={selectedFiles}
+                    onFilesChange={setSelectedFiles}
+                    linkUrl={linkUrl}
+                    onLinkChange={setLinkUrl}
+                    disabled={saving}
+                    allowMixed
+                    onError={(error) => {
+                      if (error) notify(error, "error");
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="informatii-form-actions">
+              <button
+                type="button"
+                className="informatii-cancel-button"
+                onClick={resetForm}
+                disabled={saving}
+              >
+                Anulează
+              </button>
+
+              <button
+                type="submit"
+                className="informatii-save-button"
+                disabled={saving}
+              >
+                {saving ? "Se salvează..." : "Publică informația"}
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
 
       <section className="informatii-toolbar" aria-label="Filtrare și ordonare">
         <div className="informatii-select-wrap">
@@ -903,12 +964,14 @@ const openUsefulInfo = async (item) => {
             <div className="informatii-viewer-header">
               <div>
                 <h2>{viewer.item.title}</h2>
+
                 <p>
                   {viewer.attachments.length
                     ? "Selectează materialul pe care vrei să îl deschizi."
                     : "Conținutul informației"}
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={() => setViewer(null)}
@@ -917,11 +980,14 @@ const openUsefulInfo = async (item) => {
                 <X size={20} />
               </button>
             </div>
+
             {viewer.attachments.length ? (
               <div className="informatii-viewer-list">
                 {viewer.attachments.map((attachment) => {
                   const isLink = attachment.attachment_type === "link";
+
                   const category = attachment.file_category;
+
                   return (
                     <button
                       type="button"
@@ -939,11 +1005,13 @@ const openUsefulInfo = async (item) => {
                       ) : (
                         <FileText size={21} />
                       )}
+
                       <span>
                         {attachment.original_name ||
                           attachment.name ||
                           "Material atașat"}
                       </span>
+
                       <ExternalLink size={17} />
                     </button>
                   );

@@ -1086,3 +1086,261 @@
     grid-column: 2;
   }
 }
+
+
+/* ========================================
+   BORDER - ADMINISTRARE MODERNĂ
+======================================== */
+
+.border-admin-modern {
+  --admin-accent: #174d79;
+}
+
+/* Header */
+
+.border-admin-modern .admin-header h1 {
+  font-weight: 750;
+  letter-spacing: -0.7px;
+}
+
+.border-admin-modern .admin-user-count {
+  border-radius: 14px;
+  box-shadow: 0 5px 18px rgba(20, 48, 75, 0.06);
+}
+
+.border-admin-modern .admin-user-count-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Buton adăugare */
+
+.border-admin-add-button,
+.border-admin-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  border-radius: 11px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.border-admin-add-button:hover:not(:disabled),
+.border-admin-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 77, 121, 0.17);
+}
+
+/* Formular */
+
+.border-admin-create-form {
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #dce6f0;
+  border-radius: 16px;
+  background: var(--bg-card, #fff);
+  box-shadow: 0 10px 32px rgba(20, 48, 75, 0.07);
+}
+
+.border-admin-form-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  color: var(--admin-accent);
+}
+
+.border-admin-form-heading h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+  color: var(--text-primary);
+}
+
+.border-admin-form-heading p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.border-admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.border-admin-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.border-admin-form-grid input,
+.border-admin-form-grid select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d4dfeb;
+  border-radius: 10px;
+  background: #fff;
+  color: #17324d;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.border-admin-form-grid input:focus,
+.border-admin-form-grid select:focus {
+  outline: none;
+  border-color: #4384bd;
+  box-shadow: 0 0 0 3px rgba(67, 132, 189, 0.12);
+}
+
+/* Căutare */
+
+.border-admin-modern .border-admin-search {
+  position: relative;
+}
+
+.border-admin-search > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8193a7;
+  pointer-events: none;
+}
+
+.border-admin-modern .border-admin-search input {
+  padding-left: 43px;
+  border-radius: 11px;
+}
+
+/* Tabel */
+
+.border-admin-modern .admin-table-wrapper {
+  border-radius: 15px;
+}
+
+.border-admin-modern .admin-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.border-admin-modern .admin-table tbody tr:hover {
+  background-color: #f5f9fd;
+}
+
+/* Butoane acțiuni */
+
+.border-admin-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.border-admin-resend,
+.border-admin-modern .admin-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.border-admin-resend {
+  border: 1px solid #c6dcf5;
+  background: #edf5ff;
+  color: #155a99;
+}
+
+.border-admin-resend:hover:not(:disabled) {
+  background: #deedff;
+  border-color: #9cc5ef;
+  transform: translateY(-1px);
+}
+
+.border-admin-modern .admin-delete:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.border-admin-resend:disabled,
+.border-admin-modern .admin-delete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Dialog SweetAlert2 */
+
+.border-admin-dialog {
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 22px 70px rgba(10, 30, 55, 0.18);
+}
+
+.border-admin-dialog-cancel {
+  color: #29455e !important;
+}
+
+/* Încărcare */
+
+.border-admin-spin {
+  animation: border-admin-rotate 0.85s linear infinite;
+}
+
+@keyframes border-admin-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+
+@media (max-width: 700px) {
+  .border-admin-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .border-admin-create-form {
+    padding: 18px;
+  }
+
+  .border-admin-actions {
+    justify-content: flex-end;
+  }
+
+  .border-admin-resend,
+  .border-admin-modern .admin-delete {
+    min-height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .border-admin-modern *,
+  .border-admin-modern *::before,
+  .border-admin-modern *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -663,3 +663,97 @@
     font-size: 16px;
   }
 }
+
+/* BORDER — Ordine interne: modernizare vizuală */
+.ordine-modern { --ordine-navy: #123a61; --ordine-blue: #176bb7; }
+.ordine-modern *, .ordine-modern *::before, .ordine-modern *::after { box-sizing: border-box; }
+.ordine-modern .ordine-header { margin-bottom: 24px; }
+.ordine-modern .ordine-heading { min-width: 0; }
+.ordine-modern .ordine-eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 9px; color: #3779b2; font-size: 11px; font-weight: 800; letter-spacing: 1.3px; }
+.ordine-modern .ordine-header h1 { font-size: clamp(25px, 3vw, 32px); font-weight: 800; letter-spacing: -.8px; }
+.ordine-modern .ordine-description { line-height: 1.55; }
+.ordine-modern .ordine-add-button, .ordine-modern .ordine-save-button { gap: 9px; border-radius: 11px; background: linear-gradient(125deg, #123a61, #1b6098); border-color: #194c78; box-shadow: 0 5px 14px rgba(18,58,97,.14); transition: transform .2s ease, box-shadow .2s ease; }
+.ordine-modern .ordine-add-button:hover:not(:disabled), .ordine-modern .ordine-save-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 9px 22px rgba(18,58,97,.2); }
+.ordine-modern .ordine-error { display: flex; align-items: center; gap: 10px; border-radius: 12px; }
+.ordine-modern .ordine-error span { flex: 1; }
+.ordine-modern .ordine-error button { display: inline-flex; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.ordine-modern .ordine-form { border-radius: 17px; box-shadow: 0 14px 36px rgba(15,42,78,.08); }
+.ordine-modern .ordine-form-header { background: linear-gradient(100deg,#f5f9ff,#fff); }
+.ordine-modern .ordine-form-header p { margin: 6px 0 0; color: #71849c; font-size: 12px; }
+.ordine-modern .ordine-form-close { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9px; }
+.ordine-modern .ordine-form-close:hover:not(:disabled) { background: #eaf1f8; color: #244e72; }
+.ordine-modern .ordine-form-group > input { transition: border-color .2s ease, box-shadow .2s ease; }
+.ordine-modern .ordine-cancel-button { transition: background-color .2s ease; }
+.ordine-modern .ordine-cancel-button:hover:not(:disabled) { background: #f1f5fa; }
+.ordine-modern .ordine-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 20px 0 14px; }
+.ordine-modern .ordine-list-heading h2 { margin: 0; color: #143454; font-size: 18px; font-weight: 800; }
+.ordine-modern .ordine-list-heading p { margin: 5px 0 0; color: #8393a6; font-size: 12px; }
+.ordine-modern .ordine-count { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 30px; padding: 5px 12px; border-radius: 999px; background: #eaf3ff; color: #1a5d97; font-size: 12px; font-weight: 800; }
+.ordine-modern .ordine-table-container { border-radius: 16px; box-shadow: 0 9px 30px rgba(20,43,70,.055); }
+.ordine-modern .ordine-table thead { background: #f3f7fc; }
+.ordine-modern .ordine-table tbody tr { transition: background-color .18s ease; }
+.ordine-modern .ordine-title-link { line-height: 1.5; }
+.ordine-modern .ordine-icon-button { width: 37px; height: 37px; border-radius: 10px; transition: background-color .2s ease, transform .2s ease; }
+.ordine-modern .ordine-icon-button:hover:not(:disabled) { transform: translateY(-2px); }
+.ordine-modern .ordine-icon-button:focus-visible, .ordine-modern .ordine-title-link:focus-visible, .ordine-modern button:focus-visible { outline: 2px solid #2274c2; outline-offset: 3px; }
+.ordine-modern .ordine-empty { display: flex; flex-direction: column; align-items: center; gap: 9px; border: 1px dashed #cddff1; border-radius: 15px; background: #fafcff; }
+.ordine-modern .ordine-empty strong { color: #244461; font-size: 15px; }
+.ordine-modern .ordine-empty span { font-size: 12px; }
+.ordine-modern .ordine-loading { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.ordine-spin { animation: ordine-rotate 1s linear infinite; }
+@keyframes ordine-rotate { to { transform: rotate(360deg); } }
+@media (max-width: 768px) {
+  .ordine-modern .ordine-header { gap: 16px; }
+  .ordine-modern .ordine-list-heading { align-items: flex-start; }
+  .ordine-modern .ordine-list-heading h2 { font-size: 16px; }
+  .ordine-modern .ordine-list-heading p { line-height: 1.45; }
+  .ordine-modern .ordine-table-container { box-shadow: none; }
+  .ordine-modern .ordine-table .ordine-row { border-radius: 16px; box-shadow: 0 7px 22px rgba(20,43,70,.06); }
+  .ordine-modern .ordine-table .ordine-row td.ordine-actions-cell { border-radius: 0 0 16px 16px; }
+  .ordine-modern .ordine-icon-button { width: 42px; height: 42px; }
+}
+@media (max-width: 400px) { .ordine-modern .ordine-list-heading { flex-wrap: wrap; } }
+@media (prefers-reduced-motion: reduce) {
+  .ordine-modern .ordine-add-button, .ordine-modern .ordine-save-button, .ordine-modern .ordine-icon-button { transition: none; }
+  .ordine-modern .ordine-add-button:hover, .ordine-modern .ordine-save-button:hover, .ordine-modern .ordine-icon-button:hover { transform: none; }
+  .ordine-spin { animation: none; }
+}
+
+/* ==========================================
+   BORDER - CORECTARE COLOANA CREAT DE
+========================================== */
+
+/* Coloana autorului */
+@media (min-width: 769px) {
+  .ordine-table th:nth-child(5),
+  .ordine-table td:nth-child(5) {
+    width: 190px;
+    min-width: 190px;
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  /* Coloana datei */
+  .ordine-table th:nth-child(4),
+  .ordine-table td:nth-child(4) {
+    width: 145px;
+    min-width: 145px;
+    white-space: nowrap;
+  }
+
+  /* Titlul ocupă spațiul disponibil */
+  .ordine-table th:nth-child(3),
+  .ordine-table td:nth-child(3) {
+    width: auto;
+  }
+}
+
+/* Pe telefon păstrăm afișarea tip card */
+@media (max-width: 768px) {
+  .ordine-table .ordine-row td:nth-child(5) {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+}

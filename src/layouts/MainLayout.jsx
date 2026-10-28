@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
+import { Toaster, toast } from "sonner";
 import {
   LayoutDashboard,
   Megaphone,
@@ -104,8 +106,13 @@ function MainLayout() {
   }, [searchTerm]);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login", { replace: true });
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Eroare la deconectare:", error);
+      toast.error("Deconectarea nu a reușit. Încearcă din nou.");
+    }
   };
 
   const handleSearchResultClick = (item) => {
@@ -129,7 +136,8 @@ function MainLayout() {
   };
 
   return (
-    <div className="app-layout">
+    <div className="app-layout app-layout-modern">
+      <Toaster position="top-right" richColors closeButton duration={4000} />
       {sidebarOpen && (
         <button
           type="button"
@@ -256,7 +264,12 @@ function MainLayout() {
               <X size={20} />
             </button>
             {showSearchResults && (
-              <div className="search-results">
+              <motion.div
+                className="search-results"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15 }}
+              >
                 {searchLoading ? (
                   <div className="search-message">Se caută...</div>
                 ) : searchError ? (
@@ -301,7 +314,7 @@ function MainLayout() {
                     </button>
                   ))
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
           <div className="topbar-right">
@@ -340,7 +353,12 @@ function MainLayout() {
                 <ChevronDown size={16} />
               </button>
               {showUserMenu && (
-                <div className="user-dropdown">
+                <motion.div
+                  className="user-dropdown"
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.16 }}
+                >
                   <button
                     type="button"
                     onClick={() => {
@@ -363,7 +381,7 @@ function MainLayout() {
                     <LogOut size={18} />
                     <span>Deconectare</span>
                   </button>
-                </div>
+                </motion.div>
               )}
             </div>
           </div>
