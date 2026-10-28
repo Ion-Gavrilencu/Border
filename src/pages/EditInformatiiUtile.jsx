@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Paperclip } from "lucide-react";
+import {
+  AlertCircle, ArrowLeft, BookOpen, CheckCircle2,
+  FilePenLine, FileText, FolderOpen, Paperclip, Save,
+} from "lucide-react";
+
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import DocumentUploader from "../components/DocumentUploader";
@@ -16,8 +20,7 @@ const getFileCategory = (file) => {
     /\.(doc|docx)$/i.test(name) ||
     type.includes("wordprocessingml") ||
     type === "application/msword"
-  )
-    return "word";
+  ) return "word";
   return "other";
 };
 
@@ -28,14 +31,13 @@ function EditInformatiiUtile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [formData, setFormData] = useState({
-    title: "",
-    category: "",
-    content: "",
+    title: "", category: "", content: "",
   });
   const [existingAttachments, setExistingAttachments] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -43,6 +45,7 @@ function EditInformatiiUtile() {
 
   useEffect(() => {
     let active = true;
+
     const loadInfo = async () => {
       setLoading(true);
       setMessage("");
@@ -52,8 +55,10 @@ function EditInformatiiUtile() {
           api.get(`/attachments/informatii_utile/${id}`),
         ]);
         if (!active) return;
+
         const info = infoResponse.data.informatie;
         if (!info) throw new Error("Informația utilă nu a fost găsită.");
+
         setFormData({
           title: info.title || "",
           category: info.category || "",
@@ -63,21 +68,15 @@ function EditInformatiiUtile() {
       } catch (error) {
         if (active) {
           console.error("Eroare la încărcarea informației:", error);
-          setMessage(
-            errorText(
-              error,
-              error.message || "Informația nu a putut fi încărcată.",
-            ),
-          );
+          setMessage(errorText(error, error.message || "Informația nu a putut fi încărcată."));
         }
       } finally {
         if (active) setLoading(false);
       }
     };
+
     loadInfo();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [id]);
 
   const handleChange = (event) => {
@@ -88,6 +87,7 @@ function EditInformatiiUtile() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (saving) return;
+
     const title = formData.title.trim();
     const content = formData.content.trim();
     const url = linkUrl.trim();
@@ -109,22 +109,17 @@ function EditInformatiiUtile() {
         if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
       } catch {
         setMessageType("error");
-        setMessage(
-          "Introdu un link valid, care începe cu https:// sau http://.",
-        );
+        setMessage("Introdu un link valid, care începe cu https:// sau http://.");
         return;
       }
     }
-    // Ștergerea atașamentelor este permisă doar pentru ADMIN în backend.
-    // Nu încărcăm materiale noi dacă nu le putem înlocui pe cele vechi.
-    if (
-      hasReplacement &&
-      existingAttachments.length > 0 &&
-      user?.role !== "ADMIN"
-    ) {
+
+    // Înlocuirea materialelor existente necesită permisiuni ADMIN în backend.
+    if (hasReplacement && existingAttachments.length > 0 && user?.role !== "ADMIN") {
       setMessageType("error");
       setMessage(
-        "Înlocuirea atașamentelor existente necesită rolul ADMIN. Poți modifica doar textul sau poți solicita unui administrator să înlocuiască materialele.",
+        "Înlocuirea atașamentelor existente necesită rolul ADMIN. " +
+        "Poți modifica doar textul sau solicita administratorului înlocuirea materialelor."
       );
       return;
     }
@@ -132,8 +127,9 @@ function EditInformatiiUtile() {
     setSaving(true);
     setMessage("");
     const newAttachmentIds = [];
+
     try {
-      // Încărcăm mai întâi materialele noi, ca să nu pierdem materialele vechi dacă uploadul eșuează.
+      // Încărcăm materialele noi înainte de a le șterge pe cele vechi.
       if (hasReplacement) {
         for (const file of selectedFiles) {
           const data = new FormData();
@@ -141,10 +137,13 @@ function EditInformatiiUtile() {
           data.append("entityType", "informatii_utile");
           data.append("entityId", String(id));
           data.append("fileCategory", getFileCategory(file));
+
           const response = await api.post("/attachments/upload", data);
-          if (response.data?.attachment?.id)
+          if (response.data?.attachment?.id) {
             newAttachmentIds.push(response.data.attachment.id);
+          }
         }
+
         if (url) {
           const response = await api.post("/attachments/link", {
             entityType: "informatii_utile",
@@ -152,8 +151,9 @@ function EditInformatiiUtile() {
             name: title,
             url,
           });
-          if (response.data?.attachment?.id)
+          if (response.data?.attachment?.id) {
             newAttachmentIds.push(response.data.attachment.id);
+          }
         }
       }
 
@@ -169,11 +169,7 @@ function EditInformatiiUtile() {
           try {
             await api.delete(`/attachments/${old.id}`);
           } catch (error) {
-            console.error(
-              "Nu s-a putut șterge atașamentul vechi:",
-              old.id,
-              error,
-            );
+            console.error("Nu s-a putut șterge atașamentul vechi:", old.id, error);
             deletionFailures.push(old.name || `#${old.id}`);
           }
         }
@@ -184,9 +180,9 @@ function EditInformatiiUtile() {
           setLinkUrl("");
           setMessageType("error");
           setMessage(
-            "Materialele noi au fost salvate, dar unele atașamente vechi nu au putut fi șterse: " +
-              deletionFailures.join(", ") +
-              ". Verifică permisiunile și încearcă să le ștergi separat.",
+            "Materialele noi au fost salvate, dar unele atașamente vechi " +
+            "nu au putut fi șterse: " + deletionFailures.join(", ") +
+            ". Verifică permisiunile și încearcă să le ștergi separat."
           );
           return;
         }
@@ -195,9 +191,9 @@ function EditInformatiiUtile() {
       navigate("/informatii-utile");
     } catch (error) {
       console.error("Eroare la actualizarea informației:", error);
-      // Curățăm doar atașamentele noi create în această încercare.
-      // Nu atingem atașamentele existente.
       const cleanupFailures = [];
+
+      // La eșec curățăm doar atașamentele create în această încercare.
       for (const newId of newAttachmentIds) {
         try {
           await api.delete(`/attachments/${newId}`);
@@ -206,12 +202,13 @@ function EditInformatiiUtile() {
           cleanupFailures.push(newId);
         }
       }
+
       setMessageType("error");
       setMessage(
         errorText(error, "Modificările nu au putut fi salvate.") +
-          (cleanupFailures.length
-            ? " Unele materiale noi au rămas încărcate; verifică atașamentele înainte de o nouă încercare."
-            : " Materialele vechi au fost păstrate."),
+        (cleanupFailures.length
+          ? " Unele materiale noi au rămas încărcate; verifică atașamentele înainte de o nouă încercare."
+          : " Materialele vechi au fost păstrate.")
       );
     } finally {
       setSaving(false);
@@ -220,113 +217,142 @@ function EditInformatiiUtile() {
 
   if (loading) {
     return (
-      <div className="edit-informatii-page">
-        <div className="edit-informatii-loading">
-          <div className="edit-informatii-spinner" />
+      <main className="edit-informatii-page">
+        <div className="edit-informatii-loading" role="status">
+          <div className="edit-informatii-spinner" aria-hidden="true" />
           <span>Se încarcă informația...</span>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="edit-informatii-page">
-      <div className="edit-informatii-header">
+    <main className="edit-informatii-page">
+      <header className="edit-informatii-header">
         <div>
-          <span className="edit-informatii-label">GESTIONARE CONȚINUT</span>
+          <span className="edit-informatii-label">
+            <BookOpen size={14} aria-hidden="true" />
+            CENTRU DE RESURSE
+          </span>
           <h1>Editează informația utilă</h1>
           <p>Modifică datele informației și înlocuiește materialele atașate.</p>
         </div>
-      </div>
+        <button
+          type="button"
+          className="edit-informatii-back"
+          onClick={() => navigate("/informatii-utile")}
+          disabled={saving}
+        >
+          <ArrowLeft size={17} />
+          Înapoi la listă
+        </button>
+      </header>
 
       {message && (
         <div className={`edit-informatii-message ${messageType}`} role="status">
-          {messageType === "success" ? (
-            <CheckCircle2 size={18} />
-          ) : (
-            <AlertCircle size={18} />
-          )}
+          {messageType === "success"
+            ? <CheckCircle2 size={18} />
+            : <AlertCircle size={18} />}
           <span>{message}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="edit-informatii-form">
         <div className="edit-informatii-form-header">
-          <h2>Date informație</h2>
-          <p>Actualizează câmpurile necesare și salvează modificările.</p>
+          <span className="edit-informatii-form-header-icon">
+            <FilePenLine size={24} />
+          </span>
+          <div>
+            <h2>Date informație</h2>
+            <p>Actualizează câmpurile necesare și salvează modificările.</p>
+          </div>
         </div>
+
         <div className="edit-informatii-form-body">
-          <div className="edit-informatii-form-group">
-            <label htmlFor="title">Titlu *</label>
-            <input
-              id="title"
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Introduceți titlul informației"
-              required
-              disabled={saving}
-            />
-          </div>
-          <div className="edit-informatii-form-group">
-            <label htmlFor="category">Categorie</label>
-            <input
-              id="category"
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              placeholder="Ex.: Proceduri, Contacte, General"
-              disabled={saving}
-            />
-          </div>
-          <div className="edit-informatii-form-group">
-            <label htmlFor="content">Conținut</label>
-            <textarea
-              id="content"
-              name="content"
-              value={formData.content}
-              onChange={handleChange}
-              rows={12}
-              placeholder="Introduceți conținutul informației..."
-              disabled={saving}
-            />
-          </div>
-          <div className="edit-informatii-attachments">
-            <div className="edit-informatii-attachments-header">
-              <div className="edit-informatii-attachments-icon">
-                <Paperclip size={20} />
+          <div className="edit-informatii-fields-grid">
+            <div className="edit-informatii-form-group">
+              <label htmlFor="edit-info-title">
+                Titlu <span className="edit-informatii-required">*</span>
+              </label>
+              <div className="edit-informatii-field">
+                <FileText className="edit-informatii-field-icon" size={19} />
+                <input
+                  id="edit-info-title"
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Introduceți titlul informației"
+                  required
+                  disabled={saving}
+                />
               </div>
+            </div>
+
+            <div className="edit-informatii-form-group">
+              <label htmlFor="edit-info-category">Categorie</label>
+              <div className="edit-informatii-field">
+                <FolderOpen className="edit-informatii-field-icon" size={19} />
+                <input
+                  id="edit-info-category"
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  placeholder="Ex.: Proceduri, Contacte, General"
+                  disabled={saving}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="edit-informatii-form-group">
+            <label htmlFor="edit-info-content">Conținut</label>
+            <div className="edit-informatii-field">
+              <FileText className="edit-informatii-field-icon" size={19} />
+              <textarea
+                id="edit-info-content"
+                name="content"
+                value={formData.content}
+                onChange={handleChange}
+                rows={7}
+                placeholder="Introduceți conținutul informației..."
+                disabled={saving}
+              />
+            </div>
+          </div>
+
+          <section className="edit-informatii-attachments">
+            <div className="edit-informatii-attachments-header">
+              <span className="edit-informatii-attachments-icon">
+                <Paperclip size={22} />
+              </span>
               <div>
                 <h3>Materiale și documente</h3>
                 <p>Adaugă fotografii, PDF, Word, videoclipuri sau linkuri.</p>
               </div>
             </div>
+
             {existingAttachments.length > 0 && (
-              <div style={{ marginBottom: 18 }}>
-                <strong>
-                  Materiale existente ({existingAttachments.length})
-                </strong>
-                <ul style={{ marginTop: 8, paddingLeft: 22 }}>
+              <div className="edit-informatii-existing">
+                <strong>Materiale existente ({existingAttachments.length})</strong>
+                <ul>
                   {existingAttachments.map((item) => (
-                    <li
-                      key={item.id}
-                      style={{ marginBottom: 5, overflowWrap: "anywhere" }}
-                    >
+                    <li key={item.id}>
                       {item.attachment_type === "link"
                         ? item.url || item.name
                         : item.original_name || item.name}
                     </li>
                   ))}
                 </ul>
-                <p style={{ fontSize: 13, color: "#64748b" }}>
+                <p>
                   {user?.role === "ADMIN"
                     ? "Dacă adaugi materiale noi, acestea vor înlocui toate materialele existente. Dacă nu adaugi nimic, cele existente rămân neschimbate."
                     : "Doar administratorul poate înlocui materialele existente. Modificarea textului nu le afectează."}
                 </p>
               </div>
             )}
+
             <DocumentUploader
               files={selectedFiles}
               onFilesChange={setSelectedFiles}
@@ -340,8 +366,9 @@ function EditInformatiiUtile() {
                 setMessage(error);
               }}
             />
-          </div>
+          </section>
         </div>
+
         <div className="edit-informatii-actions">
           <button
             type="button"
@@ -356,11 +383,12 @@ function EditInformatiiUtile() {
             className="edit-informatii-save-button"
             disabled={saving}
           >
+            <Save size={17} />
             {saving ? "Se salvează..." : "Salvează modificările"}
           </button>
         </div>
       </form>
-    </div>
+    </main>
   );
 }
 

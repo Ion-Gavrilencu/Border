@@ -1,6 +1,3 @@
-
-@import "./Telegrame.css";
-
 .ordine-page {
   width: 100%;
   max-width: 1500px;
@@ -9,7 +6,6 @@
   box-sizing: border-box;
   color: #172b45;
 }
-
 .ordine-header {
   display: flex;
   justify-content: space-between;
@@ -17,7 +13,6 @@
   gap: 24px;
   margin-bottom: 28px;
 }
-
 .ordine-header h1 {
   margin: 0;
   color: #102b4b;
@@ -25,40 +20,11 @@
   font-weight: 750;
   letter-spacing: -0.8px;
 }
-
 .ordine-description {
   margin: 9px 0 0;
   color: #8290a3;
   font-size: 14px;
 }
-
-.ordine-add-button,
-.ordine-save-button {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 20px;
-  border: 1px solid #123a61;
-  border-radius: 10px;
-  background: #123a61;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.ordine-add-button:hover,
-.ordine-save-button:hover:not(:disabled) {
-  background: #19517f;
-}
-
-.ordine-add-button:disabled,
-.ordine-save-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .ordine-error {
   margin-bottom: 20px;
   padding: 13px 16px;
@@ -68,103 +34,6 @@
   color: #b83d3d;
   font-size: 13px;
 }
-
-.ordine-form {
-  margin-bottom: 28px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 10px 30px rgba(20, 43, 70, 0.05);
-}
-
-.ordine-form-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 22px 26px;
-  border-bottom: 1px solid #e8edf4;
-  background: #fbfcfe;
-}
-
-.ordine-form-header h2 {
-  margin: 0;
-  color: #143454;
-  font-size: 19px;
-}
-
-.ordine-form-close {
-  border: none;
-  background: transparent;
-  color: #8292a6;
-  font-size: 26px;
-  cursor: pointer;
-}
-
-.ordine-form-body {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  padding: 24px;
-}
-
-.ordine-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  min-width: 0;
-}
-
-.ordine-form-full {
-  grid-column: 1 / -1;
-}
-
-.ordine-form-group label {
-  color: #30465e;
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.ordine-form-group > input {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 13px;
-  border: 1px solid #dbe4ed;
-  border-radius: 9px;
-  background: #fff;
-  color: #17324d;
-  font: inherit;
-  font-size: 14px;
-  outline: none;
-}
-
-.ordine-form-group > input:focus {
-  border-color: #5694c8;
-  box-shadow: 0 0 0 3px rgba(49, 123, 189, 0.1);
-}
-
-.ordine-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 26px;
-  border-top: 1px solid #e8edf4;
-  background: #fbfcfe;
-}
-
-.ordine-cancel-button {
-  min-height: 44px;
-  padding: 0 20px;
-  border: 1px solid #dce4ee;
-  border-radius: 10px;
-  background: #fff;
-  color: #52657b;
-  font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
 .ordine-table-container {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
@@ -172,18 +41,15 @@
   background: #fff;
   box-shadow: 0 12px 28px rgba(20, 43, 70, 0.035);
 }
-
 .ordine-table {
   width: 100%;
   min-width: 760px;
   border-collapse: collapse;
   table-layout: fixed;
 }
-
 .ordine-table thead {
   background: #f6f9fc;
 }
-
 .ordine-table th {
   padding: 18px 20px;
   border-bottom: 1px solid #e3eaf2;
@@ -193,7 +59,6 @@
   text-align: left;
   text-transform: uppercase;
 }
-
 .ordine-table td {
   height: 64px;
   padding: 12px 20px;
@@ -202,44 +67,35 @@
   font-size: 13px;
   overflow-wrap: anywhere;
 }
-
 .ordine-table tbody tr:last-child td {
   border-bottom: none;
 }
-
 .ordine-row {
   cursor: pointer;
 }
-
 .ordine-row:hover {
   background: #f4f8fd;
 }
-
 .ordine-table th:nth-child(1),
 .ordine-table td:nth-child(1) {
   width: 68px;
 }
-
 .ordine-table th:nth-child(2),
 .ordine-table td:nth-child(2) {
   width: 145px;
 }
-
 .ordine-table th:nth-child(4),
 .ordine-table td:nth-child(4) {
   width: 145px;
 }
-
 .ordine-table th:nth-child(5),
 .ordine-table td:nth-child(5) {
   width: 170px;
 }
-
 .ordine-table th:last-child,
 .ordine-table td:last-child {
   width: 110px;
 }
-
 .ordine-title-link {
   padding: 0;
   border: none;
@@ -250,18 +106,15 @@
   text-align: left;
   cursor: pointer;
 }
-
 .ordine-title-link:hover {
   color: #1673b9;
   text-decoration: underline;
 }
-
 .ordine-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .ordine-icon-button {
   display: inline-flex;
   align-items: center;
@@ -274,19 +127,15 @@
   color: #315778;
   cursor: pointer;
 }
-
 .ordine-icon-button:hover {
   background: #eaf3fb;
 }
-
 .ordine-delete-button {
   color: #c44949;
 }
-
 .ordine-delete-button:hover {
   background: #fff1f1;
 }
-
 .ordine-empty,
 .ordine-loading {
   padding: 56px 20px;
@@ -294,87 +143,44 @@
   font-size: 14px;
   text-align: center;
 }
-
-@media (max-width: 1000px) {
-  .ordine-page {
+@media (max-width: 1000px) {.ordine-page {
     padding: 24px 22px 36px;
-  }
-}
-
-@media (max-width: 600px) {
-  .ordine-page {
+  }}
+@media (max-width: 600px) {.ordine-page {
     padding: 18px 14px 28px;
-  }
-
-  .ordine-header {
+  }.ordine-header {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .ordine-header h1 {
+  }.ordine-header h1 {
     font-size: 25px;
-  }
-
-  .ordine-add-button {
+  }.ordine-add-button {
     width: 100%;
-  }
-
-  .ordine-form-body {
-    grid-template-columns: 1fr;
-    padding: 18px;
-  }
-
-  .ordine-form-full {
-    grid-column: auto;
-  }
-
-  .ordine-form-actions {
-    flex-direction: column-reverse;
-    padding: 16px 18px;
-  }
-
-  .ordine-save-button,
-  .ordine-cancel-button {
-    width: 100%;
-  }
-}
-
-
-/* ==========================================
-   ORDINE - CORECTARE DESKTOP
-========================================== */
-
+  }}
 .ordine-page {
   min-width: 0;
 }
-
 .ordine-table-container {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 }
-
 .ordine-table {
   table-layout: auto;
   min-width: 900px;
 }
-
 .ordine-table th,
 .ordine-table td {
   box-sizing: border-box;
 }
-
 .ordine-table th:nth-child(3),
 .ordine-table td:nth-child(3) {
   min-width: 260px;
   width: auto;
 }
-
 .ordine-table td:nth-child(3) {
   overflow-wrap: break-word;
   word-break: normal;
 }
-
 .ordine-title-link {
   max-width: 100%;
   white-space: normal;
@@ -382,94 +188,57 @@
   word-break: normal;
   line-height: 1.5;
 }
-
-/* ==========================================
-   ORDINE - TABLETĂ
-========================================== */
-
-@media (max-width: 1000px) {
-  .ordine-page {
+@media (max-width: 1000px) {.ordine-page {
     padding: 24px 20px 36px;
-  }
-
-  .ordine-header {
+  }.ordine-header {
     gap: 16px;
-  }
-}
-
-/* ==========================================
-   ORDINE - TELEFON
-========================================== */
-
-@media (max-width: 768px) {
-  .ordine-page {
+  }}
+@media (max-width: 768px) {.ordine-page {
     width: 100%;
     max-width: 100%;
     padding: 20px 14px 32px;
     overflow-x: hidden;
-  }
-
-  /* Titlu și buton adăugare */
-
-  .ordine-header {
+  }.ordine-header {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 18px;
     margin-bottom: 22px;
-  }
-
-  .ordine-header h1 {
+  }.ordine-header h1 {
     font-size: 27px;
     line-height: 1.2;
     letter-spacing: -0.5px;
-  }
-
-  .ordine-description {
+  }.ordine-description {
     margin-top: 9px;
     font-size: 14px;
     line-height: 1.6;
-  }
-
-  .ordine-add-button {
+  }.ordine-add-button {
     width: 100%;
     min-height: 52px;
     font-size: 14px;
     border-radius: 12px;
     box-shadow: 0 5px 12px rgba(18, 58, 97, 0.12);
-  }
-
-  /* Containerul devine o listă de carduri */
-
-  .ordine-table-container {
+  }.ordine-table-container {
     width: 100%;
     overflow: visible;
     border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-  }
-
-  .ordine-table {
+  }.ordine-table {
     display: block;
     width: 100%;
     min-width: 0;
     border: 0;
     background: transparent;
-  }
-
-  .ordine-table thead {
+  }.ordine-table thead {
     display: none;
-  }
-
-  .ordine-table tbody {
+  }.ordine-table tbody {
     display: flex;
     flex-direction: column;
     gap: 16px;
     width: 100%;
-  }
-
-  .ordine-table .ordine-row {
+  }.ordine-table .ordine-row {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -479,15 +248,9 @@
     border-radius: 17px;
     background: #ffffff;
     box-shadow: 0 8px 24px rgba(20, 43, 70, 0.055);
-  }
-
-  .ordine-table .ordine-row:hover {
+  }.ordine-table .ordine-row:hover {
     background: #ffffff;
-  }
-
-  /* ID și număr */
-
-  .ordine-table .ordine-row td {
+  }.ordine-table .ordine-row td {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -503,29 +266,19 @@
     overflow-wrap: break-word;
     word-break: normal;
     text-align: right;
-  }
-
-  .ordine-table .ordine-row td:first-child {
+  }.ordine-table .ordine-row td:first-child {
     padding-top: 22px;
-  }
-
-  .ordine-table .ordine-row td::before {
+  }.ordine-table .ordine-row td::before {
     content: attr(data-label);
     flex: 0 0 auto;
     color: #8294aa;
     font-size: 13px;
     font-weight: 650;
     text-align: left;
-  }
-
-  .ordine-table .ordine-row td:nth-child(2) {
+  }.ordine-table .ordine-row td:nth-child(2) {
     color: #123a61;
     font-weight: 700;
-  }
-
-  /* Titlul ocupă toată lățimea */
-
-  .ordine-table .ordine-row td.ordine-title-cell {
+  }.ordine-table .ordine-row td.ordine-title-cell {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -533,13 +286,9 @@
     padding-top: 17px;
     padding-bottom: 14px;
     text-align: left;
-  }
-
-  .ordine-table .ordine-row td.ordine-title-cell::before {
+  }.ordine-table .ordine-row td.ordine-title-cell::before {
     display: none;
-  }
-
-  .ordine-title-link {
+  }.ordine-title-link {
     display: block;
     width: 100%;
     max-width: 100%;
@@ -552,23 +301,13 @@
     white-space: normal;
     overflow-wrap: break-word;
     word-break: normal;
-  }
-
-  /* Data și autorul */
-
-  .ordine-table .ordine-row td:nth-child(4),
+  }.ordine-table .ordine-row td:nth-child(4),
   .ordine-table .ordine-row td:nth-child(5) {
     color: #526983;
     font-size: 13px;
-  }
-
-  .ordine-table .ordine-row td:nth-child(5) {
+  }.ordine-table .ordine-row td:nth-child(5) {
     padding-bottom: 20px;
-  }
-
-  /* Acțiuni */
-
-  .ordine-table .ordine-row td.ordine-actions-cell {
+  }.ordine-table .ordine-row td.ordine-actions-cell {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -577,94 +316,28 @@
     padding: 13px 18px;
     border-top: 1px solid #edf1f6;
     background: #f8fafc;
-  }
-
-  .ordine-actions {
+  }.ordine-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 9px;
-  }
-
-  .ordine-icon-button {
+  }.ordine-icon-button {
     width: 42px;
     height: 42px;
     border-radius: 10px;
-  }
-
-  /* Formular adăugare */
-
-  .ordine-form {
-    width: 100%;
-    margin-bottom: 22px;
-    border-radius: 14px;
-  }
-
-  .ordine-form-header {
-    padding: 18px;
-  }
-
-  .ordine-form-header h2 {
-    font-size: 17px;
-  }
-
-  .ordine-form-body {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 17px;
-    padding: 18px;
-  }
-
-  .ordine-form-full {
-    grid-column: auto;
-  }
-
-  .ordine-form-group {
-    min-width: 0;
-  }
-
-  .ordine-form-group > input {
-    min-width: 0;
-    font-size: 16px;
-  }
-
-  .ordine-form-actions {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 10px;
-    padding: 16px 18px;
-  }
-
-  .ordine-save-button,
-  .ordine-cancel-button {
-    width: 100%;
-    min-height: 46px;
-  }
-
-  .ordine-empty,
+  }.ordine-empty,
   .ordine-loading {
     padding: 38px 16px;
-  }
-}
-
-/* Telefoane foarte înguste */
-
-@media (max-width: 380px) {
-  .ordine-page {
+  }}
+@media (max-width: 380px) {.ordine-page {
     padding-left: 10px;
     padding-right: 10px;
-  }
-
-  .ordine-table .ordine-row td {
+  }.ordine-table .ordine-row td {
     padding-left: 14px;
     padding-right: 14px;
-  }
-
-  .ordine-title-link {
+  }.ordine-title-link {
     font-size: 16px;
-  }
-}
-
-/* BORDER — Ordine interne: modernizare vizuală */
+  }}
 .ordine-modern { --ordine-navy: #123a61; --ordine-blue: #176bb7; }
 .ordine-modern *, .ordine-modern *::before, .ordine-modern *::after { box-sizing: border-box; }
 .ordine-modern .ordine-header { margin-bottom: 24px; }
@@ -672,19 +345,9 @@
 .ordine-modern .ordine-eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 9px; color: #3779b2; font-size: 11px; font-weight: 800; letter-spacing: 1.3px; }
 .ordine-modern .ordine-header h1 { font-size: clamp(25px, 3vw, 32px); font-weight: 800; letter-spacing: -.8px; }
 .ordine-modern .ordine-description { line-height: 1.55; }
-.ordine-modern .ordine-add-button, .ordine-modern .ordine-save-button { gap: 9px; border-radius: 11px; background: linear-gradient(125deg, #123a61, #1b6098); border-color: #194c78; box-shadow: 0 5px 14px rgba(18,58,97,.14); transition: transform .2s ease, box-shadow .2s ease; }
-.ordine-modern .ordine-add-button:hover:not(:disabled), .ordine-modern .ordine-save-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 9px 22px rgba(18,58,97,.2); }
 .ordine-modern .ordine-error { display: flex; align-items: center; gap: 10px; border-radius: 12px; }
 .ordine-modern .ordine-error span { flex: 1; }
 .ordine-modern .ordine-error button { display: inline-flex; border: 0; background: transparent; color: inherit; cursor: pointer; }
-.ordine-modern .ordine-form { border-radius: 17px; box-shadow: 0 14px 36px rgba(15,42,78,.08); }
-.ordine-modern .ordine-form-header { background: linear-gradient(100deg,#f5f9ff,#fff); }
-.ordine-modern .ordine-form-header p { margin: 6px 0 0; color: #71849c; font-size: 12px; }
-.ordine-modern .ordine-form-close { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9px; }
-.ordine-modern .ordine-form-close:hover:not(:disabled) { background: #eaf1f8; color: #244e72; }
-.ordine-modern .ordine-form-group > input { transition: border-color .2s ease, box-shadow .2s ease; }
-.ordine-modern .ordine-cancel-button { transition: background-color .2s ease; }
-.ordine-modern .ordine-cancel-button:hover:not(:disabled) { background: #f1f5fa; }
 .ordine-modern .ordine-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 20px 0 14px; }
 .ordine-modern .ordine-list-heading h2 { margin: 0; color: #143454; font-size: 18px; font-weight: 800; }
 .ordine-modern .ordine-list-heading p { margin: 5px 0 0; color: #8393a6; font-size: 12px; }
@@ -701,59 +364,33 @@
 .ordine-modern .ordine-empty span { font-size: 12px; }
 .ordine-modern .ordine-loading { display: flex; justify-content: center; align-items: center; gap: 10px; }
 .ordine-spin { animation: ordine-rotate 1s linear infinite; }
-@keyframes ordine-rotate { to { transform: rotate(360deg); } }
-@media (max-width: 768px) {
-  .ordine-modern .ordine-header { gap: 16px; }
-  .ordine-modern .ordine-list-heading { align-items: flex-start; }
-  .ordine-modern .ordine-list-heading h2 { font-size: 16px; }
-  .ordine-modern .ordine-list-heading p { line-height: 1.45; }
-  .ordine-modern .ordine-table-container { box-shadow: none; }
-  .ordine-modern .ordine-table .ordine-row { border-radius: 16px; box-shadow: 0 7px 22px rgba(20,43,70,.06); }
-  .ordine-modern .ordine-table .ordine-row td.ordine-actions-cell { border-radius: 0 0 16px 16px; }
-  .ordine-modern .ordine-icon-button { width: 42px; height: 42px; }
-}
-@media (max-width: 400px) { .ordine-modern .ordine-list-heading { flex-wrap: wrap; } }
-@media (prefers-reduced-motion: reduce) {
-  .ordine-modern .ordine-add-button, .ordine-modern .ordine-save-button, .ordine-modern .ordine-icon-button { transition: none; }
-  .ordine-modern .ordine-add-button:hover, .ordine-modern .ordine-save-button:hover, .ordine-modern .ordine-icon-button:hover { transform: none; }
-  .ordine-spin { animation: none; }
-}
-
-/* ==========================================
-   BORDER - CORECTARE COLOANA CREAT DE
-========================================== */
-
-/* Coloana autorului */
-@media (min-width: 769px) {
-  .ordine-table th:nth-child(5),
+@keyframes ordine-rotate {to { transform: rotate(360deg); }}
+@media (max-width: 768px) {.ordine-modern .ordine-header { gap: 16px; }.ordine-modern .ordine-list-heading { align-items: flex-start; }.ordine-modern .ordine-list-heading h2 { font-size: 16px; }.ordine-modern .ordine-list-heading p { line-height: 1.45; }.ordine-modern .ordine-table-container { box-shadow: none; }.ordine-modern .ordine-table .ordine-row { border-radius: 16px; box-shadow: 0 7px 22px rgba(20,43,70,.06); }.ordine-modern .ordine-table .ordine-row td.ordine-actions-cell { border-radius: 0 0 16px 16px; }.ordine-modern .ordine-icon-button { width: 42px; height: 42px; }}
+@media (max-width: 400px) {.ordine-modern .ordine-list-heading { flex-wrap: wrap; }}
+@media (prefers-reduced-motion: reduce) {.ordine-spin { animation: none; }}
+@media (min-width: 769px) {.ordine-table th:nth-child(5),
   .ordine-table td:nth-child(5) {
     width: 190px;
     min-width: 190px;
     white-space: nowrap;
     word-break: normal;
     overflow-wrap: normal;
-  }
-
-  /* Coloana datei */
-  .ordine-table th:nth-child(4),
+  }.ordine-table th:nth-child(4),
   .ordine-table td:nth-child(4) {
     width: 145px;
     min-width: 145px;
     white-space: nowrap;
-  }
-
-  /* Titlul ocupă spațiul disponibil */
-  .ordine-table th:nth-child(3),
+  }.ordine-table th:nth-child(3),
   .ordine-table td:nth-child(3) {
     width: auto;
-  }
-}
-
-/* Pe telefon păstrăm afișarea tip card */
-@media (max-width: 768px) {
-  .ordine-table .ordine-row td:nth-child(5) {
+  }}
+@media (max-width: 768px) {.ordine-table .ordine-row td:nth-child(5) {
     white-space: normal;
     overflow-wrap: break-word;
     word-break: normal;
-  }
-}
+  }}
+/* Buton adăugare — formularul este pe pagină separată */
+.ordine-add-button { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:44px; padding:0 20px; border:1px solid #194c78; border-radius:11px; background:linear-gradient(125deg,#123a61,#1b6098); color:#fff; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 5px 14px rgba(18,58,97,.14); }
+.ordine-add-button:hover { background:#19517f; }
+.ordine-add-button:focus-visible { outline:3px solid #82baf3; outline-offset:2px; }
+@media (max-width:768px) { .ordine-add-button { width:100%; min-height:48px; } }

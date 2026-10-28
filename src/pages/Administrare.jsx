@@ -12,6 +12,15 @@ import {
   Trash2,
   RefreshCw,
   LoaderCircle,
+  SlidersHorizontal,
+  ArrowDownUp,
+  MoreVertical,
+  Pencil,
+  ShieldCheck,
+  Crown,
+  UserRound,
+  Check,
+  XCircle,
 } from "lucide-react";
 
 import api from "../services/api";
@@ -46,6 +55,11 @@ function Administrare() {
   const [error, setError] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [sortOrder, setSortOrder] = useState("recent");
+  const [showFilters, setShowFilters] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingRoleId, setEditingRoleId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
   const [newUser, setNewUser] = useState({ ...emptyUser });
@@ -234,15 +248,53 @@ function Administrare() {
 
   const search = searchTerm.toLowerCase().trim();
 
-  const filteredUsers = users.filter((user) => {
-    if (!search) return true;
+  const roleCounts = {
+    ALL: users.length,
+    ADMIN: users.filter((u) => u.role === "ADMIN").length,
+    EDITOR: users.filter((u) => u.role === "EDITOR").length,
+    USER: users.filter((u) => u.role === "USER").length,
+    ACTIVE: users.filter((u) => u.is_active).length,
+  };
 
-    return (
-      user.username?.toLowerCase().includes(search) ||
-      user.full_name?.toLowerCase().includes(search) ||
-      user.email?.toLowerCase().includes(search)
+  const filteredUsers = users
+    .filter((user) => {
+      const matchesSearch =
+        !search ||
+        [user.username, user.full_name, user.email].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(search),
+        );
+      const matchesRole =
+        roleFilter === "ALL" ||
+        (roleFilter === "ACTIVE"
+          ? Boolean(user.is_active)
+          : user.role === roleFilter);
+      return matchesSearch && matchesRole;
+    })
+    .sort((a, b) => {
+      if (sortOrder === "name")
+        return String(a.username || "").localeCompare(
+          String(b.username || ""),
+          "ro",
+        );
+      if (sortOrder === "oldest") return Number(a.id) - Number(b.id);
+      return Number(b.id) - Number(a.id);
+    });
+
+  const getInitial = (user) =>
+    String(user.full_name || user.username || "U")
+      .trim()
+      .charAt(0)
+      .toUpperCase();
+  const getRoleIcon = (role) =>
+    role === "ADMIN" ? (
+      <Crown size={13} />
+    ) : role === "EDITOR" ? (
+      <Pencil size={13} />
+    ) : (
+      <UserRound size={13} />
     );
-  });
 
   return (
     <div className="admin-page border-admin-modern">
@@ -258,10 +310,14 @@ function Administrare() {
         </div>
 
         <div className="admin-user-count">
-          <span className="admin-user-count-label">
-            <Users size={14} /> Utilizatori
-          </span>
-          <strong>{users.length}</strong>
+          <div className="admin-count-icon">
+            <Users size={25} />
+          </div>
+          <div className="admin-count-main">
+            <span className="admin-user-count-label">UTILIZATORI TOTALI</span>
+            <strong>{users.length}</strong>
+          </div>
+          <span className="admin-count-note">Total conturi</span>
         </div>
 
         <button
@@ -404,10 +460,73 @@ function Administrare() {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
-
+        <button
+          type="button"
+          className="admin-filter-toggle"
+          aria-label="Opțiuni de filtrare"
+          aria-expanded={showFilters}
+          onClick={() => setShowFilters((value) => !value)}
+        >
+          <SlidersHorizontal size={19} />
+        </button>
+      </div>
+      <div className="admin-filter-tabs" aria-label="Filtrează utilizatorii">
+        {[
+          ["ALL", "Toți"],
+          ["ADMIN", "Admin"],
+          ["EDITOR", "Editor"],
+          ["USER", "User"],
+          ["ACTIVE", "Activi"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`admin-filter-tab ${roleFilter === value ? "is-active" : ""}`}
+            aria-pressed={roleFilter === value}
+            onClick={() => setRoleFilter(value)}
+          >
+            {label} ({roleCounts[value]})
+          </button>
+        ))}
+      </div>
+      {showFilters && (
+        <div className="admin-extra-filters">
+          <span>
+            Filtre active:{" "}
+            {roleFilter === "ALL"
+              ? "toate rolurile"
+              : roleFilter === "ACTIVE"
+                ? "conturi active"
+                : roleFilter}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setRoleFilter("ALL");
+              setSearchTerm("");
+              setSortOrder("recent");
+            }}
+          >
+            Resetează filtrele
+          </button>
+        </div>
+      )}
+      <div className="admin-results-row">
         <div className="admin-results">
           Afișate: <strong>{filteredUsers.length}</strong>
         </div>
+        <label className="admin-sort-control">
+          <ArrowDownUp size={15} />
+          <select
+            aria-label="Sortare utilizatori"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+          >
+            <option value="recent">Cei mai recenți</option>
+            <option value="oldest">Cei mai vechi</option>
+            <option value="name">Nume A–Z</option>
+          </select>
+        </label>
       </div>
 
       {loading ? (
@@ -544,6 +663,147 @@ function Administrare() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+      {!loading && !error && (
+        <div className="admin-mobile-list">
+          {filteredUsers.length === 0 ? (
+            <p className="admin-mobile-empty">Nu au fost găsiți utilizatori.</p>
+          ) : (
+            filteredUsers.map((user) => {
+              const busy = updatingUserId === user.id;
+              return (
+                <article className="admin-mobile-card" key={user.id}>
+                  <div className="admin-mobile-top">
+                    <div
+                      className={`admin-avatar role-${String(user.role || "USER").toLowerCase()}`}
+                    >
+                      {getInitial(user)}
+                    </div>
+                    <div className="admin-mobile-identity">
+                      <strong>{user.username}</strong>
+                      <span>{user.full_name || "Nume necompletat"}</span>
+                    </div>
+                    <span
+                      className={`admin-status ${user.is_active ? "admin-status-active" : "admin-status-inactive"}`}
+                    >
+                      <span className="admin-status-dot" />
+                      {user.is_active ? "Activ" : "Inactiv"}
+                    </span>
+                    <div className="admin-mobile-menu-wrap">
+                      <button
+                        type="button"
+                        className="admin-mobile-menu-trigger"
+                        aria-label={`Opțiuni pentru ${user.username}`}
+                        aria-expanded={openMenuId === user.id}
+                        onClick={() =>
+                          setOpenMenuId((id) =>
+                            id === user.id ? null : user.id,
+                          )
+                        }
+                      >
+                        <MoreVertical size={19} />
+                      </button>
+                      {openMenuId === user.id && (
+                        <div className="admin-mobile-menu">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              handleStatusChange(user.id, user.is_active);
+                            }}
+                          >
+                            {user.is_active ? (
+                              <XCircle size={15} />
+                            ) : (
+                              <Check size={15} />
+                            )}
+                            {user.is_active
+                              ? "Dezactivează contul"
+                              : "Activează contul"}
+                          </button>
+                          {!user.is_active && (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleResendActivation(user.id);
+                              }}
+                            >
+                              <Mail size={15} /> Retrimite activarea
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="admin-mobile-details">
+                    <div className="admin-mobile-detail">
+                      <UserRound size={15} /> <span>Nume complet</span>
+                      <strong>{user.full_name || "—"}</strong>
+                    </div>
+                    <div className="admin-mobile-detail">
+                      <Mail size={15} /> <span>Email</span>
+                      <strong className="admin-mobile-email">
+                        {user.email || "—"}
+                      </strong>
+                    </div>
+                    <div className="admin-mobile-detail admin-mobile-role-row">
+                      <ShieldCheck size={15} /> <span>Rol</span>
+                      <div className="admin-mobile-role-value">
+                        {editingRoleId === user.id ? (
+                          <select
+                            value={user.role}
+                            disabled={busy}
+                            aria-label={`Rolul utilizatorului ${user.username}`}
+                            onChange={async (e) => {
+                              setEditingRoleId(null);
+                              await handleRoleChange(user.id, e.target.value);
+                            }}
+                          >
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="EDITOR">EDITOR</option>
+                            <option value="USER">USER</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`admin-role-badge role-${String(user.role || "USER").toLowerCase()}`}
+                          >
+                            {getRoleIcon(user.role)} {user.role}
+                          </span>
+                        )}
+                      </div>
+                      <div className="admin-mobile-actions">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          aria-label={`Modifică rolul pentru ${user.username}`}
+                          onClick={() =>
+                            setEditingRoleId((id) =>
+                              id === user.id ? null : user.id,
+                            )
+                          }
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="danger"
+                          aria-label={`Șterge ${user.username}`}
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
         </div>
       )}
     </div>

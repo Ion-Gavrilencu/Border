@@ -1,0 +1,432 @@
+
+/* ==========================================
+   BORDER — PAGINA EDITARE ȘTIRE
+   Design identic cu Adaugă știre
+========================================== */
+
+.edit-stire-page {
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+  box-sizing: border-box;
+  color: #102b4b;
+}
+
+/* ANTET PAGINĂ */
+
+.edit-stire-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.edit-stire-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-stire-heading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1766b0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.edit-stire-heading h1 {
+  margin: 12px 0 8px;
+  color: #102b4b;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.edit-stire-heading p {
+  margin: 0;
+  color: #7a8da3;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* BUTON ÎNAPOI */
+
+.edit-stire-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-height: 46px;
+  padding: 10px 18px;
+  border: 1px solid #d9e4ef;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #173b63;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.edit-stire-back:hover:not(:disabled) {
+  background: #edf5fc;
+  border-color: #bdd3e9;
+}
+
+.edit-stire-back:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* CARD FORMULAR */
+
+.edit-stire-card {
+  width: 100%;
+  min-width: 0;
+  padding: 28px;
+  border: 1px solid #e1e8f1;
+  border-radius: 17px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(18, 58, 97, 0.06);
+  box-sizing: border-box;
+}
+
+/* FORMULARUL FOLOSEȘTE NEWSFORM.CSS */
+
+.edit-stire-card .border-news-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* MESAJE */
+
+.edit-stire-error,
+.edit-stire-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.edit-stire-error {
+  border: 1px solid #f0caca;
+  background: #fff3f3;
+  color: #b43737;
+}
+
+.edit-stire-success {
+  border: 1px solid #b9dfc9;
+  background: #effaf3;
+  color: #217347;
+}
+
+.edit-stire-error svg,
+.edit-stire-success svg {
+  flex-shrink: 0;
+}
+
+/* TABLETĂ */
+
+@media (max-width: 768px) {
+  .edit-stire-page {
+    padding: 20px 14px 32px;
+  }
+
+  .edit-stire-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .edit-stire-card {
+    padding: 20px;
+  }
+}
+
+/* TELEFON */
+
+@media (max-width: 480px) {
+  .edit-stire-heading h1 {
+    font-size: 25px;
+  }
+
+  .edit-stire-back {
+    width: 100%;
+  }
+
+  .edit-stire-card {
+    padding: 16px;
+  }
+}
+
+/* ==========================================
+   EDITARE ȘTIRE — CORECTARE ZONĂ INFERIOARĂ
+========================================== */
+
+/* SECȚIUNEA FOTOGRAFII ȘI DOCUMENTE */
+
+.edit-stire-card .border-news-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.edit-stire-card .border-news-upload-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-stire-card .border-news-upload-heading p {
+  margin: 0;
+  color: #70849d;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ZONA DE ÎNCĂRCARE */
+
+.edit-stire-card .border-news-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 175px;
+  padding: 25px 20px;
+
+  border: 2px dashed #a9cfff;
+  border-radius: 12px;
+
+  background: #f8fbff;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.edit-stire-card .border-news-upload-zone:hover {
+  border-color: #1673d2;
+  background: #f0f7ff;
+}
+
+/* ICON UPLOAD */
+
+.edit-stire-card .border-news-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 12px;
+  background: #e7f2ff;
+  color: #0869cc;
+}
+
+.edit-stire-card .border-news-upload-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* TEXTE UPLOAD */
+
+.edit-stire-card .border-news-upload-zone strong {
+  display: block;
+  color: #10345c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.edit-stire-card .border-news-upload-zone p,
+.edit-stire-card .border-news-upload-zone small {
+  display: block;
+  margin: 0;
+  color: #8295ac;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* BUTON SELECTARE FIȘIERE */
+
+.edit-stire-card .border-news-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  width: auto;
+  min-height: 42px;
+  margin-top: 4px;
+  padding: 10px 20px;
+
+  border: 1px solid #0869cc;
+  border-radius: 9px;
+
+  background: #0869cc;
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.edit-stire-card .border-news-upload-button:hover {
+  background: #0756a5;
+  border-color: #0756a5;
+}
+
+/* ATAȘAMENTE SALVATE */
+
+.edit-stire-card .border-news-saved-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.edit-stire-card .border-news-saved-attachments h3 {
+  margin: 0;
+  color: #12345b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.edit-stire-card .border-news-saved-attachments p {
+  margin: 0;
+  color: #8191a6;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* NOTĂ DE SECURITATE */
+
+.edit-stire-card .border-news-private-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  margin-top: 18px;
+  padding: 13px 15px;
+
+  border: 1px solid #dbe8f7;
+  border-radius: 9px;
+
+  background: #f4f8fd;
+  color: #6a83a0;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.edit-stire-card .border-news-private-note svg {
+  flex-shrink: 0;
+  color: #1769b5;
+}
+
+/* BUTOANE DE JOS */
+
+.edit-stire-card .border-news-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  margin-top: 22px;
+  padding-top: 22px;
+
+  border-top: 1px solid #e1eaf4;
+}
+
+.edit-stire-card .border-news-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 44px;
+  padding: 10px 20px;
+
+  border: 1px solid #d4e0ef;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #315678;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-stire-card .border-news-cancel:hover {
+  background: #f1f6fc;
+}
+
+.edit-stire-card .border-news-form-actions .border-news-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 44px;
+  padding: 10px 22px;
+
+  border: 1px solid #0969c7;
+  border-radius: 9px;
+
+  background: #0969c7;
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.edit-stire-card .border-news-form-actions .border-news-add:hover {
+  background: #0756a5;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 480px) {
+  .edit-stire-card .border-news-upload-zone {
+    padding: 20px 12px;
+  }
+
+  .edit-stire-card .border-news-upload-button {
+    width: 100%;
+  }
+
+  .edit-stire-card .border-news-form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .edit-stire-card .border-news-cancel,
+  .edit-stire-card .border-news-form-actions .border-news-add {
+    width: 100%;
+  }
+}

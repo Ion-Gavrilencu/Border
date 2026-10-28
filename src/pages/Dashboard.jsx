@@ -1,6 +1,7 @@
 
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 
@@ -20,17 +21,27 @@ const initialStats = {
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0 },
+  hidden: {
+    opacity: 0,
+    y: 16,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+  },
 };
 
 function Dashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState(initialStats);
   const [recent, setRecent] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  // ÎNCĂRCAREA STATISTICILOR
   const loadDashboard = useCallback(async (initial = false) => {
     try {
       if (initial) {
@@ -62,7 +73,6 @@ function Dashboard() {
           ? response.data.recent
           : []
       );
-
     } catch (err) {
       console.error("DASHBOARD ERROR:", err);
 
@@ -82,10 +92,12 @@ function Dashboard() {
     }
   }, []);
 
+  // ÎNCĂRCARE INIȚIALĂ
   useEffect(() => {
     loadDashboard(true);
   }, [loadDashboard]);
 
+  // ACTUALIZARE LA REVENIREA ÎN APLICAȚIE
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -106,10 +118,32 @@ function Dashboard() {
     };
   }, [loadDashboard]);
 
+  // MESAJ DUPĂ ADAUGAREA SAU EDITAREA ȘTIRII
+  useEffect(() => {
+    const message = location.state?.newsMessage;
+
+    if (!message) return;
+
+    toast.success(message);
+
+    // Eliminăm mesajul din history pentru a nu reapărea
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+      },
+      {
+        replace: true,
+        state: null,
+      }
+    );
+  }, [location, navigate]);
+
   return (
     <div className="dashboard dashboard-modern">
 
-      {/* BANNER EXISTENT */}
+      {/* BANNER PRINCIPAL */}
       <motion.div
         className="border-hero"
         initial="hidden"
@@ -133,10 +167,14 @@ function Dashboard() {
         </div>
       </motion.div>
 
-      {/* EROARE */}
+      {/* MESAJ EROARE */}
       {error && (
-        <div className="dashboard-error" role="alert">
+        <div
+          className="dashboard-error"
+          role="alert"
+        >
           <AlertCircle size={19} />
+
           <span>{error}</span>
 
           <button
@@ -155,7 +193,10 @@ function Dashboard() {
         initial="hidden"
         animate="visible"
         variants={fadeUp}
-        transition={{ duration: 0.4, delay: 0.08 }}
+        transition={{
+          duration: 0.4,
+          delay: 0.08,
+        }}
         aria-label="Statistici"
       >
         <DashboardStats
@@ -164,15 +205,19 @@ function Dashboard() {
         />
       </motion.section>
 
-      {/* PANOURI INFORMAȚII ȘI ȘTIRI */}
+      {/* INFORMAȚII RECENTE ȘI ȘTIRI */}
       <div className="dashboard-grid">
 
+        {/* INFORMAȚII RECENTE */}
         <motion.div
           className="dashboard-panel-motion"
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          transition={{ duration: 0.4, delay: 0.14 }}
+          transition={{
+            duration: 0.4,
+            delay: 0.14,
+          }}
         >
           <RecentInformation
             recent={recent}
@@ -182,12 +227,16 @@ function Dashboard() {
           />
         </motion.div>
 
+        {/* ACTUALITATE ȘI ȘTIRI */}
         <motion.div
           className="dashboard-panel-motion"
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={{
+            duration: 0.4,
+            delay: 0.2,
+          }}
         >
           <NewsSection />
         </motion.div>

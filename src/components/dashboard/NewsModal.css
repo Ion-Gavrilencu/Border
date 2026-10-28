@@ -1,0 +1,382 @@
+
+/* ==========================================
+   BORDER — NEWS MODAL
+   Desktop / Tabletă / Telefon
+========================================== */
+
+/* FUNDAL MODAL */
+
+.border-news-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8, 27, 51, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  box-sizing: border-box;
+}
+
+/* FEREASTRA PRINCIPALĂ */
+
+.border-news-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 900px;
+  max-height: min(90vh, 1000px);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce7f3;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+  color: #102b4b;
+  box-sizing: border-box;
+}
+
+/* ANTET */
+
+.border-news-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-shrink: 0;
+  padding: 25px 30px;
+  border-bottom: 1px solid #e6edf5;
+  background: #ffffff;
+}
+
+.border-news-modal-header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.border-news-modal-header small {
+  display: block;
+  margin-bottom: 9px;
+  color: #7d91aa;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.border-news-modal-header h2 {
+  margin: 0;
+  color: #102b4b;
+  font-size: clamp(20px, 2.5vw, 27px);
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ÎNCHIDERE */
+
+.border-news-modal-header > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #dce7f3;
+  border-radius: 10px;
+  background: #f5f8fc;
+  color: #456480;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.border-news-modal-header > button:hover {
+  border-color: #c2d7ee;
+  background: #eaf3ff;
+  color: #1766b0;
+}
+
+/* CONȚINUT */
+
+.border-news-modal-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 30px 32px;
+  scrollbar-width: thin;
+  scrollbar-color: #b9cce0 transparent;
+}
+
+.border-news-modal-content > p {
+  margin: 0 0 24px;
+  color: #38516d;
+  font-size: 15px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+/* SECȚIUNI FOTO / DOCUMENTE */
+
+.border-news-private-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e8eef6;
+}
+
+.border-news-private-section h3 {
+  margin: 0 0 18px;
+  color: #102b4b;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* GALERIE FOTOGRAFII */
+
+.border-news-private-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.border-news-private-gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e0e9f3;
+  border-radius: 13px;
+  background: #f9fbfe;
+}
+
+.border-news-image-preview-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 160px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 9px;
+  background: #edf5ff;
+  cursor: zoom-in;
+}
+
+.border-news-private-gallery-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.border-news-image-preview-button:hover
+.border-news-private-gallery-image {
+  transform: scale(1.05);
+}
+
+/* ETICHETĂ MĂRIRE */
+
+.border-news-image-zoom-label {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 7px;
+  background: rgba(8, 39, 75, 0.83);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.border-news-image-preview-button:hover
+.border-news-image-zoom-label,
+.border-news-image-preview-button:focus-visible
+.border-news-image-zoom-label {
+  opacity: 1;
+}
+
+/* DESCĂRCARE FOTOGRAFII */
+
+.border-news-private-gallery-item > button:last-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px;
+  border: 1px solid #d5e3f1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1766b0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.border-news-private-gallery-item > button:last-child:hover {
+  background: #edf5ff;
+  border-color: #a9cbee;
+}
+
+/* DOCUMENTE ATAȘATE */
+
+.border-news-private-documents {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.border-news-private-document {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #e0e9f3;
+  border-radius: 11px;
+  background: #f9fbfe;
+}
+
+.border-news-private-document > svg {
+  flex-shrink: 0;
+  color: #1766b0;
+}
+
+.border-news-private-document > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.border-news-private-document strong {
+  color: #183b60;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.border-news-private-document small {
+  color: #8194aa;
+  font-size: 11px;
+}
+
+.border-news-private-document > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 38px;
+  padding: 9px 13px;
+  border: 1px solid #cbdff2;
+  border-radius: 8px;
+  background: #edf5ff;
+  color: #1766b0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.border-news-private-document > button:hover {
+  background: #dcecff;
+}
+
+/* ACCESIBILITATE */
+
+.border-news-modal button:focus-visible {
+  outline: 2px solid #1675d1;
+  outline-offset: 3px;
+}
+
+/* TABLETĂ */
+
+@media (max-width: 1024px) {
+  .border-news-modal {
+    max-width: 760px;
+  }
+
+  .border-news-private-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* TELEFON */
+
+@media (max-width: 640px) {
+  .border-news-modal-overlay {
+    padding: 10px;
+  }
+
+  .border-news-modal {
+    max-height: 95dvh;
+    border-radius: 13px;
+  }
+
+  .border-news-modal-header {
+    padding: 18px;
+    gap: 12px;
+  }
+
+  .border-news-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .border-news-modal-header > button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .border-news-modal-content {
+    padding: 18px;
+  }
+
+  .border-news-modal-content > p {
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .border-news-private-gallery {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .border-news-image-preview-button {
+    height: 210px;
+  }
+
+  .border-news-image-zoom-label {
+    opacity: 1;
+  }
+
+  .border-news-private-document {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .border-news-private-document > button {
+    width: 100%;
+  }
+}
+
+/* ECRANE CU ÎNĂLȚIME MICĂ */
+
+@media (max-height: 600px) {
+  .border-news-modal {
+    max-height: 95dvh;
+  }
+}

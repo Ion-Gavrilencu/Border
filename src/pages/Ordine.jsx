@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 import {
@@ -11,48 +10,26 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  X,
 } from "lucide-react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import DocumentUploader from "../components/DocumentUploader";
 import TelegramGallery from "../components/TelegramGallery";
 import "./Ordine.css";
-
-const emptyForm = { title: "", number: "", orderDate: "", content: "" };
-
-const getFileCategory = (file) => {
-  const type = file.type || "";
-  if (type.startsWith("image/")) return "image";
-  if (type.startsWith("video/")) return "video";
-  if (type === "application/pdf" || /\.pdf$/i.test(file.name)) return "pdf";
-  if (/\.docx?$/i.test(file.name)) return "word";
-  return "other";
-};
-
 const formatDate = (value) => {
   if (!value) return "—";
   const [year, month, day] = String(value).slice(0, 10).split("-");
   return year && month && day ? `${day}.${month}.${year}` : "—";
 };
-
 function Ordine() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canEdit = user?.role === "EDITOR" || user?.role === "ADMIN";
   const canDelete = user?.role === "ADMIN";
-
   const [ordine, setOrdine] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [formData, setFormData] = useState({ ...emptyForm });
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [linkUrl, setLinkUrl] = useState("");
   const [galleryOrder, setGalleryOrder] = useState(null);
-
   const fetchOrdine = useCallback(async () => {
     try {
       const response = await api.get("/ordine");
@@ -69,101 +46,9 @@ function Ordine() {
       setLoading(false);
     }
   }, []);
-
   useEffect(() => {
     fetchOrdine();
   }, [fetchOrdine]);
-
-  const resetForm = () => {
-    if (saving) return;
-    setFormData({ ...emptyForm });
-    setSelectedFiles([]);
-    setLinkUrl("");
-    setShowForm(false);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!canEdit || saving) return;
-    if (!formData.title.trim()) {
-      toast.error("Denumirea ordinului este obligatorie.");
-      return;
-    }
-    if (selectedFiles.length === 0 && !linkUrl.trim()) {
-      toast.error("Adaugă un document, fotografii sau un link.");
-      return;
-    }
-    if (linkUrl.trim()) {
-      try {
-        const url = new URL(linkUrl.trim());
-        if (!["http:", "https:"].includes(url.protocol))
-          throw new Error("Link invalid");
-      } catch {
-        toast.error("Introdu un link HTTP sau HTTPS valid.");
-        return;
-      }
-    }
-    setSaving(true);
-    setError("");
-    try {
-      const response = await api.post("/ordine", {
-        ...formData,
-        title: formData.title.trim(),
-      });
-      const order = response.data.order || response.data.ordin;
-      if (!order?.id) throw new Error("API-ul nu a returnat ID-ul ordinului.");
-      const failed = [];
-      for (const file of selectedFiles) {
-        try {
-          const data = new FormData();
-          data.append("file", file);
-          data.append("entityType", "ordine");
-          data.append("entityId", order.id);
-          data.append("fileCategory", getFileCategory(file));
-          await api.post("/attachments/upload", data);
-        } catch (err) {
-          console.error("Eroare încărcare fișier:", err);
-          failed.push(file.name);
-        }
-      }
-      if (linkUrl.trim()) {
-        try {
-          await api.post("/attachments/link", {
-            entityType: "ordine",
-            entityId: order.id,
-            name: order.title,
-            url: linkUrl.trim(),
-          });
-        } catch (err) {
-          console.error("Eroare salvare link:", err);
-          failed.push("linkul");
-        }
-      }
-      await fetchOrdine();
-      setFormData({ ...emptyForm });
-      setSelectedFiles([]);
-      setLinkUrl("");
-      setShowForm(false);
-      if (failed.length) {
-        const message = `Ordinul a fost creat, dar nu s-au salvat: ${failed.join(", ")}.`;
-        setError(message);
-        toast.warning(message);
-      } else {
-        toast.success("Ordinul a fost adăugat cu succes.");
-      }
-    } catch (err) {
-      console.error("Eroare salvare ordin:", err);
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Ordinul nu a putut fi salvat.";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleOpenOrder = async (order) => {
     const newTab = window.open("about:blank", "_blank");
     if (newTab) newTab.opener = null;
@@ -211,11 +96,9 @@ function Ordine() {
       toast.error("Nu s-a putut deschide documentul sau linkul ordinului.");
     }
   };
-
   const handleEditOrder = (order) => {
     if (canEdit) navigate(`/ordine/${order.id}/edit`);
   };
-
   const handleDeleteOrder = async (order) => {
     if (!canDelete || deletingId !== null) return;
     const result = await Swal.fire({
@@ -247,7 +130,6 @@ function Ordine() {
       setDeletingId(null);
     }
   };
-
   if (loading) {
     return (
       <div className="ordine-page ordine-modern">
@@ -258,7 +140,6 @@ function Ordine() {
       </div>
     );
   }
-
   return (
     <div className="ordine-page ordine-modern">
       <div className="ordine-header">
@@ -272,25 +153,11 @@ function Ordine() {
           </p>
         </div>
         {canEdit && (
-          <button
-            type="button"
-            className="ordine-add-button"
-            disabled={saving}
-            onClick={() => (showForm ? resetForm() : setShowForm(true))}
-          >
-            {showForm ? (
-              <>
-                <X size={18} /> Închide formularul
-              </>
-            ) : (
-              <>
-                <Plus size={18} /> Adaugă ordin
-              </>
-            )}
+          <button type="button" className="ordine-add-button" onClick={() => navigate("/ordine/adauga")}>
+            <Plus size={18} /> Adaugă ordin
           </button>
         )}
       </div>
-
       {error && (
         <div className="ordine-error" role="alert">
           <AlertCircle size={18} />
@@ -300,121 +167,6 @@ function Ordine() {
           </button>
         </div>
       )}
-
-      <AnimatePresence initial={false}>
-        {showForm && canEdit && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: "hidden" }}
-          >
-            <form className="ordine-form" onSubmit={handleSubmit}>
-              <div className="ordine-form-header">
-                <div>
-                  <h2>Adaugă ordin intern</h2>
-                  <p>Completează datele și atașează documentul.</p>
-                </div>
-                <button
-                  type="button"
-                  className="ordine-form-close"
-                  onClick={resetForm}
-                  disabled={saving}
-                  aria-label="Închide formularul"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="ordine-form-body">
-                <div className="ordine-form-group">
-                  <label htmlFor="order-number">Număr ordin</label>
-                  <input
-                    id="order-number"
-                    type="text"
-                    placeholder="Ex: 123/2026"
-                    value={formData.number}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        number: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="ordine-form-group">
-                  <label htmlFor="order-date">Data ordinului</label>
-                  <input
-                    id="order-date"
-                    type="date"
-                    value={formData.orderDate}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        orderDate: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="ordine-form-group ordine-form-full">
-                  <label htmlFor="order-title">Denumirea ordinului</label>
-                  <input
-                    id="order-title"
-                    type="text"
-                    required
-                    placeholder="Introduceți denumirea ordinului"
-                    value={formData.title}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        title: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="ordine-form-group ordine-form-full">
-                  <label>Conținutul ordinului</label>
-                  <DocumentUploader
-                    files={selectedFiles}
-                    onFilesChange={setSelectedFiles}
-                    linkUrl={linkUrl}
-                    onLinkChange={setLinkUrl}
-                    disabled={saving}
-                    onError={setError}
-                  />
-                </div>
-              </div>
-              <div className="ordine-form-actions">
-                <button
-                  type="button"
-                  className="ordine-cancel-button"
-                  onClick={resetForm}
-                  disabled={saving}
-                >
-                  Anulează
-                </button>
-                <button
-                  type="submit"
-                  className="ordine-save-button"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <LoaderCircle size={17} className="ordine-spin" /> Se
-                      salvează...
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={17} /> Salvează ordinul
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="ordine-list-heading">
         <div>
           <h2>Registrul ordinelor</h2>
@@ -522,5 +274,4 @@ function Ordine() {
     </div>
   );
 }
-
 export default Ordine;

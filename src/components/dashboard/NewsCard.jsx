@@ -1,4 +1,3 @@
-
 import {
   ArrowRight,
   ArrowUpRight,
@@ -6,6 +5,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import "./NewsCard.css";
 
 const categories = [
   { value: "documente", label: "Documente falsificate" },
@@ -20,9 +20,7 @@ const formatDate = (value) => {
 
   const date = new Date(value);
 
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toLocaleDateString("ro-RO");
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ro-RO");
 };
 
 function NewsCard({
@@ -37,9 +35,7 @@ function NewsCard({
   onEdit,
   onDelete,
 }) {
-  const category = categories.find(
-    (item) => item.value === article.category,
-  );
+  const category = categories.find((item) => item.value === article.category);
 
   const isInternal = article.type === "internal";
 
@@ -71,34 +67,25 @@ function NewsCard({
         }
       }}
     >
-      
-{mainImage ? (
-  <div className="border-news-photo">
-    <PrivateImageComponent
-      attachment={mainImage}
-      className="border-news-card-image"
-    />
-  </div>
-) : (
-  <ImageComponent
-    src={article.image_url}
-    title={article.title}
-  />
-)}
-
+      {mainImage ? (
+        <div className="border-news-photo">
+          <PrivateImageComponent
+            attachment={mainImage}
+            className="border-news-card-image"
+          />
+        </div>
+      ) : (
+        <ImageComponent src={article.image_url} title={article.title} />
+      )}
 
       <div className="border-news-article-body">
         <div className="border-news-meta">
-          <span
-            className={`border-news-category category-${article.category}`}
-          >
+          <span className={`border-news-category category-${article.category}`}>
             {category?.label || "Noutăți"}
           </span>
 
           {article.source && (
-            <span className="border-news-source-name">
-              {article.source}
-            </span>
+            <span className="border-news-source-name">{article.source}</span>
           )}
 
           <time>{formatDate(article.created_at)}</time>
@@ -132,10 +119,7 @@ function NewsCard({
 
         {canEdit && (
           <div className="border-news-article-actions">
-            <button
-              type="button"
-              onClick={() => onEdit(article)}
-            >
+            <button type="button" onClick={() => onEdit(article)}>
               <Pencil size={15} />
               Editează
             </button>

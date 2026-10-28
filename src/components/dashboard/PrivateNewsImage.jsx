@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 import api from "../../services/api";
@@ -18,12 +17,9 @@ function PrivateNewsImage({ attachment, className = "" }) {
 
     const loadImage = async () => {
       try {
-        const response = await api.get(
-          `/attachments/file/${attachment.id}`,
-          {
-            responseType: "blob",
-          }
-        );
+        const response = await api.get(`/attachments/file/${attachment.id}`, {
+          responseType: "blob",
+        });
 
         if (!active) return;
 
@@ -51,9 +47,7 @@ function PrivateNewsImage({ attachment, className = "" }) {
 
   if (!attachment || !src || failed) {
     return (
-      <div
-        className={`border-news-photo border-news-placeholder ${className}`}
-      >
+      <div className={`border-news-photo border-news-placeholder ${className}`}>
         <ImageIcon size={27} />
       </div>
     );
@@ -62,11 +56,7 @@ function PrivateNewsImage({ attachment, className = "" }) {
   return (
     <img
       src={src}
-      alt={
-        attachment.original_name ||
-        attachment.name ||
-        "Fotografie atașată"
-      }
+      alt={attachment.original_name || attachment.name || "Fotografie atașată"}
       className={className}
       loading="lazy"
     />

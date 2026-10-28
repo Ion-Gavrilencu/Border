@@ -1,5 +1,5 @@
 import { Download, File as FileIcon, X, ZoomIn } from "lucide-react";
-
+import "./NewsModal.css";
 const formatDate = (value) => {
   if (!value) return "";
   const date = new Date(value);
