@@ -19,12 +19,12 @@ import { useAuth } from "../context/AuthContext";
 import DocumentUploader from "../components/DocumentUploader";
 
 import "./EditLegislation.css";
+import "./EditPagesModern.css";
 
 const getCategory = (file) => {
   if (file.type.startsWith("image/")) return "image";
 
   if (file.type === "application/pdf") return "pdf";
-
   if (/\.docx?$/i.test(file.name)) return "word";
 
   return "other";
@@ -165,18 +165,53 @@ function EditLegislation() {
     }
   };
 
-  const handleOpenAttachment = (attachment) => {
-    const url = isLink(attachment)
-      ? attachment.url
-      : `${api.defaults.baseURL}/attachments/file/${attachment.id}`;
-
-    if (!/^https?:\/\//i.test(url || "")) {
-      setError("Adresa atașamentului nu este validă.");
-
+  const handleOpenAttachment = async (attachment) => {
+    if (isLink(attachment)) {
+      try {
+        const url = new URL(attachment.url);
+        if (!["http:", "https:"].includes(url.protocol))
+          throw new Error("Link invalid");
+        window.open(url.href, "_blank", "noopener,noreferrer");
+      } catch {
+        setError("Adresa linkului nu este validă.");
+      }
       return;
     }
 
-    window.open(url, "\_blank", "noopener,noreferrer");
+    // Fișierele private se descarcă prin instanța Axios autentificată.
+    // URL-ul blob este temporar și nu expune tokenul în adresă.
+    const tab = window.open("", "_blank");
+    try {
+      const response = await api.get(`/attachments/file/${attachment.id}`, {
+        responseType: "blob",
+      });
+      const mime =
+        response.headers?.["content-type"] ||
+        response.data.type ||
+        "application/octet-stream";
+      const blob = new Blob([response.data], { type: mime });
+      const objectUrl = URL.createObjectURL(blob);
+      if (tab && !tab.closed) {
+        tab.location.href = objectUrl;
+      } else {
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download =
+          attachment.original_name ||
+          attachment.file_name ||
+          attachment.name ||
+          "document";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (err) {
+      if (tab && !tab.closed) tab.close();
+      setError(
+        err.response?.data?.message || "Fișierul nu a putut fi deschis.",
+      );
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -297,7 +332,9 @@ function EditLegislation() {
     <div className="edit-legislation-page">
       <header className="edit-legislation-header">
         <div>
-          <span className="edit-legislation-label">GESTIONARE ACTELOR NORMATIV</span>
+          <span className="edit-legislation-label">
+            GESTIONARE ACTELOR NORMATIV
+          </span>
 
           <h1>Editează actul normativ</h1>
 
@@ -462,6 +499,7 @@ function EditLegislation() {
                 onLinkChange={setLinkUrl}
                 disabled={saving}
                 onError={setError}
+                variant="telegram"
               />
             </div>
           )}

@@ -1,12 +1,4 @@
-
-
-
-
 /* BORDER - MAIN LAYOUT */
-
-
-
-
 
 
 
@@ -30,10 +22,6 @@
 
 
 
-
-
-
-
   display: flex;
 
 
@@ -54,15 +42,7 @@
 
 
 
-
-
-
-
 /* SIDEBAR */
-
-
-
-
 
 
 
@@ -134,15 +114,7 @@
 
 
 
-
-
-
-
 /* LOGO BORDER */
-
-
-
-
 
 
 
@@ -206,10 +178,6 @@
 
 
 
-
-
-
-
 .sidebar-logo:focus-visible {
 
 
@@ -223,10 +191,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -270,10 +234,6 @@
 
 
 
-
-
-
-
 .sidebar-logo:hover .border-logo-image {
 
 
@@ -283,10 +243,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -303,10 +259,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -339,10 +291,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -390,15 +338,7 @@
 
 
 
-
-
-
-
 /* SIDEBAR MENU */
-
-
-
-
 
 
 
@@ -431,10 +371,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -542,10 +478,6 @@
 
 
 
-
-
-
-
 .sidebar-menu a:hover,
 
 
@@ -567,10 +499,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -618,10 +546,6 @@
 
 
 
-
-
-
-
 .sidebar-menu a.active::before,
 
 
@@ -666,10 +590,6 @@
 
 
 
-
-
-
-
 .sidebar-menu svg,
 
 
@@ -690,15 +610,7 @@
 
 
 
-
-
-
-
 /* SIDEBAR BOTTOM */
-
-
-
-
 
 
 
@@ -730,15 +642,7 @@
 
 
 
-
-
-
-
 /* MAIN AREA */
-
-
-
-
 
 
 
@@ -770,15 +674,7 @@
 
 
 
-
-
-
-
 /* TOPBAR */
-
-
-
-
 
 
 
@@ -838,10 +734,6 @@
 
 
 
-
-
-
-
 .topbar > div:first-child {
 
 
@@ -854,23 +746,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /* SEARCH */
-
-
-
-
 
 
 
@@ -903,10 +779,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -943,10 +815,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1018,10 +886,6 @@
 
 
 
-
-
-
-
 .topbar-search input:hover,
 
 
@@ -1035,10 +899,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1058,10 +918,6 @@
 
 
 
-
-
-
-
 .topbar-search input::placeholder {
 
 
@@ -1074,15 +930,7 @@
 
 
 
-
-
-
-
 /* SEARCH RESULTS */
-
-
-
-
 
 
 
@@ -1135,10 +983,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1198,10 +1042,6 @@
 
 
 
-
-
-
-
 .search-result-item:last-child {
 
 
@@ -1214,10 +1054,6 @@
 
 
 
-
-
-
-
 .search-result-item:hover {
 
 
@@ -1227,10 +1063,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1278,10 +1110,6 @@
 
 
 
-
-
-
-
 .search-result-content {
 
 
@@ -1303,10 +1131,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1342,10 +1166,6 @@
 
 
 
-
-
-
-
 .search-result-content span {
 
 
@@ -1359,10 +1179,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1390,15 +1206,7 @@
 
 
 
-
-
-
-
 /* TOPBAR RIGHT */
-
-
-
-
 
 
 
@@ -1426,15 +1234,7 @@
 
 
 
-
-
-
-
 /* NOTIFICATION BUTTON */
-
-
-
-
 
 
 
@@ -1502,10 +1302,6 @@
 
 
 
-
-
-
-
 .icon-button:hover {
 
 
@@ -1519,10 +1315,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1566,15 +1358,7 @@
 
 
 
-
-
-
-
 /* USER MENU */
-
-
-
-
 
 
 
@@ -1587,10 +1371,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1619,10 +1399,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1666,10 +1442,6 @@
 
 
 
-
-
-
-
 .user-menu-trigger > svg {
 
 
@@ -1683,10 +1455,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1734,10 +1502,6 @@
 
 
 
-
-
-
-
 .user-info strong {
 
 
@@ -1766,10 +1530,6 @@
 
 
 
-
-
-
-
 .user-info small {
 
 
@@ -1791,10 +1551,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1843,10 +1599,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1910,10 +1662,6 @@
 
 
 
-
-
-
-
 .user-dropdown button:hover {
 
 
@@ -1923,10 +1671,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1950,10 +1694,6 @@
 
 
 
-
-
-
-
 .user-dropdown .user-dropdown-logout {
 
 
@@ -1963,10 +1703,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -1982,15 +1718,7 @@
 
 
 
-
-
-
-
 /* CONTENT */
-
-
-
-
 
 
 
@@ -2018,15 +1746,7 @@
 
 
 
-
-
-
-
 /* SCROLLBARS */
-
-
-
-
 
 
 
@@ -2046,10 +1766,6 @@
 
 
 
-
-
-
-
 .sidebar-menu::-webkit-scrollbar-track,
 
 
@@ -2063,10 +1779,6 @@
 
 
 }
-
-
-
-
 
 
 
@@ -2086,10 +1798,6 @@
 
 
 
-
-
-
-
 .search-results::-webkit-scrollbar-thumb {
 
 
@@ -2106,15 +1814,7 @@
 
 
 
-
-
-
-
 /* RESPONSIVE */
-
-
-
-
 
 
 
@@ -2134,10 +1834,6 @@
 
 
 
-
-
-
-
   .main-area {
 
 
@@ -2151,10 +1847,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2174,10 +1866,6 @@
 
 
 
-
-
-
-
   .border-logo-image {
 
 
@@ -2194,10 +1882,6 @@
 
 
 
-
-
-
-
   .border-logo-text h2 {
 
 
@@ -2207,10 +1891,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2230,10 +1910,6 @@
 
 
 
-
-
-
-
   .topbar {
 
 
@@ -2247,10 +1923,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2270,10 +1942,6 @@
 
 
 
-
-
-
-
 @media (max-width: 850px) {
 
 
@@ -2287,10 +1955,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2314,10 +1978,6 @@
 
 
 
-
-
-
-
   .border-logo-image {
 
 
@@ -2331,10 +1991,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2362,10 +2018,6 @@
 
 
 
-
-
-
-
   .sidebar-menu a,
 
 
@@ -2390,10 +2042,6 @@
 
 
 
-
-
-
-
   .main-area {
 
 
@@ -2410,10 +2058,6 @@
 
 
 
-
-
-
-
   .topbar > div:first-child {
 
 
@@ -2423,10 +2067,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2446,10 +2086,6 @@
 
 
 
-
-
-
-
 @media (max-width: 600px) {
 
 
@@ -2466,10 +2102,6 @@
 
 
 
-
-
-
-
   .sidebar-logo {
 
 
@@ -2479,10 +2111,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2502,10 +2130,6 @@
 
 
 
-
-
-
-
   .sidebar-menu {
 
 
@@ -2518,10 +2142,6 @@
 
 
 
-
-
-
-
   .sidebar-bottom {
 
 
@@ -2531,10 +2151,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2558,10 +2174,6 @@
 
 
 
-
-
-
-
   .main-area {
 
 
@@ -2575,10 +2187,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2602,10 +2210,6 @@
 
 
 
-
-
-
-
   .topbar-search {
 
 
@@ -2615,10 +2219,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2642,10 +2242,6 @@
 
 
 
-
-
-
-
   .topbar-search > svg {
 
 
@@ -2662,10 +2258,6 @@
 
 
 
-
-
-
-
   .topbar-right {
 
 
@@ -2675,10 +2267,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2702,10 +2290,6 @@
 
 
 
-
-
-
-
   .user-info > div:not(.user-avatar) {
 
 
@@ -2718,10 +2302,6 @@
 
 
 
-
-
-
-
   .user-menu-trigger > svg {
 
 
@@ -2731,10 +2311,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2754,10 +2330,6 @@
 
 
 
-
-
-
-
   .icon-button {
 
 
@@ -2774,10 +2346,6 @@
 
 
 
-
-
-
-
   .user-dropdown {
 
 
@@ -2787,10 +2355,6 @@
 
 
   }
-
-
-
-
 
 
 
@@ -2810,15 +2374,11 @@
 
 
 
-
-
-
-
 @media (prefers-reduced-motion: reduce) {
 
 
 
-  .sidebar-logo *,
+   .sidebar-logo *,
 
 
 
@@ -2846,137 +2406,259 @@
 
 
 
-
-
 /* === RESPONSIVE NAVIGATION OVERRIDES === */
+
+
 
 .app-layout { width: 100%; min-width: 0; }
 
+
+
 .sidebar-brand-row { position: relative; }
+
+
 
 .sidebar-close, .sidebar-backdrop, .mobile-menu-button, .mobile-search-button, .mobile-search-close, .mobile-brand { display: none; }
 
+
+
 .topbar-search { min-width: 0; }
+
+
 
 .topbar-search input { min-width: 0; }
 
+
+
 @media (max-width: 850px) {
+
+
 
   .sidebar {
 
+
+
     width: min(310px, 86vw);
+
+
 
     transform: translateX(-105%);
 
+
+
     transition: transform .25s ease;
+
+
 
     z-index: 2100;
 
+
+
     box-shadow: 10px 0 40px rgba(0, 0, 0, .22);
 
+
+
   }
+
+
 
   .sidebar.sidebar--open { transform: translateX(0); }
 
+
+
   .sidebar-backdrop {
+
+
 
     display: block; position: fixed; inset: 0; z-index: 2050;
 
+
+
     background: rgba(4, 18, 38, .58); border: 0; padding: 0;
 
+
+
   }
+
+
 
   .sidebar-logo { min-height: 104px; justify-content: flex-start; padding: 14px 20px; gap: 12px; }
 
+
+
   .border-logo-image { width: 66px; height: 76px; }
+
+
 
   .border-logo-text, .sidebar-menu a span, .sidebar-bottom a span, .logout-button span { display: initial; }
 
+
+
   .border-logo-text h2 { font-size: 24px; }
+
+
 
   .border-logo-text span { display: block; font-size: 8px; }
 
+
+
   .sidebar-menu { padding: 20px 13px; }
 
+
+
   .sidebar-bottom { padding: 16px 13px 22px; }
+
+
 
   .sidebar-menu a, .sidebar-bottom a, .logout-button { justify-content: flex-start; padding: 0 15px; min-height: 50px; }
 
+
+
   .sidebar-close { display: flex; align-items: center; justify-content: center; position: absolute; right: 8px; top: 10px; width: 34px; height: 34px; color: #fff; background: rgba(255,255,255,.1); border: 0; border-radius: 9px; }
+
+
 
   .main-area { width: 100%; margin-left: 0; min-width: 0; }
 
+
+
   .topbar { height: 68px; padding: 0 18px; gap: 12px; }
+
+
 
   .topbar > div:first-child { display: block; }
 
+
+
   .mobile-menu-button { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex-shrink: 0; background: #eef5ff; border: 1px solid #dae5f2; border-radius: 11px; color: #123a65; cursor: pointer; }
+
+
 
   .topbar-search { display: block; flex: 1; max-width: none; margin: 0; }
 
+
+
   .content { min-width: 0; min-height: calc(100dvh - 68px); }
 
+
+
 }
+
+
 
 @media (max-width: 600px) {
 
+
+
   .sidebar { width: min(310px, 86vw); }
+
+
 
   .sidebar-logo { min-height: 104px; }
 
+
+
   .border-logo-image { width: 66px; height: 76px; }
+
+
 
   .sidebar-menu { padding: 20px 13px; }
 
+
+
   .sidebar-bottom { padding: 16px 13px 22px; }
+
+
 
   .sidebar-menu a, .sidebar-bottom a, .logout-button { min-height: 50px; }
 
+
+
   .main-area { width: 100%; margin-left: 0; }
+
+
 
   .topbar { height: 62px; padding: 0 12px; gap: 9px; }
 
+
+
   .mobile-brand { display: block; color: #0b2c52; font-weight: 900; letter-spacing: .8px; font-size: 16px; margin-right: auto; }
+
+
 
   .mobile-search-button { display: flex; }
 
+
+
   .topbar-search { display: none; }
+
+
 
   .topbar.topbar--search-open .topbar-search {
 
+
+
     display: block; position: absolute; top: 0; left: 0; right: 0;
+
+
 
     height: 62px; padding: 9px 12px; margin: 0; max-width: none;
 
+
+
     background: #fff; z-index: 10;
+
+
 
   }
 
+
+
   .topbar.topbar--search-open .topbar-search > svg { left: 26px; }
+
+
 
   .topbar.topbar--search-open .topbar-search input { height: 44px; padding-left: 43px; padding-right: 43px; font-size: 16px; }
 
+
+
   .mobile-search-close { display: flex; position: absolute; right: 17px; top: 14px; align-items: center; justify-content: center; width: 34px; height: 34px; background: transparent; border: 0; color: #536e8c; cursor: pointer; }
+
+
 
   .search-results { top: calc(100% + 3px); left: 10px; right: 10px; max-height: min(65dvh, 440px); }
 
+
+
   .topbar-right { gap: 5px; }
+
+
 
   .icon-button { width: 38px; height: 40px; }
 
+
+
   .user-info { padding-left: 2px; }
+
+
 
   .user-avatar { width: 36px; height: 36px; }
 
+
+
   .user-dropdown { width: min(260px, calc(100vw - 24px)); }
+
+
 
   .content { min-height: calc(100dvh - 62px); }
 
+
+
 }
 
+
+
 @media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }
-
-
 
 
 
@@ -2986,15 +2668,27 @@
 
 @media (max-width: 768px) {
 
+
+
   /* Ascundem denumirea din bara mobilă */
+
+
 
   .mobile-brand,
 
+
+
   .mobile-logo-text,
+
+
 
   .topbar-brand {
 
+
+
     display: none !important;
+
+
 
   }
 
@@ -3002,17 +2696,31 @@
 
   /* Organizarea barei superioare */
 
+
+
   .topbar {
+
+
 
     display: flex;
 
+
+
     align-items: center;
+
+
 
     gap: 8px;
 
+
+
     padding: 10px 12px;
 
+
+
     min-width: 0;
+
+
 
   }
 
@@ -3020,21 +2728,39 @@
 
   /* Căutarea ocupă spațiul disponibil */
 
+
+
   .topbar-search {
+
+
 
     display: flex !important;
 
+
+
     position: relative;
+
+
 
     flex: 1 1 auto;
 
+
+
     width: auto;
+
+
 
     min-width: 0;
 
+
+
     max-width: none;
 
+
+
     margin: 0;
+
+
 
   }
 
@@ -3042,13 +2768,23 @@
 
   .topbar-search input {
 
+
+
     display: block;
+
+
 
     width: 100%;
 
+
+
     min-width: 0;
 
+
+
     font-size: 13px;
+
+
 
   }
 
@@ -3056,17 +2792,31 @@
 
   /* Butoanele din dreapta */
 
+
+
   .topbar-right {
+
+
 
     display: flex;
 
+
+
     align-items: center;
+
+
 
     flex: 0 0 auto;
 
+
+
     gap: 6px;
 
+
+
     margin: 0;
+
+
 
   }
 
@@ -3074,11 +2824,19 @@
 
   /* Ascundem doar butonul mobil care deschidea căutarea */
 
+
+
   .mobile-search-button,
+
+
 
   .topbar-search-toggle {
 
+
+
     display: none !important;
+
+
 
   }
 
@@ -3086,25 +2844,47 @@
 
   /* Rezultatele căutării */
 
+
+
   .search-results {
+
+
 
     position: absolute;
 
+
+
     top: calc(100% + 8px);
+
+
 
     left: 0;
 
+
+
     right: 0;
+
+
 
     width: 100%;
 
+
+
     max-height: 60vh;
+
+
 
     overflow-y: auto;
 
+
+
     z-index: 1100;
 
+
+
   }
+
+
 
 }
 
@@ -3112,13 +2892,23 @@
 
 @media (max-width: 768px) {
 
+
+
   .mobile-search-close,
+
+
 
   .topbar-search-close,
 
+
+
   .search-close-button {
 
+
+
     display: none !important;
+
+
 
   }
 
@@ -3126,9 +2916,15 @@
 
   .topbar-search {
 
+
+
     min-width: 0;
 
+
+
     flex: 1 1 auto;
+
+
 
   }
 
@@ -3136,71 +2932,491 @@
 
   .topbar-search input {
 
+
+
     width: 100%;
+
+
 
     min-width: 0;
 
+
+
     padding-right: 12px;
+
+
 
   }
 
+
+
 }
+
+
 
 /* BORDER — modernizare incrementală; păstrează regulile existente */
+
+
+
 .app-layout-modern .sidebar { box-shadow: 8px 0 30px rgba(7, 24, 51, .11); }
+
+
+
 .app-layout-modern .sidebar-menu a,
+
+
+
 .app-layout-modern .sidebar-bottom a,
+
+
+
 .app-layout-modern .logout-button { transition: background-color .2s ease, color .2s ease, transform .2s ease; }
+
+
+
 .app-layout-modern .sidebar-menu a:hover,
+
+
+
 .app-layout-modern .sidebar-bottom a:hover,
+
+
+
 .app-layout-modern .logout-button:hover { transform: translateX(3px); }
+
+
+
 .app-layout-modern .sidebar-menu a.active,
+
+
+
 .app-layout-modern .sidebar-bottom a.active { box-shadow: 0 8px 20px rgba(0, 40, 95, .28); }
+
+
+
 .app-layout-modern .topbar { box-shadow: 0 5px 22px rgba(15, 35, 65, .055); }
+
+
+
 .app-layout-modern .topbar-search input { transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease; }
+
+
+
 .app-layout-modern .user-menu-trigger { border-radius: 12px; padding-top: 5px; padding-bottom: 5px; }
+
+
+
 .app-layout-modern .user-menu-trigger:hover { background: #f2f7fd; }
+
+
+
 .app-layout-modern .user-avatar { box-shadow: 0 3px 12px rgba(14, 50, 91, .18); }
+
+
+
 .app-layout-modern .search-results,
+
+
+
 .app-layout-modern .user-dropdown { box-shadow: 0 20px 45px rgba(9, 35, 74, .16); }
+
+
+
 .app-layout-modern .search-result-item:focus-visible,
+
+
+
 .app-layout-modern .user-dropdown button:focus-visible,
+
+
+
 .app-layout-modern .sidebar-menu a:focus-visible,
+
+
+
 .app-layout-modern .sidebar-bottom a:focus-visible { outline: 2px solid #4c9bfa; outline-offset: -2px; }
+
+
+
 @media (max-width: 850px) {
+
+
+
   .app-layout-modern .sidebar-menu a:hover,
+
+
+
   .app-layout-modern .sidebar-bottom a:hover,
+
+
+
   .app-layout-modern .logout-button:hover { transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .app-layout-modern .sidebar-menu a,
-  .app-layout-modern .sidebar-bottom a,
-  .app-layout-modern .logout-button { transition: none; }
+
+
+
 }
 
+
+
+@media (prefers-reduced-motion: reduce) {
+
+
+
+  .app-layout-modern .sidebar-menu a,
+
+
+
+  .app-layout-modern .sidebar-bottom a,
+
+
+
+  .app-layout-modern .logout-button { transition: none; }
+
+
+
+}
+
+
+
 /* Corecții finale: căutarea rămâne vizibilă pe telefon */
+
+
+
 @media (max-width: 768px) {
+
+
+
   .app-layout .topbar-search {
+
+
+
     display: flex !important;
+
+
+
     position: relative;
+
+
+
     flex: 1 1 auto;
+
+
+
     min-width: 0;
+
+
+
     width: auto;
+
+
+
     max-width: none;
+
+
+
     margin: 0;
+
+
+
   }
+
+
+
   .app-layout .topbar-search input {
+
+
+
     width: 100%;
+
+
+
     min-width: 0;
+
+
+
     padding-right: 12px;
+
+
+
   }
+
+
+
   .app-layout .mobile-search-button,
+
+
+
   .app-layout .mobile-search-close { display: none !important; }
+
+
+
   .app-layout .topbar.topbar--search-open .topbar-search {
+
+
+
     position: relative;
+
+
+
     inset: auto;
+
+
+
     height: auto;
+
+
+
     padding: 0;
+
+
+
     background: transparent;
+
+
+
   }
+
+
+
+}
+
+
+
+/* === Corecție lățime responsive (fără modificarea meniului și a rutelor) === */
+
+
+
+.app-layout,
+
+
+
+.main-area,
+
+
+
+.content {
+
+
+
+  min-width: 0;
+
+
+
+  max-width: 100%;
+
+
+
+}
+
+
+
+@media (max-width: 850px) {
+
+
+
+  .app-layout {
+
+
+
+    width: 100%;
+
+
+
+    min-width: 0;
+
+
+
+  }
+
+
+
+  .main-area {
+
+
+
+    flex: 1 1 auto;
+
+
+
+    width: 100%;
+
+
+
+    min-width: 0;
+
+
+
+    margin-left: 0;
+
+
+
+  }
+
+
+
+  .content {
+
+
+
+    width: 100%;
+
+
+
+    min-width: 0;
+
+
+
+    max-width: 100%;
+
+
+
+  }
+
+
+
+  .topbar {
+
+
+
+    width: 100%;
+
+
+
+    min-width: 0;
+
+
+
+    box-sizing: border-box;
+
+
+
+  }
+
+
+
+  .topbar-search {
+
+
+
+    min-width: 0;
+
+
+
+  }
+
+
+
+}
+
+
+
+@media (max-width: 600px) {
+
+
+
+  .app-layout,
+
+
+
+  .main-area,
+
+
+
+  .content {
+
+
+
+    width: 100%;
+
+
+
+    max-width: 100%;
+
+
+
+  }
+
+
+
+  .topbar > div:first-child {
+
+
+
+    min-width: 0;
+
+
+
+  }
+
+
+
+}
+
+
+
+/* Corecție finală: sidebar-ul mobil este overlay, nu rezervă spațiu. */
+
+
+
+@media (max-width: 850px) {
+
+
+
+  .app-layout { width: 100%; min-width: 0; max-width: 100%; }
+
+
+
+  .app-layout .main-area { width: 100%; max-width: 100%; min-width: 0; margin-left: 0; }
+
+
+
+  .app-layout .content { width: 100%; max-width: 100%; min-width: 0; }
+
+
+
+  .app-layout .topbar { width: 100%; max-width: 100%; min-width: 0; }
+
+
+
+}
+
+
+
+
+
+
+/* ==============================================================
+   REPARATIE LAYOUT: sidebar fixed + zona centrala flexibila.
+   Nu combina flex-basis: calc(...) cu margin-left: ...
+   ============================================================== */
+.app-layout.app-layout-modern {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.app-layout.app-layout-modern .main-area {
+  box-sizing: border-box;
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  max-width: none;
+  margin-left: 310px;
+}
+.app-layout.app-layout-modern .content {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.app-layout.app-layout-modern .topbar {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+@media (min-width: 851px) and (max-width: 1100px) {
+  .app-layout.app-layout-modern .main-area { margin-left: 230px; }
+}
+@media (max-width: 850px) {
+  .app-layout.app-layout-modern .main-area { margin-left: 0; }
 }

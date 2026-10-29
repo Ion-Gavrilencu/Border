@@ -1,3 +1,4 @@
+
 const express = require("express");
 
 const {
@@ -6,6 +7,8 @@ const {
   createLegislation,
   updateLegislation,
   deleteLegislation,
+  addLegislationFavorite,
+  removeLegislationFavorite,
 } = require("../controllers/legislationController");
 
 const authenticate = require("../middleware/authMiddleware");
@@ -13,10 +16,17 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
+// USER, EDITOR, ADMIN — lista actelor normative
 router.get("/", authenticate, getLegislation);
 
+// USER, EDITOR, ADMIN — favorite
+router.post("/:id/favorite", authenticate, addLegislationFavorite);
+router.delete("/:id/favorite", authenticate, removeLegislationFavorite);
+
+// USER, EDITOR, ADMIN — detalii
 router.get("/:id", authenticate, getLegislationById);
 
+// EDITOR, ADMIN — creare
 router.post(
   "/",
   authenticate,
@@ -24,6 +34,7 @@ router.post(
   createLegislation
 );
 
+// EDITOR, ADMIN — modificare
 router.patch(
   "/:id",
   authenticate,
@@ -31,6 +42,7 @@ router.patch(
   updateLegislation
 );
 
+// ADMIN — ștergere
 router.delete(
   "/:id",
   authenticate,

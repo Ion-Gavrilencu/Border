@@ -3,10 +3,14 @@ const pool = require("../config/database");
 const { createAuditLog } = require("./auditController");
 const { notifyUsers } = require("../services/notificationService");
 
+// VALIDARE ID ORDIN
+const isValidOrderId = (id) => /^[1-9]\d*$/.test(String(id || ""));
+
 // LISTA ORDINELOR
 const getOrders = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT
         o.id,
         o.title,
@@ -17,11 +21,38 @@ const getOrders = async (req, res) => {
         o.created_at,
         o.updated_at,
         u.username AS created_by_username,
-        u.full_name AS created_by_name
+        u.full_name AS created_by_name,
+
+        EXISTS (
+          SELECT 1
+          FROM order_favorites f
+          WHERE f.order_id = o.id
+            AND f.user_id = $1
+        ) AS is_favorite,
+
+        COALESCE(ac.attachments_count, 0)::integer
+          AS attachments_count
+
       FROM ordine o
-      LEFT JOIN users u ON o.created_by = u.id
-      ORDER BY o.order_date DESC NULLS LAST, o.id DESC
-    `);
+
+      LEFT JOIN users u
+        ON o.created_by = u.id
+
+      LEFT JOIN (
+        SELECT
+          entity_id,
+          COUNT(*) AS attachments_count
+        FROM attachments
+        WHERE entity_type = 'ordine'
+        GROUP BY entity_id
+      ) ac ON ac.entity_id = o.id
+
+      ORDER BY
+        o.order_date DESC NULLS LAST,
+        o.id DESC
+      `,
+      [req.user.id]
+    );
 
     return res.status(200).json({
       ordine: result.rows,
@@ -40,6 +71,12 @@ const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!isValidOrderId(id)) {
+      return res.status(400).json({
+        message: "ID-ul ordinului este invalid.",
+      });
+    }
+
     const result = await pool.query(
       `
       SELECT
@@ -52,12 +89,30 @@ const getOrderById = async (req, res) => {
         o.created_at,
         o.updated_at,
         u.username AS created_by_username,
-        u.full_name AS created_by_name
+        u.full_name AS created_by_name,
+
+        EXISTS (
+          SELECT 1
+          FROM order_favorites f
+          WHERE f.order_id = o.id
+            AND f.user_id = $2
+        ) AS is_favorite,
+
+        (
+          SELECT COUNT(*)::integer
+          FROM attachments a
+          WHERE a.entity_type = 'ordine'
+            AND a.entity_id = o.id
+        ) AS attachments_count
+
       FROM ordine o
-      LEFT JOIN users u ON o.created_by = u.id
+
+      LEFT JOIN users u
+        ON o.created_by = u.id
+
       WHERE o.id = $1
       `,
-      [id],
+      [id, req.user.id]
     );
 
     if (result.rows.length === 0) {
@@ -115,7 +170,7 @@ const createOrder = async (req, res) => {
         orderDate || null,
         typeof content === "string" ? content : "",
         req.user.id,
-      ],
+      ]
     );
 
     const order = result.rows[0];
@@ -145,7 +200,7 @@ const createOrder = async (req, res) => {
       // Ordinul rămâne salvat chiar dacă notificarea eșuează.
       console.error(
         "CREATE ORDER NOTIFICATION ERROR:",
-        notificationError,
+        notificationError
       );
     }
 
@@ -200,7 +255,7 @@ const updateOrder = async (req, res) => {
         orderDate || null,
         typeof content === "string" ? content : "",
         id,
-      ],
+      ]
     );
 
     if (result.rows.length === 0) {
@@ -241,7 +296,7 @@ const deleteOrder = async (req, res) => {
       WHERE id = $1
       RETURNING id, title
       `,
-      [id],
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -271,10 +326,99 @@ const deleteOrder = async (req, res) => {
   }
 };
 
+// ADAUGĂ ORDIN LA FAVORITE
+const addOrderFavorite = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidOrderId(id)) {
+      return res.status(400).json({
+        message: "ID-ul ordinului este invalid.",
+      });
+    }
+
+    const orderResult = await pool.query(
+      "SELECT id FROM ordine WHERE id = $1",
+      [id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Ordinul nu a fost găsit.",
+      });
+    }
+
+    await pool.query(
+      `
+      INSERT INTO order_favorites (user_id, order_id)
+      VALUES ($1, $2)
+      ON CONFLICT (user_id, order_id)
+      DO NOTHING
+      `,
+      [req.user.id, id]
+    );
+
+    return res.status(200).json({
+      message: "Ordinul a fost adăugat la favorite.",
+      order_id: Number(id),
+      is_favorite: true,
+    });
+  } catch (error) {
+    // Ordinul poate fi șters între verificare și inserare.
+    if (error.code === "23503") {
+      return res.status(404).json({
+        message: "Ordinul sau utilizatorul nu mai există.",
+      });
+    }
+
+    console.error("ADD ORDER FAVORITE ERROR:", error);
+
+    return res.status(500).json({
+      message: "Ordinul nu a putut fi adăugat la favorite.",
+    });
+  }
+};
+
+// ELIMINĂ ORDIN DIN FAVORITE
+const removeOrderFavorite = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidOrderId(id)) {
+      return res.status(400).json({
+        message: "ID-ul ordinului este invalid.",
+      });
+    }
+
+    await pool.query(
+      `
+      DELETE FROM order_favorites
+      WHERE user_id = $1
+        AND order_id = $2
+      `,
+      [req.user.id, id]
+    );
+
+    return res.status(200).json({
+      message: "Ordinul a fost eliminat din favorite.",
+      order_id: Number(id),
+      is_favorite: false,
+    });
+  } catch (error) {
+    console.error("REMOVE ORDER FAVORITE ERROR:", error);
+
+    return res.status(500).json({
+      message: "Ordinul nu a putut fi eliminat din favorite.",
+    });
+  }
+};
+
 module.exports = {
   getOrders,
   getOrderById,
   createOrder,
   updateOrder,
   deleteOrder,
+  addOrderFavorite,
+  removeOrderFavorite,
 };

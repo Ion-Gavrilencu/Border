@@ -1,0 +1,91 @@
+/* Stiluri comune izolate pentru cele patru pagini de editare. */
+:is(.edit-order-page,.edit-telegram-page,.edit-legislation-page,.edit-informatii-page) {
+  --ed-blue:#0869f5;--ed-navy:#092768;--ed-muted:#6680ac;--ed-border:#d8e6fb;
+  width:100%;max-width:1500px;min-width:0;margin:0 auto;
+  padding:28px clamp(14px,2.2vw,34px) 42px;box-sizing:border-box;color:var(--ed-navy);
+}
+:is(.edit-order-page,.edit-telegram-page,.edit-legislation-page,.edit-informatii-page) *,
+:is(.edit-order-page,.edit-telegram-page,.edit-legislation-page,.edit-informatii-page) *::before,
+:is(.edit-order-page,.edit-telegram-page,.edit-legislation-page,.edit-informatii-page) *::after {box-sizing:border-box;}
+:is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header){
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:12px;margin:0 0 20px;padding:12px 190px 12px 0;min-height:155px;
+}
+:is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header)::after{
+  content:"";position:absolute;right:8px;top:0;width:170px;height:145px;pointer-events:none;
+  background:radial-gradient(circle at 65% 45%,#b7d5ff 0 29%,transparent 30%),radial-gradient(circle at 34% 66%,#e0eeff 0 32%,transparent 33%);
+  opacity:.8;border-radius:48%;
+}
+:is(.edit-order-label,.edit-telegram-label,.edit-legislation-label,.edit-informatii-label){color:#0765e6;font-size:12px;font-weight:800;letter-spacing:.5px;}
+:is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header) h1{
+  margin:6px 0 8px;color:var(--ed-navy);font-size:clamp(27px,3vw,39px);line-height:1.14;letter-spacing:-.7px;
+}
+:is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header) p{margin:0;color:var(--ed-muted);font-size:15px;line-height:1.5;}
+:is(.edit-order-back-button,.edit-telegram-back-button,.edit-legislation-back-button,.edit-informatii-back){
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:43px;padding:0 16px;
+  border:1px solid #cfe0fa;border-radius:11px;background:#fff;color:#092d79;font-weight:750;cursor:pointer;
+}
+:is(.edit-order-form,.edit-telegram-form,.edit-legislation-form,.edit-informatii-form){
+  display:flex;flex-direction:column;gap:0;overflow:visible;border:0;background:transparent;box-shadow:none;min-width:0;
+}
+:is(.edit-order-form-header,.edit-telegram-form-header,.edit-legislation-form-header,.edit-informatii-form-header){
+  padding:20px 24px 14px;background:#fff;border:1px solid var(--ed-border);border-bottom:0;border-radius:16px 16px 0 0;
+}
+:is(.edit-order-form-header,.edit-telegram-form-header,.edit-legislation-form-header,.edit-informatii-form-header) h2{margin:0 0 6px;color:var(--ed-navy);font-size:19px;}
+:is(.edit-order-form-header,.edit-telegram-form-header,.edit-legislation-form-header,.edit-informatii-form-header) p{margin:0;color:var(--ed-muted);font-size:13px;}
+/* Grid-ul se aplică pe copiii REALI ai form-body, nu pe form-header. */
+:is(.edit-order-form-body,.edit-telegram-form-body,.edit-legislation-form-body){
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;
+  gap:16px;padding:0;min-width:0;background:transparent;
+}
+:is(.edit-order-fields,.edit-telegram-fields,.edit-legislation-fields){
+  display:grid;grid-template-columns:minmax(0,1fr);gap:17px;min-width:0;
+  padding:20px 24px 24px;border:1px solid var(--ed-border);border-top:0;
+  border-radius:0 0 16px 16px;background:#fff;
+}
+:is(.edit-order-full,.edit-telegram-full,.edit-legislation-full){grid-column:1/-1;}
+:is(.edit-order-section,.edit-telegram-section,.edit-legislation-section){
+  min-width:0;margin:0;padding:20px;border:1px solid var(--ed-border);border-radius:16px;background:#fff;
+}
+/* Secțiunea atașamentelor existente este în dreapta; uploaderul sub formular. */
+:is(.edit-order-form-body,.edit-telegram-form-body,.edit-legislation-form-body) > :is(.edit-order-section,.edit-telegram-section,.edit-legislation-section):last-child{
+  grid-column:1/-1;
+}
+:is(.edit-order-section,.edit-telegram-section,.edit-legislation-section) h3{margin:0 0 13px;color:var(--ed-navy);font-size:17px;}
+:is(.edit-order-form-group,.edit-telegram-form-group,.edit-legislation-form-group,.edit-informatii-form-group) label{display:block;margin-bottom:8px;font-size:13px;color:var(--ed-navy);font-weight:750;}
+:is(.edit-order-form-group,.edit-telegram-form-group,.edit-legislation-form-group,.edit-informatii-form-group) input,
+.edit-informatii-form-group textarea{width:100%;min-width:0;min-height:46px;border:1px solid #cbdcf6;border-radius:10px;background:#fff;color:#082968;font:inherit;font-size:14px;outline:0;}
+:is(.edit-order-form-group,.edit-telegram-form-group,.edit-legislation-form-group,.edit-informatii-form-group) input:focus,
+.edit-informatii-form-group textarea:focus{border-color:var(--ed-blue);box-shadow:0 0 0 3px #0869f51c;}
+:is(.edit-order-attachment,.edit-telegram-attachment,.edit-legislation-attachment){min-width:0;gap:10px;padding:13px;border:1px solid #e0eafb;border-radius:12px;background:#f8fbff;}
+:is(.edit-order-attachment-name,.edit-telegram-attachment-name,.edit-legislation-attachment-name) strong{overflow-wrap:anywhere;white-space:normal;color:var(--ed-navy);font-size:13px;}
+:is(.edit-order-attachment-actions,.edit-telegram-attachment-actions,.edit-legislation-attachment-actions) button{min-width:36px;min-height:36px;border:1px solid #d7e6ff;background:#edf5ff;color:var(--ed-blue);}
+:is(.edit-order-actions,.edit-telegram-actions,.edit-legislation-actions,.edit-informatii-actions){
+  display:flex;gap:14px;margin-top:16px;padding:14px;border:1px solid var(--ed-border);border-radius:16px;background:#fff;
+}
+:is(.edit-order-actions,.edit-telegram-actions,.edit-legislation-actions,.edit-informatii-actions) button{flex:1;min-width:0;min-height:49px;border-radius:11px;font-size:14px;}
+:is(.edit-order-save-button,.edit-telegram-save-button,.edit-legislation-save-button,.edit-informatii-save-button){border:0;background:linear-gradient(110deg,#087bff,#0756df);color:#fff;box-shadow:0 5px 14px #0968ef22;}
+:is(.edit-order-cancel-button,.edit-telegram-cancel-button,.edit-legislation-cancel-button,.edit-informatii-cancel-button){border:1px solid #a9c9ff;background:#fff;color:#0a347e;}
+/* Informații utile au structură diferită: nu forțăm grid-ul altor pagini. */
+.edit-informatii-form-body{display:block;min-width:0;padding:22px 24px;border:1px solid var(--ed-border);border-top:0;border-radius:0 0 16px 16px;background:#fff;}
+.edit-informatii-fields-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
+.edit-informatii-attachments{margin-top:14px;}
+@media(max-width:850px){
+  :is(.edit-order-page,.edit-telegram-page,.edit-legislation-page,.edit-informatii-page){padding:20px 14px 30px;}
+  :is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header){padding-right:110px;min-height:160px;}
+  :is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header)::after{width:100px;height:105px;top:28px;right:0;}
+  :is(.edit-order-form-body,.edit-telegram-form-body,.edit-legislation-form-body){grid-template-columns:minmax(0,1fr);gap:14px;}
+  :is(.edit-order-form-body,.edit-telegram-form-body,.edit-legislation-form-body) > :is(.edit-order-section,.edit-telegram-section,.edit-legislation-section):last-child{grid-column:1;}
+  :is(.edit-order-fields,.edit-telegram-fields,.edit-legislation-fields){padding:18px;}
+  :is(.edit-order-form-header,.edit-telegram-form-header,.edit-legislation-form-header,.edit-informatii-form-header){padding:18px 18px 12px;}
+  .edit-informatii-fields-grid{grid-template-columns:1fr;gap:0;}
+  .edit-informatii-form-body{padding:18px;}
+}
+@media(max-width:480px){
+  :is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header){padding-right:82px;}
+  :is(.edit-order-header,.edit-telegram-header,.edit-legislation-header,.edit-informatii-header)::after{width:75px;height:85px;}
+  :is(.edit-order-actions,.edit-telegram-actions,.edit-legislation-actions,.edit-informatii-actions){gap:8px;padding:10px;}
+  :is(.edit-order-actions,.edit-telegram-actions,.edit-legislation-actions,.edit-informatii-actions) button{padding:9px 6px;font-size:12px;}
+  :is(.edit-order-attachment,.edit-telegram-attachment,.edit-legislation-attachment){flex-wrap:wrap;}
+  :is(.edit-order-attachment-actions,.edit-telegram-attachment-actions,.edit-legislation-attachment-actions){margin-left:auto;}
+}

@@ -1033,3 +1033,146 @@
     transform: none;
   }
 }
+
+/* ============================================================
+   MOBILE DASHBOARD — desktop styles above remain unchanged
+   ============================================================ */
+@media (max-width: 640px) {
+  .dashboard.dashboard-modern {
+    padding: 14px 12px 30px;
+  }
+  .dashboard-modern .border-hero {
+    height: auto;
+    aspect-ratio: 1.95 / 1;
+    margin-bottom: 15px;
+    border-radius: 16px;
+  }
+  .dashboard-modern .border-hero::before {
+    background-size: cover;
+    background-position: center;
+  }
+  .dashboard-modern .border-hero-content { padding: 12px 13px; }
+  .dashboard-modern .border-hero-description {
+    gap: 3px;
+    font-size: clamp(8px, 2.45vw, 11px);
+    line-height: 1.5;
+  }
+  .dashboard-modern .border-hero-description span { padding: 0 2px; }
+  .dashboard-modern .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .dashboard-modern .stat-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 30px;
+    grid-template-rows: 45px auto;
+    align-content: start;
+    align-items: center;
+    gap: 8px 4px;
+    min-height: 148px;
+    padding: 14px 12px 12px;
+    border-radius: 17px;
+    text-align: left;
+  }
+  .dashboard-modern .stat-icon {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 44px;
+    height: 44px;
+    flex-basis: auto;
+    border-radius: 13px;
+  }
+  .dashboard-modern .stat-icon svg { width: 24px; height: 24px; }
+  .dashboard-modern .stat-content {
+    grid-column: 1;
+    grid-row: 2;
+    gap: 5px;
+    min-width: 0;
+  }
+  .dashboard-modern .stat-content strong {
+    order: -1;
+    font-size: 30px;
+    line-height: 1.05;
+  }
+  .dashboard-modern .stat-content span {
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .dashboard-modern .stat-arrow {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    align-self: end;
+    width: 27px;
+    height: 27px;
+    padding: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.85);
+    color: #41668d;
+    opacity: 1;
+  }
+  .dashboard-modern .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .dashboard-modern .dashboard-card,
+  .dashboard-modern .border-news-card {
+    border-radius: 17px;
+    box-shadow: 0 5px 20px rgba(15,40,75,.045);
+  }
+  .dashboard-modern .card-header {
+    padding: 16px 15px;
+    min-height: 69px;
+  }
+  .dashboard-modern .card-header h2 { font-size: 17px; }
+  .dashboard-modern .card-header p { font-size: 11px; }
+  .dashboard-modern .information-item {
+    gap: 11px;
+    padding: 14px 13px;
+  }
+  .dashboard-modern .information-item:hover { padding-left: 13px; }
+  .dashboard-modern .item-icon {
+    flex-basis: 43px;
+    width: 43px;
+    height: 43px;
+    border-radius: 12px;
+  }
+  .dashboard-modern .information-item p {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .dashboard-modern .information-arrow { width: 16px; }
+  .dashboard-modern .border-news-show-all {
+    min-height: 43px;
+    border-radius: 11px;
+  }
+  /* Keep the existing navbar/search logic; adjust only its mobile layout. */
+  .app-layout:has(.dashboard-modern) .topbar {
+    gap: 7px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .app-layout:has(.dashboard-modern) .topbar-right { gap: 4px; }
+  .app-layout:has(.dashboard-modern) .mobile-menu-button { flex-shrink: 0; }
+  .app-layout:has(.dashboard-modern) .user-info { padding-left: 5px; }
+  .app-layout:has(.dashboard-modern) .user-avatar { flex-shrink: 0; }
+}
+@media (max-width: 360px) {
+  .dashboard.dashboard-modern { padding-inline: 9px; }
+  .dashboard-modern .stats-grid { gap: 8px; }
+  .dashboard-modern .stat-card { padding: 11px 9px; min-height: 142px; }
+  .dashboard-modern .stat-content strong { font-size: 27px; }
+  .dashboard-modern .stat-content span { font-size: 10px; }
+}
+
+/* Ascunde butoanele de actualizare manuală din cele două panouri Dashboard. */
+.dashboard-modern .dashboard-refresh-button {
+  display: none;
+}

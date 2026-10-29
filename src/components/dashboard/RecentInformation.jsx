@@ -5,7 +5,6 @@ import {
   Scale,
   Info,
   ArrowRight,
-  RefreshCw,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -50,8 +49,6 @@ const formatDate = (value) => {
 function RecentInformation({
   recent = [],
   loadingStats,
-  refreshing,
-  onRefresh,
 }) {
   const navigate = useNavigate();
 
@@ -62,19 +59,6 @@ function RecentInformation({
           <h2>Ultimele informații</h2>
           <p>Documente adăugate recent</p>
         </div>
-
-        <button
-          type="button"
-          className="dashboard-refresh-button"
-          onClick={onRefresh}
-          disabled={refreshing}
-          aria-label="Actualizează informațiile"
-        >
-          <RefreshCw
-            size={19}
-            className={refreshing ? "refresh-spin" : ""}
-          />
-        </button>
       </div>
 
       <div className="information-list">

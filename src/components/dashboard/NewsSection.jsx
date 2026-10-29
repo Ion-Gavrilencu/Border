@@ -1,7 +1,5 @@
-
 import {
   ArrowRight,
-  RefreshCw,
   AlertCircle,
   Newspaper,
   Plus,
@@ -38,14 +36,11 @@ const validUrl = (value) => {
 
 // NUMELE FIȘIERULUI
 const getFileName = (attachment) =>
-  attachment.original_name ||
-  attachment.name ||
-  "Document";
+  attachment.original_name || attachment.name || "Document";
 
 // VERIFICARE FOTOGRAFIE
 const isImageAttachment = (attachment) =>
-  attachment.attachment_type === "file" &&
-  attachment.file_category === "image";
+  attachment.attachment_type === "file" && attachment.file_category === "image";
 
 // IMAGINE PUBLICĂ
 function NewsImage({ src, title }) {
@@ -78,12 +73,9 @@ function NewsImage({ src, title }) {
 
 // DESCĂRCARE ATAȘAMENT PRIVAT
 async function downloadPrivateAttachment(attachment) {
-  const response = await api.get(
-    `/attachments/file/${attachment.id}`,
-    {
-      responseType: "blob",
-    }
-  );
+  const response = await api.get(`/attachments/file/${attachment.id}`, {
+    responseType: "blob",
+  });
 
   const objectUrl = URL.createObjectURL(response.data);
   const link = document.createElement("a");
@@ -112,8 +104,7 @@ function NewsSection() {
   // PERMISIUNI
   const [role, setRole] = useState("USER");
 
-  const canEdit =
-    role === "ADMIN" || role === "EDITOR";
+  const canEdit = role === "ADMIN" || role === "EDITOR";
 
   const canDelete = role === "ADMIN";
 
@@ -127,8 +118,7 @@ function NewsSection() {
 
   // ATAȘAMENTE
   const [newsAttachments, setNewsAttachments] = useState({});
-  const [attachmentsLoading, setAttachmentsLoading] =
-    useState({});
+  const [attachmentsLoading, setAttachmentsLoading] = useState({});
 
   // ÎNCĂRCARE ATAȘAMENTE
   const loadNewsAttachments = useCallback(async (newsId) => {
@@ -138,13 +128,9 @@ function NewsSection() {
     }));
 
     try {
-      const response = await api.get(
-        `/attachments/news/${newsId}`
-      );
+      const response = await api.get(`/attachments/news/${newsId}`);
 
-      const attachments = Array.isArray(
-        response.data?.attachments
-      )
+      const attachments = Array.isArray(response.data?.attachments)
         ? response.data.attachments
         : [];
 
@@ -173,17 +159,12 @@ function NewsSection() {
 
       const response = await api.get("/news");
 
-      const articles = Array.isArray(
-        response.data?.articles
-      )
+      const articles = Array.isArray(response.data?.articles)
         ? response.data.articles
         : [];
 
       const validArticles = articles.filter((article) => {
-        if (
-          typeof article.title !== "string" ||
-          !article.title.trim()
-        ) {
+        if (typeof article.title !== "string" || !article.title.trim()) {
           return false;
         }
 
@@ -199,8 +180,8 @@ function NewsSection() {
       // ÎNCĂRCARE FOTOGRAFII ȘI DOCUMENTE
       const results = await Promise.allSettled(
         validArticles.map((article) =>
-          api.get(`/attachments/news/${article.id}`)
-        )
+          api.get(`/attachments/news/${article.id}`),
+        ),
       );
 
       const attachmentsByNews = {};
@@ -210,9 +191,7 @@ function NewsSection() {
 
         attachmentsByNews[articleId] =
           result.status === "fulfilled" &&
-          Array.isArray(
-            result.value.data?.attachments
-          )
+          Array.isArray(result.value.data?.attachments)
             ? result.value.data.attachments
             : [];
       });
@@ -222,8 +201,7 @@ function NewsSection() {
       console.error("NEWS ERROR:", err);
 
       setNewsError(
-        err.response?.data?.message ||
-          "Noutățile nu au putut fi încărcate."
+        err.response?.data?.message || "Noutățile nu au putut fi încărcate.",
       );
     } finally {
       setLoadingNews(false);
@@ -236,9 +214,7 @@ function NewsSection() {
       const response = await api.get("/auth/me");
 
       const user =
-        response.data?.user ||
-        response.data?.data?.user ||
-        response.data;
+        response.data?.user || response.data?.data?.user || response.data;
 
       setRole(user?.role || "USER");
     } catch (err) {
@@ -263,16 +239,10 @@ function NewsSection() {
       }
     };
 
-    window.addEventListener(
-      "keydown",
-      handleKeyDown
-    );
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown
-      );
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selectedArticle, previewImage]);
 
@@ -295,9 +265,7 @@ function NewsSection() {
     } catch (err) {
       console.error("DOWNLOAD ATTACHMENT ERROR:", err);
 
-      setNewsError(
-        "Fișierul nu a putut fi descărcat."
-      );
+      setNewsError("Fișierul nu a putut fi descărcat.");
     }
   };
 
@@ -307,11 +275,7 @@ function NewsSection() {
       return;
     }
 
-    if (
-      !window.confirm(
-        "Sigur dorești să ștergi această noutate?"
-      )
-    ) {
+    if (!window.confirm("Sigur dorești să ștergi această noutate?")) {
       return;
     }
 
@@ -320,12 +284,10 @@ function NewsSection() {
       setNewsError("");
       setNewsMessage("");
 
-      const attachments =
-        await loadNewsAttachments(id);
+      const attachments = await loadNewsAttachments(id);
 
       const files = attachments.filter(
-        (item) =>
-          item.attachment_type === "file"
+        (item) => item.attachment_type === "file",
       );
 
       // NU ȘTERGEM ȘTIREA DACĂ ARE FIȘIERE
@@ -333,7 +295,7 @@ function NewsSection() {
         setNewsError(
           `Această noutate are ${files.length} fișier(e) atașat(e). ` +
             "Șterge mai întâi atașamentele din pagina de editare, " +
-            "apoi șterge noutatea."
+            "apoi șterge noutatea.",
         );
         return;
       }
@@ -346,15 +308,12 @@ function NewsSection() {
         setSelectedArticle(null);
       }
 
-      setNewsMessage(
-        "Noutatea a fost ștearsă cu succes."
-      );
+      setNewsMessage("Noutatea a fost ștearsă cu succes.");
     } catch (err) {
       console.error("DELETE NEWS ERROR:", err);
 
       setNewsError(
-        err.response?.data?.message ||
-          "Noutatea nu a putut fi ștearsă."
+        err.response?.data?.message || "Noutatea nu a putut fi ștearsă.",
       );
     } finally {
       setDeletingId(null);
@@ -365,11 +324,7 @@ function NewsSection() {
   const openArticle = async (article) => {
     if (article.type !== "internal") {
       if (validUrl(article.url)) {
-        window.open(
-          article.url,
-          "_blank",
-          "noopener,noreferrer"
-        );
+        window.open(article.url, "_blank", "noopener,noreferrer");
       }
       return;
     }
@@ -379,41 +334,31 @@ function NewsSection() {
     try {
       await loadNewsAttachments(article.id);
     } catch {
-      setNewsError(
-        "Atașamentele articolului nu au putut fi încărcate."
-      );
+      setNewsError("Atașamentele articolului nu au putut fi încărcate.");
     }
   };
 
   // ȘTIRI AFIȘATE
-  const displayedNews = showAllNews
-    ? news
-    : news.slice(0, 2);
+  const displayedNews = showAllNews ? news : news.slice(0, 2);
 
   // ATAȘAMENTE ARTICOL SELECTAT
-  const selectedArticleAttachments =
-    selectedArticle
-      ? newsAttachments[selectedArticle.id] || []
-      : [];
+  const selectedArticleAttachments = selectedArticle
+    ? newsAttachments[selectedArticle.id] || []
+    : [];
 
   // FOTOGRAFIA PRINCIPALĂ
   const getMainNewsImage = (newsId) => {
-    const attachments =
-      newsAttachments[newsId] || [];
+    const attachments = newsAttachments[newsId] || [];
 
     return [...attachments]
       .filter(isImageAttachment)
-      .sort(
-        (a, b) =>
-          Number(a.id) - Number(b.id)
-      )[0];
+      .sort((a, b) => Number(a.id) - Number(b.id))[0];
   };
 
   return (
     <>
       {/* ACTUALITATE */}
       <section className="dashboard-card border-news-card">
-
         {/* ANTET */}
         <div className="card-header">
           <div>
@@ -432,7 +377,6 @@ function NewsSection() {
           </div>
 
           <div className="border-news-header-actions">
-
             {/* ADAUGĂ ȘTIRE */}
             {canEdit && (
               <button
@@ -446,39 +390,19 @@ function NewsSection() {
             )}
 
             {/* ACTUALIZARE */}
-            <button
-              type="button"
-              className="dashboard-refresh-button"
-              onClick={loadNews}
-              disabled={loadingNews}
-              aria-label="Actualizează noutățile"
-            >
-              <RefreshCw
-                size={19}
-                className={
-                  loadingNews ? "refresh-spin" : ""
-                }
-              />
-            </button>
           </div>
         </div>
 
         {/* MESAJ SUCCES */}
         {newsMessage && (
-          <div
-            className="border-news-success"
-            role="status"
-          >
+          <div className="border-news-success" role="status">
             {newsMessage}
           </div>
         )}
 
         {/* MESAJ EROARE */}
         {newsError && (
-          <div
-            className="border-news-error"
-            role="alert"
-          >
+          <div className="border-news-error" role="alert">
             <AlertCircle size={17} />
             <span>{newsError}</span>
           </div>
@@ -487,9 +411,7 @@ function NewsSection() {
         {/* LISTA ȘTIRILOR */}
         <div className="border-news-list">
           {loadingNews ? (
-            <div className="border-news-state">
-              Se încarcă noutățile...
-            </div>
+            <div className="border-news-state">Se încarcă noutățile...</div>
           ) : news.length === 0 ? (
             <div className="border-news-state">
               Nu există noutăți disponibile.
@@ -499,13 +421,9 @@ function NewsSection() {
               <NewsCard
                 key={article.id}
                 article={article}
-                mainImage={getMainNewsImage(
-                  article.id
-                )}
+                mainImage={getMainNewsImage(article.id)}
                 ImageComponent={NewsImage}
-                PrivateImageComponent={
-                  PrivateNewsImage
-                }
+                PrivateImageComponent={PrivateNewsImage}
                 canEdit={canEdit}
                 canDelete={canDelete}
                 deletingId={deletingId}
@@ -522,11 +440,7 @@ function NewsSection() {
           <button
             type="button"
             className="border-news-show-all"
-            onClick={() =>
-              setShowAllNews(
-                (current) => !current
-              )
-            }
+            onClick={() => setShowAllNews((current) => !current)}
           >
             {showAllNews
               ? "Afișează mai puține"
@@ -540,40 +454,26 @@ function NewsSection() {
       {/* MODAL ARTICOL */}
       <NewsModal
         article={selectedArticle}
-        attachments={
-          selectedArticleAttachments
-        }
+        attachments={selectedArticleAttachments}
         loading={
           selectedArticle
-            ? Boolean(
-                attachmentsLoading[
-                  selectedArticle.id
-                ]
-              )
+            ? Boolean(attachmentsLoading[selectedArticle.id])
             : false
         }
-        PrivateImageComponent={
-          PrivateNewsImage
-        }
+        PrivateImageComponent={PrivateNewsImage}
         onClose={() => {
           setPreviewImage(null);
           setSelectedArticle(null);
         }}
         onPreviewImage={setPreviewImage}
-        onDownloadAttachment={
-          handleDownloadAttachment
-        }
+        onDownloadAttachment={handleDownloadAttachment}
       />
 
       {/* PREVIZUALIZARE FOTOGRAFIE */}
       <ImageLightbox
         attachment={previewImage}
-        PrivateImageComponent={
-          PrivateNewsImage
-        }
-        onClose={() =>
-          setPreviewImage(null)
-        }
+        PrivateImageComponent={PrivateNewsImage}
+        onClose={() => setPreviewImage(null)}
       />
     </>
   );

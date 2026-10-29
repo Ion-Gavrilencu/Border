@@ -1,658 +1,83 @@
-
-/* =========================================
-   ACTE NORMATIVE — MODERN ADMIN DASHBOARD
-========================================= */
-
-/* PAGINA */
-
-.legislatie-page {
-  width: 100%;
-  max-width: 1500px;
-  min-width: 0;
-  margin: 0 auto;
-  padding: 32px 36px 48px;
-  box-sizing: border-box;
-  color: #172b45;
-}
-
-/* =========================================
-   ANTET
-========================================= */
-
-.legislatie-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24px;
-  margin-bottom: 28px;
-}
-
-.legislatie-header h1 {
-  margin: 0;
-  color: #102b4b;
-  font-size: 30px;
-  font-weight: 750;
-  letter-spacing: -0.8px;
-  line-height: 1.2;
-}
-
-.legislatie-description {
-  margin: 9px 0 0;
-  color: #8290a3;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.legislation-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-/* =========================================
-   BUTON ADAUGĂ ACT NORMATIV
-========================================= */
-
-.legislatie-page .legislation-add-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-
-  min-height: 44px;
-  padding: 0 20px;
-
-  border: 1px solid #123a61;
-  border-radius: 10px;
-
-  background: #123a61;
-  color: #ffffff;
-
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.4;
-
-  white-space: nowrap;
-  cursor: pointer;
-
-  box-shadow: 0 4px 12px rgba(18, 58, 97, 0.15);
-
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-}
-
-.legislatie-page .legislation-add-button:hover {
-  background: #19517f;
-  border-color: #19517f;
-  color: #ffffff;
-
-  box-shadow: 0 7px 16px rgba(18, 58, 97, 0.2);
-  transform: translateY(-1px);
-}
-
-.legislatie-page .legislation-add-button:active {
-  transform: translateY(0);
-}
-
-.legislatie-page .legislation-add-button:focus-visible {
-  outline: 3px solid rgba(35, 117, 192, 0.3);
-  outline-offset: 3px;
-}
-
-.legislatie-page .legislation-add-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* =========================================
-   TABEL ACTE NORMATIVE
-========================================= */
-
-.legislatie-table-wrapper {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-
-  overflow-x: auto;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 3px 6px rgba(20, 43, 70, 0.025),
-    0 12px 28px rgba(20, 43, 70, 0.035);
-}
-
-.legislatie-table {
-  width: 100%;
-  min-width: 900px;
-  border-collapse: collapse;
-  table-layout: auto;
-}
-
-.legislatie-table thead {
-  background: #f6f9fc;
-}
-
-.legislatie-table th {
-  padding: 18px 20px;
-  border-bottom: 1px solid #e3eaf2;
-
-  color: #788ba0;
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: 0.07em;
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.legislatie-table td {
-  height: 64px;
-  padding: 12px 20px;
-
-  border-bottom: 1px solid #edf1f6;
-
-  color: #425771;
-  font-size: 13px;
-  font-weight: 500;
-  vertical-align: middle;
-
-  overflow-wrap: anywhere;
-}
-
-.legislatie-table th,
-.legislatie-table td {
-  box-sizing: border-box;
-}
-
-.legislatie-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* =========================================
-   RÂNDURI
-========================================= */
-
-.legislation-row {
-  cursor: pointer;
-  transition: background-color 0.18s ease;
-}
-
-.legislation-row:hover {
-  background: #f4f8fd;
-}
-
-.legislation-row:hover td {
-  border-bottom-color: #e4ecf5;
-}
-
-/* =========================================
-   DIMENSIUNI COLOANE
-========================================= */
-
-.legislatie-table th:nth-child(1),
-.legislatie-table td:nth-child(1) {
-  width: 68px;
-  color: #94a3b5;
-}
-
-.legislatie-table th:nth-child(2),
-.legislatie-table td:nth-child(2) {
-  width: 175px;
-}
-
-.legislatie-table th:nth-child(3),
-.legislatie-table td:nth-child(3) {
-  width: auto;
-  min-width: 270px;
-}
-
-.legislatie-table th:nth-child(4),
-.legislatie-table td:nth-child(4) {
-  width: 150px;
-}
-
-.legislatie-table th:nth-child(5),
-.legislatie-table td:nth-child(5) {
-  width: 170px;
-}
-
-.legislatie-table td:nth-child(2) {
-  color: #315778;
-  font-weight: 650;
-}
-
-.legislatie-table td:nth-child(3) {
-  overflow-wrap: break-word;
-  word-break: normal;
-}
-
-/* =========================================
-   TITLU CLICKABIL
-========================================= */
-
-.legislation-title-link {
-  display: inline-block;
-  max-width: 100%;
-  padding: 0;
-
-  border: none;
-  background: transparent;
-
-  color: #123a61;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.5;
-  text-align: left;
-
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
-
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.legislation-title-link:hover {
-  color: #1673b9;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.legislation-title-link:focus-visible {
-  outline: 3px solid rgba(35, 117, 192, 0.25);
-  outline-offset: 4px;
-}
-
-/* =========================================
-   ACȚIUNI EDITARE / ȘTERGERE
-========================================= */
-
-.legislation-actions-heading {
-  width: 125px;
-  text-align: center !important;
-}
-
-.legislation-actions-cell {
-  width: 125px;
-}
-
-.legislation-row-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-}
-
-.legislation-action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 34px;
-  height: 34px;
-  padding: 0;
-
-  border: 1px solid #dce5ef;
-  border-radius: 8px;
-
-  background: #ffffff;
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.legislation-action-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.legislation-action-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.legislation-action-edit {
-  color: #1763a6;
-}
-
-.legislation-action-edit:hover:not(:disabled) {
-  background: #eaf3ff;
-  border-color: #a8caee;
-}
-
-.legislation-action-delete {
-  color: #dc3545;
-}
-
-.legislation-action-delete:hover:not(:disabled) {
-  background: #fff0f0;
-  border-color: #f4b7bc;
-}
-
-.legislation-action-button:focus-visible {
-  outline: 2px solid #1763a6;
-  outline-offset: 2px;
-}
-
-/* =========================================
-   MESAJE
-========================================= */
-
-.legislation-error {
-  margin-bottom: 20px;
-  padding: 13px 16px;
-
-  border: 1px solid #f0caca;
-  border-radius: 9px;
-
-  background: #fff2f2;
-  color: #b83d3d;
-
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.legislation-empty,
-.legislation-no-results,
-.legislation-loading {
-  padding: 56px 20px;
-
-  color: #8392a5;
-  font-size: 14px;
-  text-align: center;
-}
-
-/* =========================================
-   TABLETĂ
-========================================= */
-
-@media (max-width: 1000px) {
-  .legislatie-page {
-    padding: 24px 22px 36px;
-  }
-
-  .legislatie-header {
-    gap: 18px;
-  }
-
-  .legislatie-header h1 {
-    font-size: 27px;
-  }
-}
-
-/* =========================================
-   TELEFON — TABEL TRANSFORMAT ÎN CARDURI
-========================================= */
-
-@media (max-width: 768px) {
-  .legislatie-page {
-    width: 100%;
-    max-width: 100%;
-    padding: 20px 14px 32px;
-    overflow-x: hidden;
-  }
-
-  /* ANTET */
-
-  .legislatie-header {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 18px;
-    margin-bottom: 22px;
-  }
-
-  .legislatie-header h1 {
-    font-size: 27px;
-    line-height: 1.2;
-    letter-spacing: -0.5px;
-  }
-
-  .legislatie-description {
-    margin-top: 9px;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .legislation-header-actions {
-    width: 100%;
-  }
-
-  .legislatie-page .legislation-add-button {
-    width: 100%;
-    min-height: 52px;
-    padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 14px;
-    white-space: normal;
-  }
-
-  /* ELIMINĂM ASPECTUL DE TABEL */
-
-  .legislatie-table-wrapper {
-    width: 100%;
-    overflow: visible;
-
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .legislatie-table {
-    display: block;
-    width: 100%;
-    min-width: 0;
-
-    border: 0;
-    background: transparent;
-  }
-
-  .legislatie-table thead {
-    display: none;
-  }
-
-  .legislatie-table tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 100%;
-  }
-
-  /* FIECARE ACT NORMATIV DEVINE CARD */
-
-  .legislatie-table .legislation-row {
-    display: flex;
-    flex-direction: column;
-
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-
-    border: 1px solid #dce6f1;
-    border-radius: 17px;
-
-    background: #ffffff;
-    box-shadow: 0 8px 24px rgba(20, 43, 70, 0.055);
-  }
-
-  .legislatie-table .legislation-row:hover {
-    background: #ffffff;
-  }
-
-  /* CÂMPURI CARD */
-
-  .legislatie-table .legislation-row td {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: auto;
-
-    padding: 9px 18px;
-    border: none;
-
-    font-size: 14px;
-    line-height: 1.5;
-
-    overflow-wrap: break-word;
-    word-break: normal;
-    text-align: right;
-  }
-
-  .legislatie-table .legislation-row td:first-child {
-    padding-top: 22px;
-  }
-
-  .legislatie-table .legislation-row td::before {
-    content: attr(data-label);
-    flex: 0 0 auto;
-
-    color: #8294aa;
-    font-size: 13px;
-    font-weight: 650;
-    text-align: left;
-  }
-
-  .legislatie-table .legislation-row td:nth-child(2) {
-    color: #123a61;
-    font-weight: 700;
-  }
-
-  /* TITLU PE TOATĂ LĂȚIMEA */
-
-  .legislatie-table .legislation-row td.legislation-title-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-
-    padding-top: 17px;
-    padding-bottom: 14px;
-
-    text-align: left;
-  }
-
-  .legislatie-table .legislation-row td.legislation-title-cell::before {
-    display: none;
-  }
-
-  .legislation-title-link {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    padding: 0;
-
-    color: #10375b;
-    font-size: 17px;
-    font-weight: 750;
-    line-height: 1.45;
-    text-align: left;
-
-    white-space: normal;
-    overflow-wrap: break-word;
-    word-break: normal;
-  }
-
-  /* DATA ȘI AUTORUL */
-
-  .legislatie-table .legislation-row td:nth-child(4),
-  .legislatie-table .legislation-row td:nth-child(5) {
-    color: #526983;
-    font-size: 13px;
-  }
-
-  .legislatie-table .legislation-row td:nth-child(5) {
-    padding-bottom: 20px;
-  }
-
-  /* BUTOANE EDITARE / ȘTERGERE */
-
-  .legislatie-table .legislation-row td.legislation-actions-cell {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-
-    margin-top: 0;
-    padding: 13px 18px;
-
-    border-top: 1px solid #edf1f6;
-    background: #f8fafc;
-  }
-
-  .legislation-row-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 9px;
-  }
-
-  .legislation-action-button {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-  }
-
-  /* MESAJE */
-
-  .legislation-empty,
-  .legislation-loading,
-  .legislation-no-results {
-    padding: 38px 16px;
-  }
-}
-
-/* =========================================
-   TELEFOANE FOARTE ÎNGUSTE
-========================================= */
-
-@media (max-width: 380px) {
-  .legislatie-page {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .legislatie-table .legislation-row td {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .legislation-title-link {
-    font-size: 16px;
-  }
-
-  .legislatie-page .legislation-add-button {
-    font-size: 13px;
-    padding: 10px 12px;
-  }
-}
-
-/* =========================================
-   ACCESIBILITATE
-========================================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .legislation-row,
-  .legislation-title-link,
-  .legislation-action-button,
-  .legislatie-page .legislation-add-button {
-    transition: none;
-  }
-}
+.legislatie-page{--leg-blue:#0768e9;--leg-navy:#09245e;--leg-border:#d9e8ff;width:100%;max-width:1600px;min-width:0;margin:0 auto;padding:25px 30px 38px;box-sizing:border-box;color:var(--leg-navy);font-family:inherit}
+.legislatie-page *{box-sizing:border-box}
+.legislatie-page button,.legislatie-page select{font:inherit}
+.legislatie-page button{cursor:pointer}
+.legislatie-page button:focus-visible,.legislatie-page select:focus-visible{outline:3px solid #81b8ff;outline-offset:2px}
+.legislatie-header{display:flex;align-items:center;justify-content:space-between;gap:22px;min-height:166px;margin-bottom:17px}
+.legislatie-heading{flex:1;min-width:0}
+.legislatie-eyebrow{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:750;color:#006df5;margin-bottom:7px}
+.legislatie-header h1{font-size:clamp(29px,3vw,39px);letter-spacing:-1.3px;line-height:1.13;margin:0;font-weight:800;color:#08245f}
+.legislatie-description{color:#6b85ae;font-size:16px;margin:8px 0 14px;line-height:1.45}
+.legislatie-page .legislation-add-button{display:flex;align-items:center;justify-content:center;gap:12px;width:min(100%,500px);min-height:52px;padding:11px 20px;border:0;border-radius:11px;background:linear-gradient(115deg,#0752b4,#0874ee);color:white;font-weight:700;box-shadow:0 8px 18px #0b5dc02b;transition:filter .2s,transform .2s}
+.legislation-add-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.legislatie-hero-art{width:188px;height:168px;flex-shrink:0;position:relative;border-radius:50%;background:radial-gradient(circle,#d6e9ff 0%,#eaf4ff 70%,transparent 72%);transform:rotate(8deg)}
+.legislatie-art-back,.legislatie-art-front{position:absolute;width:94px;height:125px;background:#fff;border:3px solid #c7e1ff;border-radius:13px;box-shadow:0 8px 18px #418ce03d;top:25px;left:48px;transform:rotate(-22deg)}
+.legislatie-art-front{left:65px;top:28px;transform:rotate(1deg);padding:17px 13px}
+.legislatie-art-front span{display:block;height:5px;border-radius:4px;background:#cce3ff;margin-bottom:11px}
+.legislatie-art-front span:nth-child(4){width:80%}.legislatie-art-front span:nth-child(5){width:50%}
+.legislatie-art-bookmark{position:absolute;top:116px;left:126px;width:20px;height:29px;background:#0875ef;clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
+.legislatie-tabs{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:14px}
+.legislatie-tab-group{display:flex;gap:12px;flex-wrap:wrap}
+.legislatie-tab,.legislatie-filter-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 18px;border:1px solid var(--leg-border);border-radius:12px;background:#fff;color:#07245f;font-weight:700;white-space:nowrap}
+.legislatie-tab span{display:inline-flex;align-items:center;justify-content:center;min-width:27px;height:27px;padding:0 6px;border-radius:30px;background:#e7f0ff;color:#0759d5;font-size:13px}
+.legislatie-tab.active{color:#fff;background:linear-gradient(120deg,#0756c7,#0780ff);border-color:transparent;box-shadow:0 7px 14px #1261c022}
+.legislatie-tab.active span{background:#fff;color:#0867e5}
+.legislatie-filter-button.selected{background:#eaf3ff}
+.legislatie-filter-panel{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:16px;border:1px solid var(--leg-border);border-radius:12px;background:#f5faff;margin-bottom:14px}
+.legislatie-filter-panel label{font-weight:650;font-size:14px}
+.legislatie-filter-panel select{min-height:40px;padding:0 12px;border:1px solid var(--leg-border);border-radius:9px;background:white;color:var(--leg-navy)}
+.legislatie-filter-panel button{display:flex;gap:6px;align-items:center;border:0;background:transparent;color:#0869df;font-weight:700}
+.legislatie-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:11px;flex-wrap:wrap}
+.legislatie-toolbar>strong{font-size:17px;font-weight:800}
+.legislatie-toolbar-controls{display:flex;align-items:center;gap:12px}
+.legislatie-toolbar-controls>label{font-size:14px;color:#6e89b1}
+.legislatie-select-wrap{display:flex;align-items:center;gap:10px;padding:0 13px;height:48px;border:1px solid var(--leg-border);border-radius:11px;background:#fff;color:#00388f}
+.legislatie-select-wrap select{max-width:210px;appearance:none;border:0;outline:0;background:transparent;color:var(--leg-navy);font-weight:650;cursor:pointer;font-size:14px}
+.legislatie-view-switch{display:flex;gap:7px}
+.legislatie-view-switch button,.legislatie-page-buttons button{display:inline-flex;align-items:center;justify-content:center;width:47px;height:47px;border:1px solid var(--leg-border);border-radius:11px;background:#edf5ff;color:#08418f}
+.legislatie-view-switch button.active,.legislatie-page-buttons button.active{background:linear-gradient(135deg,#002764,#0065d5);color:#fff;border-color:transparent}
+.legislatie-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:13px}
+.legislatie-card{display:grid;grid-template-columns:82px minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:17px;position:relative;padding:13px 17px 0 18px;border:1px solid var(--leg-border);border-radius:14px;background:#fff;box-shadow:0 7px 21px #205c9d0d;min-width:0}
+.legislatie-card-icon{width:70px;height:70px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#e1efff;color:#0872ed;grid-row:1}
+.legislatie-card-icon.tone-1{background:#e2f8ed;color:#00a64d}.legislatie-card-icon.tone-2{background:#eee5ff;color:#6b1bc8}
+.legislatie-card-main{min-width:0;padding:3px 0 9px}
+.legislatie-card-title{display:block;width:100%;padding:0;border:0;background:transparent;text-align:left;color:#08245e;font-size:17px;font-weight:800;line-height:1.32;overflow-wrap:anywhere}
+.legislatie-card-title:hover{color:#006be7;text-decoration:underline}
+.legislatie-card-meta{display:flex;align-items:center;gap:10px;color:#6885ad;font-size:14px;margin-top:7px;min-width:0;flex-wrap:wrap}
+.legislatie-card-meta>svg{flex-shrink:0}.legislatie-category{color:#006ce9}
+.legislatie-tags{display:flex;gap:7px;flex-wrap:wrap}
+.legislatie-tags span{border-radius:30px;background:#e9f3ff;color:#0070e8;padding:4px 12px;font-size:12px}
+.legislatie-card-detail{font-size:12px;color:#8096b7;margin-top:7px}
+.legislatie-card-top-actions{display:flex;align-items:flex-start;gap:14px}
+.legislatie-card-top-actions button{border:0;background:transparent;color:#6483b1;padding:5px}
+.legislatie-card-top-actions .legislatie-star.is-favorite{color:#ffa500}
+.legislatie-menu-wrap{position:relative}
+.legislatie-menu{position:absolute;z-index:5;right:0;top:34px;min-width:155px;padding:5px;border:1px solid var(--leg-border);border-radius:10px;background:white;box-shadow:0 12px 28px #163e742b}
+.legislatie-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:10px;color:#123b75;text-align:left;white-space:nowrap;border-radius:7px}
+.legislatie-menu button:hover{background:#f0f6ff}.legislatie-menu button.danger{color:#d82828}
+.legislatie-card-footer{grid-column:2/4;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;border-top:1px solid #e3edfb}
+.legislatie-attachments{display:flex;align-items:center;gap:11px;border:0;background:transparent;color:#496c9e;font-size:13px;text-align:left}
+.legislatie-attachments:hover{color:#006ce9}
+.legislatie-card-actions{display:flex;gap:10px;align-items:center}
+.legislatie-card-actions button{display:flex;align-items:center;justify-content:center;gap:9px;min-height:38px;padding:0 15px;border-radius:10px;font-size:13px;font-weight:650}
+.legislatie-edit{background:#f5faff;border:1px solid #d8e9ff;color:#0073f6}
+.legislatie-delete{background:#fff0f0;border:1px solid #fff0f0;color:#f12828}
+.legislatie-card-actions button:disabled{opacity:.5;cursor:not-allowed}
+.legislatie-cards.grid-view{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-view .legislatie-card{grid-template-columns:66px minmax(0,1fr) auto;column-gap:10px}
+.grid-view .legislatie-card-icon{width:58px;height:58px}
+.grid-view .legislatie-card-footer{grid-column:1/4}
+.legislatie-pagination{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;color:#6e88ae;font-size:13px;flex-wrap:wrap}
+.legislatie-page-buttons{display:flex;align-items:center;justify-content:center;gap:7px}
+.legislatie-page-buttons button{width:39px;height:42px;border:0;font-weight:700;font-size:15px}
+.legislatie-page-buttons button:disabled{opacity:.4;cursor:not-allowed}
+.legislatie-page-entry{display:inline-flex;gap:7px;align-items:center}.legislatie-ellipsis{padding:0 3px}
+.legislatie-page-size{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.legislatie-page-size select{min-width:70px;min-height:40px;border:1px solid var(--leg-border);border-radius:10px;background:white;padding:0 10px;color:var(--leg-navy)}
+.legislation-loading,.legislation-empty{padding:65px 20px;text-align:center;color:#7189aa;border:1px solid var(--leg-border);border-radius:14px;background:white}
+.legislation-error{padding:13px 16px;margin:0 0 16px;border:1px solid #ffc8c8;border-radius:10px;background:#fff1f1;color:#ba2626}
+@media(max-width:1100px){.legislatie-page{padding:22px 20px 32px}.legislatie-tabs{align-items:flex-start}.legislatie-tab-group{gap:8px}.legislatie-tab,.legislatie-filter-button{padding:0 12px;gap:7px}.legislatie-cards.grid-view{grid-template-columns:1fr}}
+@media(max-width:768px){.legislatie-page{padding:20px 14px 32px;overflow-x:clip}.legislatie-header{position:relative;min-height:0;display:block;margin-bottom:20px}.legislatie-heading{position:relative;z-index:1}.legislatie-eyebrow{font-size:13px;margin-bottom:13px}.legislatie-header h1{font-size:clamp(27px,7vw,36px);max-width:75%}.legislatie-description{font-size:14px;max-width:78%;min-height:35px;margin:12px 0 22px}.legislatie-hero-art{position:absolute;right:-7px;top:0;width:135px;height:135px;opacity:.8}.legislatie-art-back{transform:scale(.72) rotate(-22deg);transform-origin:top left;left:33px;top:20px}.legislatie-art-front{transform:scale(.72) rotate(1deg);transform-origin:top left;left:50px;top:22px}.legislatie-art-bookmark{transform:scale(.7);top:85px;left:94px}.legislatie-page .legislation-add-button{width:100%;min-height:52px;font-size:15px}.legislatie-tabs{gap:9px;align-items:stretch}.legislatie-tab-group{display:flex;flex:1;min-width:0;gap:7px}.legislatie-tab{flex:1;min-width:0;min-height:44px;padding:0 7px;gap:5px;font-size:12px}.legislatie-tab svg{width:17px;height:17px}.legislatie-tab span{min-width:22px;height:22px;font-size:11px}.legislatie-filter-button{min-height:44px;padding:0 10px;font-size:12px}.legislatie-filter-button svg{width:17px}.legislatie-toolbar{align-items:center;gap:8px}.legislatie-toolbar>strong{font-size:15px}.legislatie-toolbar-controls{gap:6px}.legislatie-toolbar-controls>label{font-size:12px}.legislatie-select-wrap{height:41px;padding:0 8px;gap:5px}.legislatie-select-wrap svg{width:16px}.legislatie-select-wrap select{max-width:155px;font-size:12px}.legislatie-view-switch{gap:4px}.legislatie-view-switch button{width:38px;height:41px}.legislatie-card{grid-template-columns:66px minmax(0,1fr) auto;gap:0 10px;padding:17px 14px 0;border-radius:18px}.legislatie-card-icon{width:58px;height:62px}.legislatie-card-main{grid-column:2/4;padding:32px 0 12px}.legislatie-card-title{font-size:16px}.legislatie-card-top-actions{position:absolute;right:13px;top:14px;gap:8px}.legislatie-card-meta{font-size:13px;gap:7px}.legislatie-card-footer{grid-column:1/4;min-height:65px}.legislatie-card-actions{gap:6px}.legislatie-card-actions button{padding:0 10px;min-height:39px;font-size:12px}.legislatie-attachments{font-size:12px;gap:5px;padding:0}.legislatie-cards.grid-view{grid-template-columns:1fr}.legislatie-pagination{justify-content:center;text-align:center;gap:12px}.legislatie-pagination-info{order:2;width:100%}.legislatie-page-buttons{order:1}.legislatie-page-size{order:3}}
+@media(max-width:520px){.legislatie-tabs{flex-wrap:wrap}.legislatie-tab-group{width:100%;flex:1}.legislatie-tab{font-size:11px}.legislatie-tab svg{width:15px}.legislatie-filter-button{font-size:0;gap:0;min-width:40px}.legislatie-filter-button svg{width:20px}.legislatie-toolbar{align-items:flex-start}.legislatie-toolbar>strong{width:100%}.legislatie-toolbar-controls{width:100%;justify-content:space-between}.legislatie-card-main{padding-top:36px}.legislatie-card-footer{gap:8px}.legislatie-card-actions button{padding:0 8px}.legislatie-attachments{max-width:43%}}
+@media(max-width:370px){.legislatie-page{padding-left:10px;padding-right:10px}.legislatie-tab{gap:3px;padding:0 4px}.legislatie-tab span{min-width:20px}.legislatie-card-actions button{font-size:0;min-width:37px}.legislatie-card-actions button svg{width:18px}.legislatie-select-wrap select{max-width:132px}.legislatie-page-buttons{gap:3px}.legislatie-page-buttons button{width:35px}}
+@media(prefers-reduced-motion:reduce){.legislatie-page *{transition:none!important}}

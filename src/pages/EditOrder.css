@@ -1,8 +1,4 @@
 
-@import "./EditTelegram.css";
-
-/* Aplicăm stilurile paginii EditTelegram și la EditOrder. */
-
 .edit-order-page {
   width: 100%;
   max-width: 1100px;
@@ -22,218 +18,308 @@
 .edit-order-label {
   display: inline-block;
   margin-bottom: 8px;
-  color: #477ca8;
+  color: #1765ac;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.8px;
 }
 
 .edit-order-header h1 {
   margin: 0;
-  color: #102b4b;
-  font-size: 26px;
+  color: #0b2947;
+  font-size: 27px;
+  font-weight: 750;
 }
 
 .edit-order-header p {
-  color: #8290a3;
+  margin: 7px 0 0;
+  color: #7589a1;
   font-size: 14px;
 }
 
 .edit-order-back-button {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 11px 16px;
-  border: 1px solid #dce4ee;
+  border: 1px solid #d7e2ee;
   border-radius: 9px;
-  background: white;
-  color: #315778;
+  background: #fff;
+  color: #173b5e;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+}
+
+.edit-order-back-button:hover {
+  background: #f1f6fb;
 }
 
 .edit-order-error {
   margin-bottom: 18px;
   padding: 13px 16px;
-  border: 1px solid #f0caca;
+  border: 1px solid #f0c7c4;
   border-radius: 9px;
-  background: #fff2f2;
-  color: #b83d3d;
+  background: #fff2f1;
+  color: #c52d38;
+  font-size: 13px;
 }
 
 .edit-order-form {
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
   background: #fff;
-  box-shadow: 0 10px 30px rgba(20, 43, 70, 0.05);
+  border: 1px solid #dce6f0;
+  border-radius: 15px;
+  box-shadow: 0 8px 28px rgba(20, 50, 80, 0.04);
 }
 
 .edit-order-form-header {
-  padding: 22px 26px;
-  border-bottom: 1px solid #e8edf4;
+  padding: 21px 25px;
+  border-bottom: 1px solid #e7edf4;
   background: #fbfcfe;
 }
 
 .edit-order-form-header h2 {
   margin: 0;
-  color: #143454;
-  font-size: 19px;
+  color: #123453;
+  font-size: 17px;
 }
 
 .edit-order-form-header p {
   margin: 6px 0 0;
-  color: #8290a3;
-  font-size: 13px;
+  color: #8495aa;
+  font-size: 12px;
 }
 
 .edit-order-form-body {
-  padding: 26px;
+  padding: 25px;
 }
 
 .edit-order-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 28px;
-}
-
-.edit-order-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
+  gap: 19px;
 }
 
 .edit-order-full {
   grid-column: 1 / -1;
 }
 
+.edit-order-form-group {
+  min-width: 0;
+}
+
 .edit-order-form-group label {
-  color: #30465e;
-  font-size: 13px;
+  display: block;
+  margin-bottom: 8px;
+  color: #183b5d;
+  font-size: 12px;
   font-weight: 650;
 }
 
 .edit-order-form-group input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 13px;
-  border: 1px solid #dbe4ed;
+  height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d6e1ed;
   border-radius: 9px;
   background: #fff;
-  color: #17324d;
-  font-size: 14px;
+  color: #153a5c;
+  font-size: 13px;
   outline: none;
 }
 
 .edit-order-form-group input:focus {
-  border-color: #5694c8;
-  box-shadow: 0 0 0 3px rgba(49, 123, 189, 0.1);
+  border-color: #2874b8;
+  box-shadow: 0 0 0 3px rgba(40, 116, 184, 0.1);
+}
+
+.edit-order-form-group input::placeholder {
+  color: #9aacbf;
 }
 
 .edit-order-section {
-  margin-top: 26px;
+  margin-top: 27px;
   padding-top: 24px;
-  border-top: 1px solid #e8edf4;
+  border-top: 1px solid #edf1f6;
 }
 
 .edit-order-section h3 {
-  margin: 0 0 14px;
-  color: #143454;
-  font-size: 15px;
+  margin: 0 0 15px;
+  color: #163a5a;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.edit-order-section-description,
 .edit-order-empty {
-  color: #8290a3;
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #d9e4ef;
+  border-radius: 10px;
+  color: #899bb0;
   font-size: 13px;
-  line-height: 1.6;
+  text-align: center;
 }
 
 .edit-order-attachments {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
 .edit-order-attachment {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 13px;
-  border: 1px solid #e2e8f0;
+  gap: 13px;
+  padding: 12px 14px;
+  border: 1px solid #e0e8f1;
   border-radius: 10px;
-  background: #f8fafc;
+  background: #fafcff;
 }
 
 .edit-order-attachment-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
   flex-shrink: 0;
+  width: 38px;
+  height: 38px;
   border-radius: 9px;
-  background: #e9f2fa;
-  color: #315778;
+  background: #e9f2fc;
+  color: #2673b6;
 }
 
 .edit-order-attachment-name {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
 }
 
 .edit-order-attachment-name strong {
-  color: #30465e;
-  font-size: 13px;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  color: #173a5b;
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .edit-order-attachment-name span {
-  color: #8290a3;
+  color: #8b9db1;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .edit-order-attachment-actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
 }
 
 .edit-order-attachment-actions button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #dce4ee;
+  width: 33px;
+  height: 33px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: #fff;
-  color: #315778;
+  background: transparent;
+  color: #66839f;
   cursor: pointer;
 }
 
 .edit-order-attachment-actions button:hover {
-  background: #eaf3fb;
+  background: #eaf2fc;
+  color: #1763a6;
 }
 
 .edit-order-attachment-actions .edit-order-attachment-delete {
-  color: #c44949;
+  color: #d94b54;
 }
 
 .edit-order-attachment-actions .edit-order-attachment-delete:hover {
-  background: #fff1f1;
+  background: #fff0f1;
+}
+
+.edit-order-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 25px;
+  border: 1.5px dashed #b9cee4;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #2571b1;
+  text-align: center;
+}
+
+.edit-order-upload strong {
+  color: #173e60;
+  font-size: 13px;
+}
+
+.edit-order-upload p {
+  margin: 0;
+  color: #7d90a5;
+  font-size: 12px;
+}
+
+.edit-order-upload input {
+  max-width: 100%;
+  font-size: 12px;
+}
+
+.edit-order-upload small {
+  color: #91a2b6;
+  font-size: 11px;
+}
+
+.edit-order-selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  padding: 10px 13px;
+  border: 1px solid #dfe8f2;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #234764;
+  font-size: 12px;
+}
+
+.edit-order-selected-file span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.edit-order-selected-file button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  color: #d34a54;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.edit-order-link {
+  margin-top: 20px;
 }
 
 .edit-order-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 26px;
-  border-top: 1px solid #e8edf4;
+  gap: 10px;
+  padding: 18px 25px;
+  border-top: 1px solid #e7edf4;
   background: #fbfcfe;
 }
 
@@ -242,19 +328,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 9px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 650;
   cursor: pointer;
 }
 
 .edit-order-cancel-button {
-  border: 1px solid #dce4ee;
+  border: 1px solid #d5e0ec;
   background: #fff;
-  color: #52657b;
+  color: #244764;
+}
+
+.edit-order-cancel-button:hover {
+  background: #f1f6fb;
 }
 
 .edit-order-save-button {
@@ -263,29 +353,41 @@
   color: #fff;
 }
 
-.edit-order-save-button:hover {
-  background: #19517f;
+.edit-order-save-button:hover:not(:disabled) {
+  background: #19517e;
 }
 
 .edit-order-save-button:disabled,
 .edit-order-cancel-button:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .edit-order-loading {
-  padding: 70px 20px;
-  color: #8290a3;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  color: #748ba2;
+  font-size: 14px;
 }
 
 @media (max-width: 700px) {
   .edit-order-page {
-    padding: 20px 14px;
+    padding: 18px 12px;
   }
 
   .edit-order-header {
     flex-direction: column;
+  }
+
+  .edit-order-header h1 {
+    font-size: 23px;
+  }
+
+  .edit-order-back-button {
+    width: 100%;
+    justify-content: center;
   }
 
   .edit-order-form-body {
@@ -297,7 +399,11 @@
   }
 
   .edit-order-full {
-    grid-column: auto;
+    grid-column: 1;
+  }
+
+  .edit-order-form-header {
+    padding: 18px;
   }
 
   .edit-order-actions {
@@ -305,8 +411,170 @@
     padding: 16px 18px;
   }
 
-  .edit-order-save-button,
-  .edit-order-cancel-button {
+  .edit-order-cancel-button,
+  .edit-order-save-button {
     width: 100%;
+  }
+}
+
+
+/* Câmpurile principale */
+
+.edit-order-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.edit-order-fields .edit-order-form-group {
+  margin-bottom: 0;
+}
+
+.edit-order-full {
+  grid-column: 1 / -1;
+}
+
+/* Secțiuni */
+
+.edit-order-section {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e5ebf2;
+}
+
+.edit-order-section h3 {
+  margin: 0 0 15px;
+  color: #103758;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.edit-order-section-description {
+  margin: -5px 0 18px;
+  color: #8092a6;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Atașamente existente */
+
+.edit-order-empty {
+  padding: 18px;
+  border: 1px dashed #d7e2ed;
+  border-radius: 10px;
+  color: #8a9caf;
+  background: #f8fafc;
+  font-size: 13px;
+}
+
+.edit-order-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.edit-order-attachment {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2eaf2;
+  border-radius: 10px;
+  background: #f9fbfd;
+}
+
+.edit-order-attachment-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  background: #e8f1fb;
+  color: #2470b1;
+}
+
+.edit-order-attachment-name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.edit-order-attachment-name strong {
+  overflow: hidden;
+  color: #173b5a;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-order-attachment-name span {
+  color: #90a2b4;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.edit-order-attachment-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.edit-order-attachment-actions button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #55728f;
+  cursor: pointer;
+}
+
+.edit-order-attachment-actions button:hover {
+  background: #e9f1fa;
+}
+
+.edit-order-attachment-actions
+  .edit-order-attachment-delete {
+  color: #d34c56;
+}
+
+.edit-order-attachment-actions
+  .edit-order-attachment-delete:hover {
+  background: #fff0f1;
+}
+
+.edit-order-attachment-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Butoane */
+
+.edit-order-back-button,
+.edit-order-save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Responsive */
+
+@media (max-width: 700px) {
+  .edit-order-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-order-full {
+    grid-column: auto;
+  }
+
+  .edit-order-section {
+    margin-top: 20px;
+    padding-top: 20px;
   }
 }

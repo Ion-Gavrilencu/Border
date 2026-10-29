@@ -1,5 +1,4 @@
-
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
@@ -61,17 +60,13 @@ function Dashboard() {
       const normalizedStats = {};
 
       Object.keys(initialStats).forEach((key) => {
-        normalizedStats[key] = Number(
-          response.data.stats[key] ?? 0
-        );
+        normalizedStats[key] = Number(response.data.stats[key] ?? 0);
       });
 
       setStats(normalizedStats);
 
       setRecent(
-        Array.isArray(response.data.recent)
-          ? response.data.recent
-          : []
+        Array.isArray(response.data.recent) ? response.data.recent : [],
       );
     } catch (err) {
       console.error("DASHBOARD ERROR:", err);
@@ -105,16 +100,10 @@ function Dashboard() {
       }
     };
 
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibilityChange
-    );
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityChange
-      );
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [loadDashboard]);
 
@@ -136,13 +125,12 @@ function Dashboard() {
       {
         replace: true,
         state: null,
-      }
+      },
     );
   }, [location, navigate]);
 
   return (
     <div className="dashboard dashboard-modern">
-
       {/* BANNER PRINCIPAL */}
       <motion.div
         className="border-hero"
@@ -169,22 +157,12 @@ function Dashboard() {
 
       {/* MESAJ EROARE */}
       {error && (
-        <div
-          className="dashboard-error"
-          role="alert"
-        >
+        <div className="dashboard-error" role="alert">
           <AlertCircle size={19} />
 
           <span>{error}</span>
 
-          <button
-            type="button"
-            disabled={loadingStats || refreshing}
-            onClick={() => loadDashboard(true)}
-          >
-            <RefreshCw size={15} />
-            Reîncearcă
-          </button>
+          
         </div>
       )}
 
@@ -199,15 +177,11 @@ function Dashboard() {
         }}
         aria-label="Statistici"
       >
-        <DashboardStats
-          stats={stats}
-          loadingStats={loadingStats}
-        />
+        <DashboardStats stats={stats} loadingStats={loadingStats} />
       </motion.section>
 
       {/* INFORMAȚII RECENTE ȘI ȘTIRI */}
       <div className="dashboard-grid">
-
         {/* INFORMAȚII RECENTE */}
         <motion.div
           className="dashboard-panel-motion"
@@ -240,7 +214,6 @@ function Dashboard() {
         >
           <NewsSection />
         </motion.div>
-
       </div>
     </div>
   );

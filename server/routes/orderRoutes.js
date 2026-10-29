@@ -1,3 +1,4 @@
+
 const express = require("express");
 
 const {
@@ -6,6 +7,8 @@ const {
   createOrder,
   updateOrder,
   deleteOrder,
+  addOrderFavorite,
+  removeOrderFavorite,
 } = require("../controllers/orderController");
 
 const authenticate = require("../middleware/authMiddleware");
@@ -13,21 +16,19 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// USER, EDITOR, ADMIN
-router.get(
-  "/",
-  authenticate,
-  getOrders
-);
+// USER, EDITOR, ADMIN — lista ordinelor
+router.get("/", authenticate, getOrders);
 
-// USER, EDITOR, ADMIN
-router.get(
-  "/:id",
-  authenticate,
-  getOrderById
-);
+// USER, EDITOR, ADMIN — adăugare la favorite
+router.post("/:id/favorite", authenticate, addOrderFavorite);
 
-// EDITOR, ADMIN
+// USER, EDITOR, ADMIN — eliminare din favorite
+router.delete("/:id/favorite", authenticate, removeOrderFavorite);
+
+// USER, EDITOR, ADMIN — detaliile unui ordin
+router.get("/:id", authenticate, getOrderById);
+
+// EDITOR, ADMIN — creare ordin
 router.post(
   "/",
   authenticate,
@@ -35,7 +36,7 @@ router.post(
   createOrder
 );
 
-// EDITOR, ADMIN
+// EDITOR, ADMIN — modificare ordin
 router.patch(
   "/:id",
   authenticate,
@@ -43,7 +44,7 @@ router.patch(
   updateOrder
 );
 
-// ADMIN only
+// ADMIN — ștergere ordin
 router.delete(
   "/:id",
   authenticate,
