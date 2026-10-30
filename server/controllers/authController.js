@@ -1,3 +1,7 @@
+const {
+  logMonitoringEvent,
+  touchPresence,
+} = require("../services/monitoringService");
 const bcrypt = require("bcrypt");
 const pool = require("../config/database");
 const jwt = require("jsonwebtoken");
@@ -102,6 +106,18 @@ const login = async (req, res) => {
       path: "/",
     });
 
+    await logMonitoringEvent({
+      userId: user.id,
+      action: "login",
+      details: "Autentificare reușită",
+      req,
+    });
+
+    await touchPresence({
+      user: { id: user.id },
+      get: req.get.bind(req),
+      ip: req.ip,
+    });
     return res.json({
       message: "Autentificare reușită.",
       user: {
@@ -120,20 +136,52 @@ const login = async (req, res) => {
     });
   }
 };
-const logout = (req, res) => {
-  
-res.clearCookie("token", {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite:
-    process.env.NODE_ENV === "production" ? "none" : "lax",
-  path: "/",
-});
 
+const logout = async (req, res) => {
+  try {
+    // Înregistrăm deconectarea doar dacă utilizatorul
+    // a fost identificat de middleware-ul de autentificare.
+    if (req.user?.id) {
+      await logMonitoringEvent({
+        userId: req.user.id,
+        action: "logout",
+        details: "Deconectare din aplicație",
+        req,
+      });
 
-  return res.status(200).json({
-    message: "Deconectare reușită.",
-  });
+      await pool.query(
+        `DELETE FROM monitoring_presence
+         WHERE user_id = $1`,
+        [req.user.id],
+      );
+    }
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      message: "Deconectare reușită.",
+    });
+  } catch (error) {
+    console.error("LOGOUT ERROR:", error);
+
+    // Cookie-ul trebuie șters chiar dacă monitorizarea
+    // întâmpină o eroare.
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      message: "Deconectare reușită.",
+    });
+  }
 };
 
 const activateAccount = async (req, res) => {

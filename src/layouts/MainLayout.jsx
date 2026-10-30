@@ -10,6 +10,7 @@ import {
   Scale,
   Info,
   Settings,
+  Activity,
   LogOut,
   User,
   Search,
@@ -18,7 +19,12 @@ import {
   X,
 } from "lucide-react";
 import api from "../services/api";
+import {
+  sendMonitoringHeartbeat,
+  recordMonitoringPageView,
+} from "../services/monitoringService";
 import NotificationBell from "../components/layout/NotificationBell";
+import SearchDocumentPreview from "../components/SearchDocumentPreview";
 import "./MainLayout.css";
 
 function MainLayout() {
@@ -26,6 +32,7 @@ function MainLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [previewItem, setPreviewItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -36,6 +43,53 @@ function MainLayout() {
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Actualizează prezența doar cât timp utilizatorul este autentificat.
+  useEffect(() => {
+    if (!user?.id) return;
+    let disposed = false;
+    const ping = async () => {
+      if (disposed || document.visibilityState !== "visible") return;
+      try {
+        await sendMonitoringHeartbeat();
+      } catch (error) {
+        // Monitorizarea nu trebuie să blocheze navigarea în aplicație.
+        if (!disposed && import.meta.env.DEV) {
+          console.warn("Heartbeat monitorizare indisponibil:", error);
+        }
+      }
+    };
+    ping();
+    const interval = window.setInterval(ping, 30000);
+    document.addEventListener("visibilitychange", ping);
+    return () => {
+      disposed = true;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", ping);
+    };
+  }, [user?.id]);
+
+  
+useEffect(() => {
+  if (!user?.id) return;
+
+  const path = location.pathname;
+
+  const trackPage = async () => {
+    try {
+      await recordMonitoringPageView(path);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          "Nu s-a putut înregistra accesarea paginii:",
+          error
+        );
+      }
+    }
+  };
+
+  trackPage();
+}, [user?.id, location.pathname]);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -116,13 +170,8 @@ function MainLayout() {
   };
 
   const handleSearchResultClick = (item) => {
-    const routes = {
-      telegrama: "/telegrame",
-      ordin: "/ordine",
-      legislatie: "/legislatie",
-      informatii: "/informatii-utile",
-    };
-    if (routes[item.type]) navigate(`${routes[item.type]}/${item.id}`);
+    if (!item?.id || !item?.type) return;
+    setPreviewItem({ id: item.id, type: item.type, title: item.title });
     setSearchTerm("");
     setSearchResults([]);
     setShowSearchResults(false);
@@ -138,6 +187,10 @@ function MainLayout() {
   return (
     <div className="app-layout app-layout-modern">
       <Toaster position="top-right" richColors closeButton duration={4000} />
+      <SearchDocumentPreview
+        item={previewItem}
+        onClose={() => setPreviewItem(null)}
+      />
       {sidebarOpen && (
         <button
           type="button"
@@ -200,6 +253,15 @@ function MainLayout() {
           </NavLink>
         </nav>
         <div className="sidebar-bottom">
+          {user?.role === "ADMIN" && (
+            <NavLink
+              to="/monitorizare-utilizatori"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <Activity size={20} />
+              <span>Monitorizare utilizatori</span>
+            </NavLink>
+          )}
           {user?.role === "ADMIN" && (
             <NavLink to="/admin" onClick={() => setSidebarOpen(false)}>
               <Settings size={20} />

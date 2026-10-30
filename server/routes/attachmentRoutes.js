@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -14,7 +13,6 @@ const {
 
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Verificarea rolurilor EDITOR și ADMIN
 const canManageAttachments = (req, res, next) => {
   const allowedRoles = ["EDITOR", "ADMIN"];
 
@@ -27,38 +25,27 @@ const canManageAttachments = (req, res, next) => {
   next();
 };
 
-// Vizualizare fișier - USER, EDITOR, ADMIN
-router.get(
-  "/file/:id",
-  authMiddleware,
-  getAttachmentFile
-);
+// Vizualizare: GET /file/:id
+// Descărcare: GET /file/:id?download=1
+router.get("/file/:id", authMiddleware, getAttachmentFile);
 
-// Listare atașamente - USER, EDITOR, ADMIN
-router.get(
-  "/:entityType/:entityId",
-  authMiddleware,
-  getAttachments
-);
+router.get("/:entityType/:entityId", authMiddleware, getAttachments);
 
-// Încărcare fișier - EDITOR, ADMIN
 router.post(
   "/upload",
   authMiddleware,
   canManageAttachments,
   upload.single("file"),
-  uploadAttachment
+  uploadAttachment,
 );
 
-// Adăugare link - EDITOR, ADMIN
 router.post(
   "/link",
   authMiddleware,
   canManageAttachments,
-  createAttachmentLink
+  createAttachmentLink,
 );
 
-// Ștergere atașament - EDITOR, ADMIN
 router.delete(
   "/:id",
   authMiddleware,
@@ -71,7 +58,7 @@ router.delete(
 
     next();
   },
-  deleteAttachment
+  deleteAttachment,
 );
 
 module.exports = router;

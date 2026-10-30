@@ -152,9 +152,7 @@ function Attachments({
       setLoading(true);
       setError("");
 
-      const response = await api.get(
-        `/attachments/${entityType}/${entityId}`
-      );
+      const response = await api.get(`/attachments/${entityType}/${entityId}`);
 
       setAttachments(response.data.attachments || []);
     } catch (error) {
@@ -162,7 +160,7 @@ function Attachments({
 
       setError(
         error.response?.data?.message ||
-          "Atașamentele nu au putut fi încărcate."
+          "Atașamentele nu au putut fi încărcate.",
       );
     } finally {
       setLoading(false);
@@ -194,9 +192,7 @@ function Attachments({
     const maxSize = 100 * 1024 * 1024;
 
     if (file.size > maxSize) {
-      setError(
-        "Fișierul este prea mare. Dimensiunea maximă este de 100 MB."
-      );
+      setError("Fișierul este prea mare. Dimensiunea maximă este de 100 MB.");
 
       event.target.value = "";
       return;
@@ -249,7 +245,7 @@ function Attachments({
       setFileCategory("");
 
       const fileInput = document.getElementById(
-        `attachment-file-${entityType}-${entityId}`
+        `attachment-file-${entityType}-${entityId}`,
       );
 
       if (fileInput) {
@@ -263,8 +259,7 @@ function Attachments({
       console.error("Eroare încărcare fișier:", error);
 
       setError(
-        error.response?.data?.message ||
-          "Fișierul nu a putut fi încărcat."
+        error.response?.data?.message || "Fișierul nu a putut fi încărcat.",
       );
     } finally {
       setUploading(false);
@@ -301,8 +296,7 @@ function Attachments({
       console.error("Eroare adăugare link:", error);
 
       setError(
-        error.response?.data?.message ||
-          "Linkul nu a putut fi adăugat."
+        error.response?.data?.message || "Linkul nu a putut fi adăugat.",
       );
     } finally {
       setAddingLink(false);
@@ -311,7 +305,7 @@ function Attachments({
 
   const handleDelete = async (attachment) => {
     const confirmed = window.confirm(
-      `Sigur dorești să ștergi "${attachment.name}"?`
+      `Sigur dorești să ștergi "${attachment.name}"?`,
     );
 
     if (!confirmed) {
@@ -330,58 +324,92 @@ function Attachments({
       console.error("Eroare ștergere atașament:", error);
 
       setError(
-        error.response?.data?.message ||
-          "Atașamentul nu a putut fi șters."
+        error.response?.data?.message || "Atașamentul nu a putut fi șters.",
       );
     }
   };
 
-  const handleOpenAttachment = (attachment) => {
+  // Deschide fișiere private prin Axios, cu cookie-ul de autentificare.
+  const handleOpenAttachment = async (attachment) => {
     if (attachment.attachment_type === "link") {
-      window.open(
-        attachment.url,
-        "_blank",
-        "noopener,noreferrer"
-      );
-
+      window.open(attachment.url, "_blank", "noopener,noreferrer");
       return;
     }
 
-    window.open(
-      `http://localhost:5000/api/attachments/file/${attachment.id}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    // Deschidem fila în timpul clicului pentru a evita blocarea popup-urilor.
+    const previewWindow = window.open("", "_blank");
+    if (previewWindow) {
+      previewWindow.opener = null;
+      previewWindow.document.title = "Se încarcă documentul...";
+      previewWindow.document.body.textContent = "Se încarcă documentul...";
+    }
+
+    try {
+      resetMessages();
+      const response = await api.get(`/attachments/file/${attachment.id}`, {
+        responseType: "blob",
+      });
+      const blob = response.data;
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (previewWindow && !previewWindow.closed) {
+        previewWindow.location.replace(objectUrl);
+      } else {
+        // În cazul în care browserul blochează fila, oferim descărcarea.
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download =
+          attachment.original_name || attachment.name || "document";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      // Lăsăm timp browserului să încarce conținutul din URL-ul temporar.
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (error) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
+      console.error("Eroare deschidere atașament:", error);
+      setError(
+        error.response?.data?.message || "Fișierul nu a putut fi deschis.",
+      );
+    }
   };
 
-  const handleDownload = (attachment) => {
-    if (attachment.attachment_type !== "file") {
-      return;
+  // ?download=1 permite backend-ului să înregistreze acțiunea „download”.
+  const handleDownload = async (attachment) => {
+    if (attachment.attachment_type !== "file") return;
+
+    try {
+      resetMessages();
+      const response = await api.get(
+        `/attachments/file/${attachment.id}?download=1`,
+        { responseType: "blob" },
+      );
+
+      const objectUrl = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = attachment.original_name || attachment.name || "document";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (error) {
+      console.error("Eroare descărcare atașament:", error);
+      setError(
+        error.response?.data?.message || "Fișierul nu a putut fi descărcat.",
+      );
     }
-
-    const link = document.createElement("a");
-
-    link.href = `http://localhost:5000/api/attachments/file/${attachment.id}`;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.download = attachment.original_name || attachment.name;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
     <section className="attachments-section">
       <div className="attachments-header">
         <div className="attachments-title-section">
-          <h2 className="attachments-title">
-            Documente și atașamente
-          </h2>
+          <h2 className="attachments-title">Documente și atașamente</h2>
 
-          <span className="attachments-count">
-            {attachments.length}
-          </span>
+          <span className="attachments-count">{attachments.length}</span>
         </div>
 
         {canEdit && (
@@ -458,9 +486,7 @@ function Attachments({
             <div>
               <strong>{selectedFile.name}</strong>
 
-              <span>
-                {formatFileSize(selectedFile.size)}
-              </span>
+              <span>{formatFileSize(selectedFile.size)}</span>
             </div>
           </div>
 
@@ -490,17 +516,11 @@ function Attachments({
       )}
 
       {showLinkForm && canEdit && (
-        <form
-          className="attachments-link-form"
-          onSubmit={handleAddLink}
-        >
+        <form className="attachments-link-form" onSubmit={handleAddLink}>
           <div className="attachments-link-form-header">
             <h3>Adaugă link</h3>
 
-            <button
-              type="button"
-              onClick={() => setShowLinkForm(false)}
-            >
+            <button type="button" onClick={() => setShowLinkForm(false)}>
               <X size={18} />
             </button>
           </div>
@@ -514,9 +534,7 @@ function Attachments({
                 className="attachments-input"
                 placeholder="Ex: Instrucțiuni de serviciu"
                 value={linkName}
-                onChange={(event) =>
-                  setLinkName(event.target.value)
-                }
+                onChange={(event) => setLinkName(event.target.value)}
               />
             </div>
 
@@ -528,9 +546,7 @@ function Attachments({
                 className="attachments-input"
                 placeholder="https://..."
                 value={linkUrl}
-                onChange={(event) =>
-                  setLinkUrl(event.target.value)
-                }
+                onChange={(event) => setLinkUrl(event.target.value)}
               />
             </div>
           </div>
@@ -568,71 +584,45 @@ function Attachments({
           <strong>Nu există atașamente</strong>
 
           <span>
-            Documentele, imaginile, videoclipurile și linkurile
-            asociate vor apărea aici.
+            Documentele, imaginile, videoclipurile și linkurile asociate vor
+            apărea aici.
           </span>
         </div>
       ) : (
         <div className="attachments-list">
           {attachments.map((attachment) => (
-            <div
-              className="attachment-item"
-              key={attachment.id}
-            >
-              <div className="attachment-icon">
-                {getFileIcon(attachment)}
-              </div>
+            <div className="attachment-item" key={attachment.id}>
+              <div className="attachment-icon">{getFileIcon(attachment)}</div>
 
               <div className="attachment-info">
-                <strong
-                  className="attachment-name"
-                  title={attachment.name}
-                >
+                <strong className="attachment-name" title={attachment.name}>
                   {attachment.name}
                 </strong>
 
                 <div className="attachment-meta">
-                  <span>
-                    {getCategoryLabel(attachment)}
-                  </span>
+                  <span>{getCategoryLabel(attachment)}</span>
 
                   {attachment.file_size && (
                     <>
-                      <span className="attachment-separator">
-                        •
-                      </span>
+                      <span className="attachment-separator">•</span>
 
-                      <span>
-                        {formatFileSize(
-                          attachment.file_size
-                        )}
-                      </span>
+                      <span>{formatFileSize(attachment.file_size)}</span>
                     </>
                   )}
 
                   {attachment.created_at && (
                     <>
-                      <span className="attachment-separator">
-                        •
-                      </span>
+                      <span className="attachment-separator">•</span>
 
-                      <span>
-                        {formatDate(
-                          attachment.created_at
-                        )}
-                      </span>
+                      <span>{formatDate(attachment.created_at)}</span>
                     </>
                   )}
 
                   {attachment.uploaded_by_name && (
                     <>
-                      <span className="attachment-separator">
-                        •
-                      </span>
+                      <span className="attachment-separator">•</span>
 
-                      <span>
-                        {attachment.uploaded_by_name}
-                      </span>
+                      <span>{attachment.uploaded_by_name}</span>
                     </>
                   )}
                 </div>
@@ -642,9 +632,7 @@ function Attachments({
                 <button
                   type="button"
                   className="attachment-action-button"
-                  onClick={() =>
-                    handleOpenAttachment(attachment)
-                  }
+                  onClick={() => handleOpenAttachment(attachment)}
                   title={
                     attachment.attachment_type === "link"
                       ? "Deschide link"
@@ -658,9 +646,7 @@ function Attachments({
                   <button
                     type="button"
                     className="attachment-action-button"
-                    onClick={() =>
-                      handleDownload(attachment)
-                    }
+                    onClick={() => handleDownload(attachment)}
                     title="Descarcă"
                   >
                     <Download size={17} />
@@ -671,9 +657,7 @@ function Attachments({
                   <button
                     type="button"
                     className="attachment-action-button attachment-delete-button"
-                    onClick={() =>
-                      handleDelete(attachment)
-                    }
+                    onClick={() => handleDelete(attachment)}
                     title="Șterge"
                   >
                     <Trash2 size={17} />

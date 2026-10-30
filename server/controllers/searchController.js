@@ -1,10 +1,15 @@
+
 const pool = require("../config/database");
+const {
+  logMonitoringEvent,
+} = require("../services/monitoringService");
 
 const globalSearch = async (req, res) => {
   try {
     const { q } = req.query;
 
-    const searchTerm = q?.trim();
+    const searchTerm =
+      typeof q === "string" ? q.trim() : "";
 
     if (!searchTerm) {
       return res.status(200).json({
@@ -75,6 +80,17 @@ const globalSearch = async (req, res) => {
       `,
       [search]
     );
+
+    // Înregistrăm căutarea în sistemul de monitorizare.
+    // Limităm textul și nu salvăm date sensibile.
+    const safeTerm = searchTerm.slice(0, 120);
+
+    await logMonitoringEvent({
+      userId: req.user.id,
+      action: "search",
+      details: `Căutare globală: ${safeTerm} | Rezultate: ${result.rows.length}`,
+      req,
+    });
 
     return res.status(200).json({
       results: result.rows,
