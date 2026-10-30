@@ -173,15 +173,17 @@ const createLegislation = async (req, res) => {
         ? ` nr. ${legislation.law_number}`
         : "";
 
-      await notifyUsers({
-        actorId: req.user.id,
-        title: "Act normativ nou",
-        message:
-          `A fost adăugat actul normativ${lawNumberText} ` +
-          `„${legislation.title}”.`,
-        type: "legislatie",
-        link: `/legislatie/${legislation.id}`,
-      });
+      
+await notifyUsers({
+  actorId: req.user.id,
+  title: "Act normativ nou",
+  message:
+    `A fost adăugat actul normativ${lawNumberText} ` +
+    `„${legislation.title}”.`,
+  type: "legislatie",
+  link: `/legislatie?open=${legislation.id}`,
+});
+
     } catch (notificationError) {
       console.error(
         "CREATE LEGISLATION NOTIFICATION ERROR:",

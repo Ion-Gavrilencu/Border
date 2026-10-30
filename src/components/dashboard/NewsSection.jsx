@@ -6,8 +6,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import api from "../../services/api";
 
@@ -94,6 +94,9 @@ async function downloadPrivateAttachment(attachment) {
 
 function NewsSection() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const deepLinkHandledRef = useRef(null);
+  const [highlightedNewsId, setHighlightedNewsId] = useState(null);
 
   // ȘTIRI
   const [news, setNews] = useState([]);
@@ -228,6 +231,88 @@ function NewsSection() {
     loadNews();
     loadUser();
   }, [loadNews, loadUser]);
+
+  // LINK DIN E-MAIL: ?open=ID. Funcționează și când articolul nu este
+  // inclus în primele 100 de rezultate ale listei.
+  useEffect(() => {
+    if (loadingNews || newsError) return;
+
+    const requestedId = new URLSearchParams(location.search).get("open");
+    if (!requestedId || !/^[1-9]\d*$/.test(requestedId)) return;
+
+    const key = `${location.pathname}:${requestedId}`;
+    if (deepLinkHandledRef.current === key) return;
+    let cancelled = false;
+
+    const locateArticle = async () => {
+      try {
+        let article = news.find((item) => String(item.id) === requestedId);
+        if (!article) {
+          const response = await api.get(`/news/${requestedId}`);
+          article = response.data?.article;
+          if (article && !cancelled) {
+            setNews((current) =>
+              current.some((item) => String(item.id) === requestedId)
+                ? current
+                : [article, ...current],
+            );
+          }
+        }
+
+        if (cancelled) return;
+        if (!article) {
+          setNewsError("Știrea din notificare nu a fost găsită.");
+          return;
+        }
+
+        deepLinkHandledRef.current = key;
+        setShowAllNews(true);
+        setHighlightedNewsId(requestedId);
+
+        // Știrile proprii se deschid în modalul deja existent.
+        // Știrile externe rămân evidențiate în listă; un clic deschide sursa.
+        if (article.type === "internal") {
+          setSelectedArticle(article);
+          try {
+            await loadNewsAttachments(article.id);
+          } catch (error) {
+            console.error("DEEP LINK NEWS ATTACHMENTS:", error);
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setNewsError(
+            error.response?.status === 404
+              ? "Știrea din notificare nu mai există."
+              : "Știrea din notificare nu a putut fi încărcată.",
+          );
+        }
+      }
+    };
+
+    locateArticle();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    loadingNews,
+    newsError,
+    news,
+    location.pathname,
+    location.search,
+    loadNewsAttachments,
+  ]);
+
+  useEffect(() => {
+    if (!highlightedNewsId) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const element = document.querySelector(
+        `[data-news-deep-link-id="${highlightedNewsId}"]`,
+      );
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlightedNewsId, showAllNews, news]);
 
   // ÎNCHIDERE MODAL CU ESCAPE
   useEffect(() => {
@@ -418,19 +503,32 @@ function NewsSection() {
             </div>
           ) : (
             displayedNews.map((article) => (
-              <NewsCard
+              <div
                 key={article.id}
-                article={article}
-                mainImage={getMainNewsImage(article.id)}
-                ImageComponent={NewsImage}
-                PrivateImageComponent={PrivateNewsImage}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                deletingId={deletingId}
-                onOpen={openArticle}
-                onEdit={openEditPage}
-                onDelete={handleDeleteNews}
-              />
+                data-news-deep-link-id={String(article.id)}
+                style={
+                  highlightedNewsId === String(article.id)
+                    ? {
+                        outline: "3px solid #3b82f6",
+                        outlineOffset: 4,
+                        borderRadius: 14,
+                      }
+                    : undefined
+                }
+              >
+                <NewsCard
+                  article={article}
+                  mainImage={getMainNewsImage(article.id)}
+                  ImageComponent={NewsImage}
+                  PrivateImageComponent={PrivateNewsImage}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  deletingId={deletingId}
+                  onOpen={openArticle}
+                  onEdit={openEditPage}
+                  onDelete={handleDeleteNews}
+                />
+              </div>
             ))
           )}
         </div>
@@ -471,22 +569,22 @@ function NewsSection() {
 
       {/* PREVIZUALIZARE FOTOGRAFIE */}
       <ImageLightbox
-  attachment={previewImage}
-  attachments={
-    selectedArticle
-      ? (newsAttachments[selectedArticle.id] || [])
-          .filter(
-            (item) =>
-              item.attachment_type === "file" &&
-              item.file_category === "image"
-          )
-          .sort((a, b) => Number(a.id) - Number(b.id))
-      : []
-  }
-  PrivateImageComponent={PrivateNewsImage}
-  onChange={setPreviewImage}
-  onClose={() => setPreviewImage(null)}
-/>
+        attachment={previewImage}
+        attachments={
+          selectedArticle
+            ? (newsAttachments[selectedArticle.id] || [])
+                .filter(
+                  (item) =>
+                    item.attachment_type === "file" &&
+                    item.file_category === "image",
+                )
+                .sort((a, b) => Number(a.id) - Number(b.id))
+            : []
+        }
+        PrivateImageComponent={PrivateNewsImage}
+        onChange={setPreviewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </>
   );
 }

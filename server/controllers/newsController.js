@@ -238,7 +238,7 @@ const createNews = async (req, res) => {
         title: "Știre nouă",
         message: `A fost publicată știrea „${article.title}”.`,
         type: "stire",
-        link: `/stiri/${article.id}`,
+        link: `/dashboard?open=${article.id}`,
       });
     } catch (notificationError) {
       // Știrea rămâne salvată dacă notificarea eșuează.

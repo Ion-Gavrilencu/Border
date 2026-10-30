@@ -28,7 +28,7 @@ import {
 
 import api from "../services/api";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authStore";
 
 import TelegramGallery from "../components/TelegramGallery";
 
@@ -50,13 +50,18 @@ const getTags = (item) => {
 
   if (Array.isArray(tags))
     return tags
+
       .map((tag) => (typeof tag === "string" ? tag : tag?.name))
+
       .filter(Boolean);
 
   if (typeof tags === "string")
     return tags
+
       .split(",")
+
       .map((tag) => tag.trim())
+
       .filter(Boolean);
 
   return [];
@@ -80,8 +85,14 @@ const getAttachmentCount = (item) => {
 
 function Legislatie() {
   const navigate = useNavigate();
+
   const location = useLocation();
-  const targetId = location.state?.openDocumentId;
+
+  const emailTargetId = new URLSearchParams(location.search).get("open");
+  const dashboardTargetId = location.state?.openDocumentId;
+  const targetId = emailTargetId || dashboardTargetId;
+  const [highlightedId, setHighlightedId] = useState(null);
+
   const [pendingTarget, setPendingTarget] = useState(() =>
     targetId == null ? null : String(targetId),
   );
@@ -287,11 +298,16 @@ function Legislatie() {
     () =>
       new Set(
         [...legislatie]
+
           .filter((item) => !isArchived(item))
+
           .sort((a, b) => getTimestamp(b) - getTimestamp(a))
+
           .slice(0, 5)
+
           .map((item) => String(item.id)),
       ),
+
     [legislatie],
   );
 
@@ -312,6 +328,7 @@ function Legislatie() {
         filterType !== "all" &&
         !String(item.title || "")
           .toLowerCase()
+
           .includes(filterType)
       )
         return false;
@@ -333,31 +350,47 @@ function Legislatie() {
   }, [legislatie, tab, favorites, recentIds, filterType, sort]);
 
   useEffect(() => {
-    if (targetId != null) setPendingTarget(String(targetId));
+    if (targetId != null && /^[1-9]\d*$/.test(String(targetId))) {
+      setPendingTarget(String(targetId));
+      setHighlightedId(String(targetId));
+    }
   }, [targetId, location.key]);
 
   useEffect(() => {
     if (loading || pendingTarget === null) return;
+
     const target = legislatie.find((item) => String(item.id) === pendingTarget);
+
     if (!target) {
       setPendingTarget(null);
+
       return;
     }
+
     const desiredTab = isArchived(target) ? "archived" : "all";
+
     if (tab !== desiredTab || filterType !== "all") {
       setTab(desiredTab);
+
       setFilterType("all");
+
       return;
     }
+
     const index = visible.findIndex(
       (item) => String(item.id) === pendingTarget,
     );
+
     if (index < 0) return;
+
     const desiredPage = Math.floor(index / pageSize) + 1;
+
     if (page !== desiredPage) {
       setPage(desiredPage);
+
       return;
     }
+
     const frame = requestAnimationFrame(() => {
       const card = Array.from(
         document.querySelectorAll("[data-legislatie-id]"),
@@ -365,21 +398,40 @@ function Legislatie() {
         (element) =>
           element.getAttribute("data-legislatie-id") === pendingTarget,
       );
-      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      if (!card) return;
+
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
       setPendingTarget(null);
-      navigate(location.pathname, { replace: true, state: null });
+      // Păstrăm parametrul ?open=ID în adresă pentru partajarea linkului.
+      if (location.state) {
+        navigate(location.pathname + location.search, {
+          replace: true,
+          state: null,
+        });
+      }
     });
+
     return () => cancelAnimationFrame(frame);
   }, [
     loading,
+
     pendingTarget,
+
     legislatie,
+
     tab,
+
     filterType,
+
     visible,
+
     pageSize,
+
     page,
+
     navigate,
+
     location.pathname,
   ]);
 
@@ -389,17 +441,21 @@ function Legislatie() {
 
   const pageItems = visible.slice(
     (currentPage - 1) * pageSize,
+
     currentPage * pageSize,
   );
 
   const changeTab = (value) => {
     setTab(value);
+
     setPage(1);
+
     setMenuId(null);
   };
 
   const changeFilter = (value) => {
     setFilterType(value);
+
     setPage(1);
   };
 
@@ -430,13 +486,19 @@ function Legislatie() {
 
         <div className="legislatie-hero-art" aria-hidden="true">
           <div className="legislatie-art-back" />
+
           <div className="legislatie-art-front">
             <span />
+
             <span />
+
             <span />
+
             <span />
+
             <span />
           </div>
+
           <div className="legislatie-art-bookmark" />
         </div>
       </header>
@@ -504,20 +566,27 @@ function Legislatie() {
           aria-label="Filtre acte normative"
         >
           <label htmlFor="legislatie-type">Tip act normativ</label>
+
           <select
             id="legislatie-type"
             value={filterType}
             onChange={(event) => changeFilter(event.target.value)}
           >
             <option value="all">Toate tipurile</option>
+
             <option value="lege">Lege</option>
+
             <option value="hotărâre">Hotărâre</option>
+
             <option value="ordin">Ordin</option>
+
             <option value="regulament">Regulament</option>
           </select>
+
           <button
             onClick={() => {
               changeFilter("all");
+
               setFiltersOpen(false);
             }}
           >
@@ -534,23 +603,31 @@ function Legislatie() {
 
         <div className="legislatie-toolbar-controls">
           <label htmlFor="legislatie-sort">Sortare:</label>
+
           <div className="legislatie-select-wrap">
             <CalendarDays size={20} />
+
             <select
               id="legislatie-sort"
               value={sort}
               onChange={(event) => {
                 setSort(event.target.value);
+
                 setPage(1);
               }}
             >
               <option value="newest">Data (cele mai noi)</option>
+
               <option value="oldest">Data (cele mai vechi)</option>
+
               <option value="az">Titlu (A–Z)</option>
+
               <option value="za">Titlu (Z–A)</option>
             </select>
+
             <ChevronDown size={17} />
           </div>
+
           <div className="legislatie-view-switch">
             <button
               aria-label="Vizualizare listă"
@@ -560,6 +637,7 @@ function Legislatie() {
             >
               <List size={21} />
             </button>
+
             <button
               aria-label="Vizualizare grilă"
               title="Grilă"
@@ -596,6 +674,15 @@ function Legislatie() {
             return (
               <article
                 className="legislatie-card"
+                style={
+                  highlightedId === String(item.id)
+                    ? {
+                        outline: "3px solid #2563eb",
+                        outlineOffset: "3px",
+                        borderRadius: "16px",
+                      }
+                    : undefined
+                }
                 key={item.id}
                 data-legislatie-id={item.id}
               >
@@ -613,14 +700,18 @@ function Legislatie() {
 
                   <div className="legislatie-card-meta">
                     <Folder size={17} />
+
                     <span>Categorie:</span>
+
                     <span className="legislatie-category">Acte normative</span>
                   </div>
 
                   {tags.length > 0 && (
                     <div className="legislatie-card-meta">
                       <Tag size={17} />
+
                       <span>Etichete:</span>
+
                       <div className="legislatie-tags">
                         {tags.map((tag, i) => (
                           <span key={`${tag}-${i}`}>{tag}</span>
@@ -656,6 +747,7 @@ function Legislatie() {
                   >
                     <Star size={23} fill={favorite ? "currentColor" : "none"} />
                   </button>
+
                   <div className="legislatie-menu-wrap">
                     <button
                       title="Mai multe opțiuni"
@@ -667,16 +759,19 @@ function Legislatie() {
                     >
                       <MoreVertical size={22} />
                     </button>
+
                     {menuId === item.id && (
                       <div className="legislatie-menu">
                         <button
                           onClick={() => {
                             setMenuId(null);
+
                             handleOpenLegislation(item);
                           }}
                         >
                           <FileText size={16} /> Deschide
                         </button>
+
                         {canEdit && (
                           <button
                             onClick={() =>
@@ -686,6 +781,7 @@ function Legislatie() {
                             <Pencil size={16} /> Editează
                           </button>
                         )}
+
                         {canDelete && (
                           <button
                             className="danger"
@@ -705,10 +801,12 @@ function Legislatie() {
                     onClick={() => handleOpenLegislation(item)}
                   >
                     <Paperclip size={20} />
+
                     {count === null
                       ? "Vezi atașamente"
                       : `${count} ${count === 1 ? "fișier atașat" : "fișiere atașate"}`}
                   </button>
+
                   <div className="legislatie-card-actions">
                     {canEdit && (
                       <button
@@ -718,6 +816,7 @@ function Legislatie() {
                         <Pencil size={18} /> Editează
                       </button>
                     )}
+
                     {canDelete && (
                       <button
                         className="legislatie-delete"
@@ -743,6 +842,7 @@ function Legislatie() {
             {Math.min(currentPage * pageSize, visible.length)} din{" "}
             {visible.length} acte normative
           </div>
+
           <div className="legislatie-page-buttons">
             <button
               aria-label="Prima pagină"
@@ -751,6 +851,7 @@ function Legislatie() {
             >
               <ChevronsLeft size={19} />
             </button>
+
             <button
               aria-label="Pagina precedentă"
               disabled={currentPage === 1}
@@ -758,7 +859,9 @@ function Legislatie() {
             >
               <ChevronLeft size={19} />
             </button>
+
             {Array.from({ length: totalPages }, (_, i) => i + 1)
+
               .filter(
                 (p) =>
                   totalPages <= 5 ||
@@ -766,11 +869,13 @@ function Legislatie() {
                   p === 1 ||
                   p === totalPages,
               )
+
               .map((p, i, array) => (
                 <span key={p} className="legislatie-page-entry">
                   {i > 0 && p - array[i - 1] > 1 && (
                     <span className="legislatie-ellipsis">…</span>
                   )}
+
                   <button
                     aria-current={p === currentPage ? "page" : undefined}
                     className={p === currentPage ? "active" : ""}
@@ -780,6 +885,7 @@ function Legislatie() {
                   </button>
                 </span>
               ))}
+
             <button
               aria-label="Pagina următoare"
               disabled={currentPage === totalPages}
@@ -787,6 +893,7 @@ function Legislatie() {
             >
               <ChevronRight size={19} />
             </button>
+
             <button
               aria-label="Ultima pagină"
               disabled={currentPage === totalPages}
@@ -795,12 +902,14 @@ function Legislatie() {
               <ChevronsRight size={19} />
             </button>
           </div>
+
           <label className="legislatie-page-size">
             Elemente pe pagină:{" "}
             <select
               value={pageSize}
               onChange={(event) => {
                 setPageSize(Number(event.target.value));
+
                 setPage(1);
               }}
             >

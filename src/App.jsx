@@ -42,17 +42,32 @@ function App() {
               <Route path="/ordine/adauga" element={<AdaugaOrdin />} />
               <Route path="/ordine/:id/edit" element={<EditOrder />} />
               <Route path="/legislatie" element={<Legislatie />} />
-              <Route path="/legislatie/adauga" element={<AdaugaLegislation />} />
-              <Route path="/legislatie/:id/edit" element={<EditLegislation />} />
+              <Route
+                path="/legislatie/adauga"
+                element={<AdaugaLegislation />}
+              />
+              <Route
+                path="/legislatie/:id/edit"
+                element={<EditLegislation />}
+              />
               <Route path="/informatii-utile" element={<InformatiiUtile />} />
-              <Route path="/informatii-utile/adauga" element={<AdaugaInformatiiUtile />} />
-              <Route path="/informatii-utile/:id/edit" element={<EditInformatiiUtile />} />
+              <Route
+                path="/informatii-utile/adauga"
+                element={<AdaugaInformatiiUtile />}
+              />
+              <Route
+                path="/informatii-utile/:id/edit"
+                element={<EditInformatiiUtile />}
+              />
               <Route path="/stiri/adauga" element={<AdaugaStire />} />
               <Route path="/stiri/:id/edit" element={<EditStire />} />
               <Route path="/profil" element={<Profile />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<Administrare />} />
-                <Route path="/monitorizare-utilizatori" element={<MonitorizareUtilizatori />} />
+                <Route
+                  path="/monitorizare-utilizatori"
+                  element={<MonitorizareUtilizatori />}
+                />
               </Route>
             </Route>
           </Route>

@@ -16,7 +16,7 @@ import {
 
 import api from "../services/api";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authStore";
 
 import DocumentUploader from "../components/DocumentUploader";
 

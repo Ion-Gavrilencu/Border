@@ -69,9 +69,13 @@ const createTelegram = async (req, res) => {
     await createAuditLog({ userId: req.user.id, action: "CREATE", entityType: "telegrama",
       entityId: telegram.id, description: `A creat telegrama "${telegram.title}"` });
     try {
-      await notifyUsers({ actorId: req.user.id, title: "Telegramă nouă",
-        message: `A fost adăugată telegrama „${telegram.title}”.`,
-        type: "telegrama", link: `/telegrame/${telegram.id}` });
+      await notifyUsers({
+  actorId: req.user.id,
+  title: "Telegramă nouă",
+  message: `A fost adăugată telegrama „${telegram.title}”.`,
+  type: "telegrama",
+  link: `/telegrame?open=${telegram.id}`,
+});
     } catch (error) { console.error("CREATE TELEGRAM NOTIFICATION ERROR:", error); }
     return res.status(201).json({ message: "Telegrama a fost adăugată.", telegram });
   } catch (error) {

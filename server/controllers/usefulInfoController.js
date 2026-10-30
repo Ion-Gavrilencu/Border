@@ -68,7 +68,7 @@ const createUsefulInfo = async (req, res) => {
       await notifyUsers({
         actorId: req.user.id, title: "Informație utilă nouă",
         message: `A fost adăugată informația „${informatie.title}”${categoryText}.`,
-        type: "informatii", link: `/informatii-utile/${informatie.id}`,
+        type: "informatii", link: `/informatii-utile?open=${informatie.id}`,
       });
     } catch (notificationError) {
       console.error("CREATE USEFUL INFO NOTIFICATION ERROR:", notificationError);

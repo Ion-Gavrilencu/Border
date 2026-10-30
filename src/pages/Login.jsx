@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
   UserRound,
   LockKeyhole,
@@ -11,16 +10,53 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authStore";
 import "./Login.css";
+
+const getSafeDestination = (from) => {
+  if (
+    typeof from !== "string" ||
+    !from.startsWith("/") ||
+    from.startsWith("//")
+  ) {
+    return "/dashboard";
+  }
+
+  if (/[\\\r\n]/.test(from)) {
+    return "/dashboard";
+  }
+
+  try {
+    const url = new URL(from, "https://internal.invalid");
+    if (url.origin !== "https://internal.invalid") return "/dashboard";
+
+    const allowedPaths = new Set([
+      "/dashboard",
+      "/telegrame",
+      "/ordine",
+      "/legislatie",
+      "/informatii-utile",
+      "/profil",
+      "/admin",
+      "/monitorizare-utilizatori",
+    ]);
+
+    if (!allowedPaths.has(url.pathname)) return "/dashboard";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "/dashboard";
+  }
+};
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, login } = useAuth();
+
+  const destination = getSafeDestination(location.state?.from);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +66,6 @@ function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (loading) return;
 
     setError("");
@@ -38,8 +73,7 @@ function Login() {
 
     try {
       await login(username.trim(), password);
-
-      navigate("/dashboard", { replace: true });
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -51,25 +85,19 @@ function Login() {
   };
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={destination} replace />;
   }
 
   return (
     <div className="login-page">
       <div className="login-container">
-
         {/* PANOU STÂNGA - BRANDING */}
-
         <section className="login-brand-panel">
           <div
             className="login-brand-background"
-            style={{
-              backgroundImage: `url("${bannerUrl}")`,
-            }}
+            style={{ backgroundImage: `url("${bannerUrl}")` }}
           />
-
           <div className="login-brand-overlay" />
-
           <div className="login-brand-content">
             <div className="login-brand-top">
               <img
@@ -77,30 +105,24 @@ function Login() {
                 alt="Stema Republicii Moldova"
                 className="login-brand-logo"
               />
-
               <div className="login-brand-name">
                 <h1>BORDER</h1>
                 <span>PORTAL INFORMAȚIONAL</span>
               </div>
             </div>
-
             <div className="login-brand-bottom">
               <span className="login-brand-tag">
                 PLATFORMA INFORMAȚIONALĂ INTERNĂ
               </span>
-
               <h2>
                 Informația de serviciu,
                 <br />
                 într-un singur loc.
               </h2>
-
               <p>
-                Acces la telegrame, ordine interne,
-                legislație și informații utile,
-                într-o platformă organizată.
+                Acces la telegrame, ordine interne, legislație și informații
+                utile, într-o platformă organizată.
               </p>
-
               <div className="login-brand-features">
                 <span>Documente</span>
                 <span className="login-feature-dot">•</span>
@@ -113,23 +135,15 @@ function Login() {
         </section>
 
         {/* PANOU DREAPTA - AUTENTIFICARE */}
-
         <section className="login-form-panel">
           <div className="login-form-wrapper">
-
             <div className="login-mobile-brand">
-              <img
-                src={logoUrl}
-                alt="Stema Republicii Moldova"
-              />
-
+              <img src={logoUrl} alt="Stema Republicii Moldova" />
               <div>
                 <strong>BORDER</strong>
                 <span>PORTAL INFORMAȚIONAL</span>
               </div>
             </div>
-
-            
 
             {error && (
               <div className="login-error" role="alert">
@@ -138,31 +152,18 @@ function Login() {
               </div>
             )}
 
-            <form
-              className="login-form"
-              onSubmit={handleSubmit}
-            >
+            <form className="login-form" onSubmit={handleSubmit}>
               {/* UTILIZATOR */}
-
               <div className="login-form-group">
-                <label htmlFor="username">
-                  Nume de utilizator
-                </label>
-
+                <label htmlFor="username">Nume de utilizator</label>
                 <div className="login-input-wrapper">
-                  <UserRound
-                    size={19}
-                    className="login-input-icon"
-                  />
-
+                  <UserRound size={19} className="login-input-icon" />
                   <input
                     id="username"
                     type="text"
                     placeholder="Introdu numele de utilizator"
                     value={username}
-                    onChange={(event) =>
-                      setUsername(event.target.value)
-                    }
+                    onChange={(event) => setUsername(event.target.value)}
                     autoComplete="username"
                     autoCapitalize="none"
                     spellCheck={false}
@@ -173,60 +174,36 @@ function Login() {
               </div>
 
               {/* PAROLĂ */}
-
               <div className="login-form-group">
-                <label htmlFor="password">
-                  Parolă
-                </label>
-
+                <label htmlFor="password">Parolă</label>
                 <div className="login-input-wrapper">
-                  <LockKeyhole
-                    size={19}
-                    className="login-input-icon"
-                  />
-
+                  <LockKeyhole size={19} className="login-input-icon" />
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Introdu parola"
                     value={password}
-                    onChange={(event) =>
-                      setPassword(event.target.value)
-                    }
+                    onChange={(event) => setPassword(event.target.value)}
                     autoComplete="current-password"
                     required
                     disabled={loading}
                   />
-
                   <button
                     type="button"
                     className="login-password-toggle"
-                    onClick={() =>
-                      setShowPassword((previous) => !previous)
-                    }
+                    onClick={() => setShowPassword((previous) => !previous)}
                     aria-label={
-                      showPassword
-                        ? "Ascunde parola"
-                        : "Afișează parola"
+                      showPassword ? "Ascunde parola" : "Afișează parola"
                     }
                     aria-pressed={showPassword}
                   >
-                    {showPassword ? (
-                      <EyeOff size={19} />
-                    ) : (
-                      <Eye size={19} />
-                    )}
+                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                   </button>
                 </div>
               </div>
 
               {/* BUTON AUTENTIFICARE */}
-
-              <button
-                type="submit"
-                className="login-button"
-                disabled={loading}
-              >
+              <button type="submit" className="login-button" disabled={loading}>
                 {loading ? (
                   <>
                     <span className="login-spinner" />
@@ -242,16 +219,10 @@ function Login() {
             </form>
 
             {/* SECURITATE */}
-
             <div className="login-security">
               <ShieldCheck size={18} />
-
-              <span>
-                Acces destinat exclusiv
-                utilizatorilor autorizați
-              </span>
+              <span>Acces destinat exclusiv utilizatorilor autorizați</span>
             </div>
-
             <div className="login-footer">
               <span>BORDER</span>
               <span>•</span>

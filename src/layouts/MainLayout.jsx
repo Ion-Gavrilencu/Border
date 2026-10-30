@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authStore";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Toaster, toast } from "sonner";
@@ -69,27 +69,23 @@ function MainLayout() {
     };
   }, [user?.id]);
 
-  
-useEffect(() => {
-  if (!user?.id) return;
+  useEffect(() => {
+    if (!user?.id) return;
 
-  const path = location.pathname;
+    const path = location.pathname;
 
-  const trackPage = async () => {
-    try {
-      await recordMonitoringPageView(path);
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.warn(
-          "Nu s-a putut înregistra accesarea paginii:",
-          error
-        );
+    const trackPage = async () => {
+      try {
+        await recordMonitoringPageView(path);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn("Nu s-a putut înregistra accesarea paginii:", error);
+        }
       }
-    }
-  };
+    };
 
-  trackPage();
-}, [user?.id, location.pathname]);
+    trackPage();
+  }, [user?.id, location.pathname]);
 
   useEffect(() => {
     setSidebarOpen(false);

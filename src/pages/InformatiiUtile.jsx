@@ -39,7 +39,7 @@ import {
 
 import api from "../services/api";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authStore";
 
 import "./InformatiiUtile.css";
 
@@ -185,8 +185,13 @@ function InformatiiUtile() {
   const { user } = useAuth();
 
   const navigate = useNavigate();
+
   const location = useLocation();
+
   const navigationHandledRef = useRef(null);
+  const deepLinkId = new URLSearchParams(location.search).get("open");
+  const [highlightedInfoId, setHighlightedInfoId] = useState(null);
+
   const [targetInfoId, setTargetInfoId] = useState(null);
 
   const [informatii, setInformatii] = useState([]);
@@ -314,37 +319,53 @@ function InformatiiUtile() {
   }, [informatii, category, sort, formatFilter, importantOnly, attachmentMeta]);
 
   // Navigare din Dashboard la informația selectată, fără rute sau componente noi.
+
   useEffect(() => {
-    const requestedId = location.state?.openDocumentId;
+    const requestedId = deepLinkId || location.state?.openDocumentId;
+
     if (loading || requestedId == null) return;
 
     const navigationKey = `${location.key}:${requestedId}`;
+
     if (navigationHandledRef.current === navigationKey) return;
+
     navigationHandledRef.current = navigationKey;
 
     const target = informatii.find(
       (item) => String(item.id) === String(requestedId),
     );
+
     if (!target) {
       toast.error("Informația selectată nu a fost găsită.");
+
       return;
     }
 
     // Resetăm filtrele pentru ca documentul să fie inclus în rezultate.
+
     setCategory("Toate");
+
     setFormatFilter("Toate");
+
     setImportantOnly(false);
+
     setSort("recent");
+
     setTargetInfoId(String(requestedId));
-  }, [loading, informatii, location.key, location.state]);
+    setHighlightedInfoId(String(requestedId));
+  }, [loading, informatii, location.key, location.state, deepLinkId]);
 
   // După resetarea filtrelor calculăm pagina care conține informația.
+
   useEffect(() => {
     if (targetInfoId === null || loading) return;
+
     const index = filtered.findIndex(
       (item) => String(item.id) === targetInfoId,
     );
+
     if (index < 0) return;
+
     setPage(Math.floor(index / pageSize) + 1);
   }, [targetInfoId, loading, filtered, pageSize]);
 
@@ -359,8 +380,10 @@ function InformatiiUtile() {
   );
 
   // Evidențiem și aducem în zona vizibilă documentul, pe mobil și desktop.
+
   useEffect(() => {
     if (targetInfoId === null || loading) return;
+
     if (!visibleItems.some((item) => String(item.id) === targetInfoId)) return;
 
     const frame = window.requestAnimationFrame(() => {
@@ -371,12 +394,14 @@ function InformatiiUtile() {
           node.getAttribute("data-info-document-id") === targetInfoId &&
           node.getClientRects().length > 0,
       );
+
       element?.scrollIntoView({ behavior: "smooth", block: "center" });
+
       setTargetInfoId(null);
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [targetInfoId, loading, visibleItems]);
+  }, [targetInfoId, loading, visibleItems, navigate, location.pathname]);
 
   // Fișierele sunt private: le cerem cu tokenul Axios și le deschidem ca Blob.
 
@@ -1019,7 +1044,19 @@ function InformatiiUtile() {
 
                   <tbody>
                     {visibleItems.map((item, index) => (
-                      <tr key={item.id} data-info-document-id={String(item.id)}>
+                      <tr
+                        key={item.id}
+                        data-info-document-id={String(item.id)}
+                        style={
+                          String(item.id) === highlightedInfoId
+                            ? {
+                                outline: "3px solid #2b70d7",
+                                outlineOffset: "-3px",
+                                backgroundColor: "#eef5ff",
+                              }
+                            : undefined
+                        }
+                      >
                         <td>
                           <input
                             type="checkbox"

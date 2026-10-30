@@ -184,25 +184,26 @@ const createOrder = async (req, res) => {
     });
 
     // NOTIFICARE AUTOMATĂ PENTRU ORDIN NOU
-    try {
-      const orderNumber = order.number
-        ? ` nr. ${order.number}`
-        : "";
+   
+try {
+  const orderNumber = order.number
+    ? ` nr. ${order.number}`
+    : "";
 
-      await notifyUsers({
-        actorId: req.user.id,
-        title: "Ordin nou",
-        message: `A fost adăugat ordinul${orderNumber} „${order.title}”.`,
-        type: "ordin",
-        link: `/ordine/${order.id}`,
-      });
-    } catch (notificationError) {
-      // Ordinul rămâne salvat chiar dacă notificarea eșuează.
-      console.error(
-        "CREATE ORDER NOTIFICATION ERROR:",
-        notificationError
-      );
-    }
+  await notifyUsers({
+    actorId: req.user.id,
+    title: "Ordin nou",
+    message: `A fost adăugat ordinul${orderNumber} „${order.title}”.`,
+    type: "ordin",
+    link: `/ordine?open=${order.id}`,
+  });
+} catch (notificationError) {
+  console.error(
+    "CREATE ORDER NOTIFICATION ERROR:",
+    notificationError
+  );
+}
+
 
     return res.status(201).json({
       message: "Ordinul a fost adăugat.",
