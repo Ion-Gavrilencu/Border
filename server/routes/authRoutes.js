@@ -1,36 +1,39 @@
+
 const express = require("express");
 
-
 const {
-  register,
   login,
   logout,
-  getMe,
   activateAccount,
   changePassword,
   updateProfile,
 } = require("../controllers/authController");
-
 
 const authenticate = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// router.post("/register", register);
-
+// Autentificare
 router.post("/login", login);
+
+// Activarea contului
 router.post("/activate", activateAccount);
-// Schimbarea parolei - utilizator autentificat
+
+// Deconectare - utilizator autentificat
+router.post("/logout", authenticate, logout);
+
+// Schimbarea parolei
 router.patch(
   "/change-password",
   authenticate,
   changePassword
 );
-router.post("/logout", logout);
 
+// Actualizarea profilului
 router.patch("/profile", authenticate, updateProfile);
 
+// Utilizatorul autentificat
 router.get("/me", authenticate, (req, res) => {
   res.json({
     message: "Utilizator autentificat.",
@@ -38,6 +41,7 @@ router.get("/me", authenticate, (req, res) => {
   });
 });
 
+// Verificare acces administrator
 router.get(
   "/admin-test",
   authenticate,
@@ -49,4 +53,5 @@ router.get(
     });
   }
 );
+
 module.exports = router;

@@ -113,11 +113,18 @@ const login = async (req, res) => {
       req,
     });
 
-    await touchPresence({
-      user: { id: user.id },
-      get: req.get.bind(req),
-      ip: req.ip,
-    });
+    try {
+  await touchPresence({
+    user: { id: user.id },
+    get: req.get.bind(req),
+    ip: req.ip,
+  });
+} catch (monitoringError) {
+  console.error(
+    "LOGIN MONITORING ERROR:",
+    monitoringError
+  );
+}
     return res.json({
       message: "Autentificare reușită.",
       user: {
