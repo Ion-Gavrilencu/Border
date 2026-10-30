@@ -1,7 +1,7 @@
 const {
   logMonitoringEvent,
-  touchPresence,
-  markUserOffline,
+  createMonitoringSession,
+  closeMonitoringSession,
 } = require("../services/monitoringService");
 const bcrypt = require("bcrypt");
 const pool = require("../config/database");
@@ -67,7 +67,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
 
     if (!username || !password) {
       return res.status(400).json({
@@ -76,10 +76,7 @@ const login = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT *
-       FROM users
-       WHERE username = $1
-       AND is_active = TRUE`,
+      `SELECT * FROM users WHERE username = $1 AND is_active = TRUE`,
       [username],
     );
 
@@ -90,7 +87,6 @@ const login = async (req, res) => {
     }
 
     const user = result.rows[0];
-
     const passwordCorrect = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordCorrect) {
@@ -99,24 +95,36 @@ const login = async (req, res) => {
       });
     }
 
+    const sessionId = crypto.randomUUID();
+    const sessionDurationMs = 8 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + sessionDurationMs);
+
+    // Mai întâi persistăm sesiunea; nu trimitem un JWT pentru o
+    // sesiune care nu a putut fi creată în baza de date.
+    await createMonitoringSession({
+      sessionId,
+      userId: user.id,
+      expiresAt,
+      req,
+    });
+
     const token = jwt.sign(
       {
         id: user.id,
         username: user.username,
         role: user.role,
         sessionVersion: user.session_version,
+        sessionId,
       },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "8h",
-      },
+      { expiresIn: "8h" },
     );
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 8 * 60 * 60 * 1000,
+      maxAge: sessionDurationMs,
       path: "/",
     });
 
@@ -127,22 +135,12 @@ const login = async (req, res) => {
       req,
     });
 
-    try {
-      await touchPresence({
-        user: { id: user.id },
-        get: req.get.bind(req),
-        ip: req.ip,
-      });
-    } catch (monitoringError) {
-      console.error("LOGIN MONITORING ERROR:", monitoringError);
-    }
     return res.json({
       message: "Autentificare reușită.",
       user: publicUser(user),
     });
   } catch (error) {
     console.error("LOGIN ERROR:", error);
-
     return res.status(500).json({
       message: "Eroare la autentificare.",
     });
@@ -151,45 +149,34 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    // Înregistrăm deconectarea doar dacă utilizatorul
-    // a fost identificat de middleware-ul de autentificare.
-    if (req.user?.id) {
+    if (req.user?.id && req.user?.sessionId) {
+      await closeMonitoringSession({
+        sessionId: req.user.sessionId,
+        userId: req.user.id,
+      });
+
       await logMonitoringEvent({
         userId: req.user.id,
         action: "logout",
         details: "Deconectare din aplicație",
         req,
       });
-
-      await markUserOffline(req.user.id);
     }
-
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-    });
-
-    return res.status(200).json({
-      message: "Deconectare reușită.",
-    });
   } catch (error) {
     console.error("LOGOUT ERROR:", error);
-
-    // Cookie-ul trebuie șters chiar dacă monitorizarea
-    // întâmpină o eroare.
+  } finally {
+    // Ștergem cookie-ul chiar dacă monitorizarea întâmpină erori.
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
     });
-
-    return res.status(200).json({
-      message: "Deconectare reușită.",
-    });
   }
+
+  return res.status(200).json({
+    message: "Deconectare reușită.",
+  });
 };
 
 const activateAccount = async (req, res) => {

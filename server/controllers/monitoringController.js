@@ -1,132 +1,110 @@
 const pool = require("../config/database");
 const {
-  touchPresence,
+  touchMonitoringSession,
   logMonitoringEvent,
 } = require("../services/monitoringService");
 
 const ONLINE_INTERVAL = "2 minutes";
 
-// =====================================================
-// HEARTBEAT — ACTUALIZAREA PREZENȚEI
-// =====================================================
-
+// Actualizează numai sesiunea autentificată a dispozitivului curent.
 async function heartbeat(req, res) {
   try {
-    await touchPresence(req);
+    const updated = await touchMonitoringSession({
+      sessionId: req.user.sessionId,
+      userId: req.user.id,
+      req,
+    });
 
+    if (!updated) {
+      return res.status(401).json({ message: "Sesiunea nu mai este activă." });
+    }
     return res.json({ ok: true });
   } catch (error) {
     console.error("MONITORING HEARTBEAT ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-a putut actualiza prezența.",
-    });
+    return res
+      .status(500)
+      .json({ message: "Nu s-a putut actualiza prezența." });
   }
 }
 
-// =====================================================
-// OVERVIEW — UTILIZATORI ȘI STATISTICI
-// =====================================================
-
+// Starea Online = cel puțin o sesiune validă cu heartbeat recent.
+// Detaliile dispozitivului provin din cea mai recentă sesiune a utilizatorului.
 async function getOverview(req, res) {
   try {
     const [users, stats] = await Promise.all([
       pool.query(`
         SELECT
-          u.id,
-          u.username,
-          u.email,
-          u.full_name,
-          u.role,
-          u.created_at,
-
-          CASE
-            WHEN u.avatar_data IS NOT NULL
-            THEN '/api/auth/avatar-image/' || u.id ||
-                 '?v=' ||
-                 (
-                   EXTRACT(
-                     EPOCH FROM COALESCE(
-                       u.avatar_updated_at,
-                       u.created_at
-                     )
-                   ) * 1000
-                 )::bigint::text
-            ELSE NULL
-          END AS avatar_url,
-
-          p.last_seen_at,
-          p.session_started_at,
-          p.user_agent,
-
-          COALESCE(
-            (
-              p.logged_out_at IS NULL
-              AND p.last_seen_at >=
-                NOW() - INTERVAL '${ONLINE_INTERVAL}'
-            ),
-            FALSE
+          u.id, u.username, u.email, u.full_name, u.role, u.created_at,
+          CASE WHEN u.avatar_data IS NOT NULL THEN
+            '/api/auth/avatar-image/' || u.id || '?v=' ||
+            (EXTRACT(EPOCH FROM COALESCE(u.avatar_updated_at, u.created_at)) * 1000)::bigint::text
+          ELSE NULL END AS avatar_url,
+          latest.last_seen_at,
+          latest.started_at AS session_started_at,
+          latest.user_agent,
+          EXISTS (
+            SELECT 1 FROM monitoring_sessions active_session
+            WHERE active_session.user_id = u.id
+              AND active_session.logged_out_at IS NULL
+              AND active_session.expires_at > NOW()
+              AND active_session.last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}'
           ) AS online
-
         FROM users u
-
-        LEFT JOIN monitoring_presence p
-          ON p.user_id = u.id
-
+        LEFT JOIN LATERAL (
+          SELECT s.last_seen_at, s.started_at, s.user_agent
+          FROM monitoring_sessions s
+          WHERE s.user_id = u.id
+          ORDER BY s.last_seen_at DESC, s.id DESC
+          LIMIT 1
+        ) latest ON TRUE
         ORDER BY u.id ASC
       `),
-
       pool.query(`
         SELECT
           (
-            SELECT COUNT(*)::int
-            FROM monitoring_presence
+            SELECT COUNT(DISTINCT user_id)::int
+            FROM monitoring_sessions
             WHERE logged_out_at IS NULL
-              AND last_seen_at >=
-                NOW() - INTERVAL '${ONLINE_INTERVAL}'
+              AND expires_at > NOW()
+              AND last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}'
           ) AS online_users,
-
           (
-            SELECT COUNT(*)::int
-            FROM monitoring_events
+            SELECT COUNT(*)::int FROM monitoring_events
             WHERE action = 'login'
-              AND created_at >= date_trunc('day', NOW())
+              AND created_at >= (DATE_TRUNC('day', NOW() AT TIME ZONE 'Europe/Chisinau') AT TIME ZONE 'Europe/Chisinau')
           ) AS logins_today,
-
           (
-            SELECT COUNT(*)::int
-            FROM monitoring_events
+            SELECT COUNT(*)::int FROM monitoring_events
             WHERE action = 'search'
-              AND created_at >=
-                NOW() - INTERVAL '24 hours'
+              AND created_at >= NOW() - INTERVAL '24 hours'
           ) AS searches_24h,
-
           (
-            SELECT COUNT(*)::int
-            FROM monitoring_events
+            SELECT COUNT(*)::int FROM monitoring_events
             WHERE action = 'download'
-              AND created_at >=
-                NOW() - INTERVAL '24 hours'
+              AND created_at >= NOW() - INTERVAL '24 hours'
           ) AS downloads_24h
       `),
     ]);
 
-    return res.json({
-      users: users.rows,
-      stats: stats.rows[0],
-    });
+    return res.json({ users: users.rows, stats: stats.rows[0] });
   } catch (error) {
     console.error("MONITORING OVERVIEW ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-au putut încărca statisticile.",
-    });
+    return res
+      .status(500)
+      .json({ message: "Nu s-au putut încărca statisticile." });
   }
 }
 
-// =====================================================
-// ACTIVITIES — ISTORICUL ACTIVITĂȚII
-// =====================================================
+function validDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() + 1 === month &&
+    parsed.getUTCDate() === day
+  );
+}
 
 async function getActivities(req, res) {
   try {
@@ -134,105 +112,60 @@ async function getActivities(req, res) {
       1,
       Math.min(100000, Number.parseInt(req.query.page, 10) || 1),
     );
-
     const limit = Math.max(
       1,
       Math.min(50, Number.parseInt(req.query.limit, 10) || 10),
     );
-
     const userId = req.query.userId ? Number(req.query.userId) : null;
-
     const action =
       typeof req.query.action === "string" ? req.query.action.trim() : "";
-
     const search =
       typeof req.query.search === "string"
         ? req.query.search.trim().slice(0, 120)
         : "";
-
     const start = typeof req.query.start === "string" ? req.query.start : "";
-
     const end = typeof req.query.end === "string" ? req.query.end : "";
 
-    // Validarea filtrelor
     if (
       (userId !== null && (!Number.isSafeInteger(userId) || userId < 1)) ||
-      (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) ||
-      (end && !/^\d{4}-\d{2}-\d{2}$/.test(end))
+      (start && !validDate(start)) ||
+      (end && !validDate(end)) ||
+      (start && end && start > end)
     ) {
-      return res.status(400).json({
-        message: "Filtre invalide.",
-      });
+      return res.status(400).json({ message: "Filtre invalide." });
     }
 
     const clauses = [];
     const values = [];
-
     const add = (sql, value) => {
       values.push(value);
-
       clauses.push(sql.replace("?", `$${values.length}`));
     };
 
-    if (userId !== null) {
-      add("e.user_id = ?", userId);
-    }
-
-    if (action && action !== "all") {
-      add("e.action = ?", action);
-    }
-
-    if (search) {
-      add("COALESCE(e.details, '') ILIKE ?", `%${search}%`);
-    }
-
-    if (start) {
-      add("e.created_at >= ?::date", start);
-    }
-
-    if (end) {
-      add("e.created_at < (?::date + INTERVAL '1 day')", end);
-    }
+    if (userId !== null) add("e.user_id = ?", userId);
+    if (action && action !== "all") add("e.action = ?", action);
+    if (search) add("COALESCE(e.details, '') ILIKE ?", `%${search}%`);
+    if (start)
+      add("e.created_at >= (?::date AT TIME ZONE 'Europe/Chisinau')", start);
+    if (end)
+      add(
+        "e.created_at < ((?::date + INTERVAL '1 day') AT TIME ZONE 'Europe/Chisinau')",
+        end,
+      );
 
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-
-    const base = `
-      FROM monitoring_events e
-      LEFT JOIN users u
-        ON u.id = e.user_id
-      ${where}
-    `;
+    const base = `FROM monitoring_events e LEFT JOIN users u ON u.id = e.user_id ${where}`;
 
     const count = await pool.query(
-      `
-        SELECT COUNT(*)::int AS total
-        ${base}
-      `,
+      `SELECT COUNT(*)::int AS total ${base}`,
       values,
     );
-
     const result = await pool.query(
-      `
-        SELECT
-          e.id,
-          e.user_id,
-          e.action,
-          e.details,
-          e.ip_address,
-          e.user_agent,
-          e.created_at,
-          u.username,
-          u.full_name
-
-        ${base}
-
-        ORDER BY
-          e.created_at DESC,
-          e.id DESC
-
-        LIMIT $${values.length + 1}
-        OFFSET $${values.length + 2}
-      `,
+      `SELECT e.id, e.user_id, e.action, e.details, e.ip_address,
+              e.user_agent, e.created_at, u.username, u.full_name
+       ${base}
+       ORDER BY e.created_at DESC, e.id DESC
+       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, limit, (page - 1) * limit],
     );
 
@@ -244,30 +177,22 @@ async function getActivities(req, res) {
     });
   } catch (error) {
     console.error("MONITORING ACTIVITIES ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-a putut încărca istoricul.",
-    });
+    return res.status(500).json({ message: "Nu s-a putut încărca istoricul." });
   }
 }
 
-// =====================================================
-// PAGE VIEW — ÎNREGISTRAREA PAGINILOR ACCESATE
-// =====================================================
-
-const recordPageView = async (req, res) => {
+async function recordPageView(req, res) {
   try {
     const { path } = req.body || {};
-
     if (
       typeof path !== "string" ||
       !path.startsWith("/") ||
       path.startsWith("//") ||
       path.length > 200
     ) {
-      return res.status(400).json({
-        message: "Pagina accesată este invalidă.",
-      });
+      return res
+        .status(400)
+        .json({ message: "Pagina accesată este invalidă." });
     }
 
     await logMonitoringEvent({
@@ -276,26 +201,11 @@ const recordPageView = async (req, res) => {
       details: `Pagină accesată: ${path}`,
       req,
     });
-
-    return res.status(200).json({
-      ok: true,
-    });
+    return res.json({ ok: true });
   } catch (error) {
     console.error("PAGE VIEW ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-a putut înregistra pagina.",
-    });
+    return res.status(500).json({ message: "Nu s-a putut înregistra pagina." });
   }
-};
+}
 
-// =====================================================
-// EXPORTS
-// =====================================================
-
-module.exports = {
-  heartbeat,
-  getOverview,
-  getActivities,
-  recordPageView,
-};
+module.exports = { heartbeat, getOverview, getActivities, recordPageView };
