@@ -20,7 +20,7 @@ const newsRoutes = require("./routes/newsRoutes");
 const newsFileRoutes = require("./routes/newsFileRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const monitoringRoutes = require("./routes/monitoringRoutes");
-
+const cronRoutes = require("./routes/cronRoutes");
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const allowedOrigins = [
@@ -63,6 +63,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/news-files", newsFileRoutes);
 app.use("/api/monitoring", monitoringRoutes);
+app.use("/api/cron", cronRoutes);
 module.exports = app;
 if (require.main === module) {
   app.listen(PORT, () => console.log(`Server pornit pe portul ${PORT}`));
