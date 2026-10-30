@@ -1,6 +1,7 @@
 const {
   logMonitoringEvent,
   touchPresence,
+  markUserOffline,
 } = require("../services/monitoringService");
 const bcrypt = require("bcrypt");
 const pool = require("../config/database");
@@ -8,11 +9,16 @@ const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 
 const publicUser = (row) => ({
-  id: row.id, username: row.username, email: row.email,
-  fullName: row.full_name, role: row.role,
+  id: row.id,
+  username: row.username,
+  email: row.email,
+  fullName: row.full_name,
+  role: row.role,
   created_at: row.created_at,
   emailNotifications: row.email_notifications,
-  avatarURL: row.avatar_data ? `/api/auth/avatar-image/${row.id}?v=${new Date(row.avatar_updated_at || Date.now()).getTime()}` : null,
+  avatarURL: row.avatar_data
+    ? `/api/auth/avatar-image/${row.id}?v=${new Date(row.avatar_updated_at || Date.now()).getTime()}`
+    : null,
 });
 
 const register = async (req, res) => {
@@ -122,17 +128,14 @@ const login = async (req, res) => {
     });
 
     try {
-  await touchPresence({
-    user: { id: user.id },
-    get: req.get.bind(req),
-    ip: req.ip,
-  });
-} catch (monitoringError) {
-  console.error(
-    "LOGIN MONITORING ERROR:",
-    monitoringError
-  );
-}
+      await touchPresence({
+        user: { id: user.id },
+        get: req.get.bind(req),
+        ip: req.ip,
+      });
+    } catch (monitoringError) {
+      console.error("LOGIN MONITORING ERROR:", monitoringError);
+    }
     return res.json({
       message: "Autentificare reușită.",
       user: publicUser(user),
@@ -158,11 +161,7 @@ const logout = async (req, res) => {
         req,
       });
 
-      await pool.query(
-        `DELETE FROM monitoring_presence
-         WHERE user_id = $1`,
-        [req.user.id],
-      );
+      await markUserOffline(req.user.id);
     }
 
     res.clearCookie("token", {
@@ -390,19 +389,36 @@ const updateProfile = async (req, res) => {
   }
 };
 
-
 // Fotografiile sunt salvate în PostgreSQL, nu pe discul temporar al serverului.
 const updateAvatar = async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "Selectează o fotografie." });
+  if (!req.file)
+    return res.status(400).json({ message: "Selectează o fotografie." });
   try {
     const buffer = req.file.buffer;
     // Verificare semnătură, nu doar MIME-ul declarat de browser.
-    const jpeg = buffer.length >= 3 && buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
-    const png = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-    const webp = buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP";
-    const mime = jpeg ? "image/jpeg" : png ? "image/png" : webp ? "image/webp" : null;
+    const jpeg =
+      buffer.length >= 3 &&
+      buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
+    const png =
+      buffer.length >= 8 &&
+      buffer
+        .subarray(0, 8)
+        .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const webp =
+      buffer.length >= 12 &&
+      buffer.toString("ascii", 0, 4) === "RIFF" &&
+      buffer.toString("ascii", 8, 12) === "WEBP";
+    const mime = jpeg
+      ? "image/jpeg"
+      : png
+        ? "image/png"
+        : webp
+          ? "image/webp"
+          : null;
     if (!mime || req.file.mimetype !== mime) {
-      return res.status(400).json({ message: "Fotografia trebuie să fie JPG, PNG sau WebP valid." });
+      return res.status(400).json({
+        message: "Fotografia trebuie să fie JPG, PNG sau WebP valid.",
+      });
     }
     const result = await pool.query(
       `UPDATE users SET avatar_data = $1, avatar_mime = $2,
@@ -411,11 +427,17 @@ const updateAvatar = async (req, res) => {
        RETURNING id, username, email, full_name, role, created_at, email_notifications, avatar_data, avatar_updated_at`,
       [buffer, mime, req.user.id],
     );
-    if (!result.rows.length) return res.status(404).json({ message: "Contul nu a fost găsit." });
-    return res.json({ message: "Fotografia a fost actualizată.", user: publicUser(result.rows[0]) });
+    if (!result.rows.length)
+      return res.status(404).json({ message: "Contul nu a fost găsit." });
+    return res.json({
+      message: "Fotografia a fost actualizată.",
+      user: publicUser(result.rows[0]),
+    });
   } catch (error) {
     console.error("UPDATE AVATAR ERROR:", error);
-    return res.status(500).json({ message: "Fotografia nu a putut fi salvată." });
+    return res
+      .status(500)
+      .json({ message: "Fotografia nu a putut fi salvată." });
   }
 };
 
@@ -442,7 +464,9 @@ const getAvatarImage = async (req, res) => {
 const updatePreferences = async (req, res) => {
   const { emailNotifications } = req.body || {};
   if (typeof emailNotifications !== "boolean") {
-    return res.status(400).json({ message: "Valoare invalidă pentru notificările e-mail." });
+    return res
+      .status(400)
+      .json({ message: "Valoare invalidă pentru notificările e-mail." });
   }
   try {
     const result = await pool.query(
@@ -451,11 +475,17 @@ const updatePreferences = async (req, res) => {
        RETURNING id, username, email, full_name, role, created_at, email_notifications, avatar_data, avatar_updated_at`,
       [emailNotifications, req.user.id],
     );
-    if (!result.rows.length) return res.status(404).json({ message: "Contul nu a fost găsit." });
-    return res.json({ message: "Preferința a fost salvată.", user: publicUser(result.rows[0]) });
+    if (!result.rows.length)
+      return res.status(404).json({ message: "Contul nu a fost găsit." });
+    return res.json({
+      message: "Preferința a fost salvată.",
+      user: publicUser(result.rows[0]),
+    });
   } catch (error) {
     console.error("UPDATE PREFERENCES ERROR:", error);
-    return res.status(500).json({ message: "Preferința nu a putut fi salvată." });
+    return res
+      .status(500)
+      .json({ message: "Preferința nu a putut fi salvată." });
   }
 };
 
@@ -467,11 +497,17 @@ const getMe = async (req, res) => {
        FROM users WHERE id = $1 AND is_active = TRUE`,
       [req.user.id],
     );
-    if (!result.rows.length) return res.status(401).json({ message: "Cont indisponibil." });
-    return res.json({ message: "Utilizator autentificat.", user: publicUser(result.rows[0]) });
+    if (!result.rows.length)
+      return res.status(401).json({ message: "Cont indisponibil." });
+    return res.json({
+      message: "Utilizator autentificat.",
+      user: publicUser(result.rows[0]),
+    });
   } catch (error) {
     console.error("GET ME ERROR:", error);
-    return res.status(500).json({ message: "Profilul nu a putut fi încărcat." });
+    return res
+      .status(500)
+      .json({ message: "Profilul nu a putut fi încărcat." });
   }
 };
 

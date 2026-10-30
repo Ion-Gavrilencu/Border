@@ -360,7 +360,31 @@ function MainLayout() {
                 aria-haspopup="true"
               >
                 <div className="user-avatar">
-                  <User size={19} />
+                  {user?.avatarURL || user?.avatar_url ? (
+                    <img
+                      src={(() => {
+                        const avatar = user.avatarURL || user.avatar_url;
+
+                        return avatar.startsWith("/")
+                          ? `${
+                              new URL(
+                                api.defaults.baseURL || "/api",
+                                window.location.origin,
+                              ).origin
+                            }${avatar}`
+                          : avatar;
+                      })()}
+                      alt="Fotografie de profil"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <User size={19} />
+                  )}
                 </div>
                 <div>
                   <strong>
