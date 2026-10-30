@@ -46,11 +46,17 @@ const formatDate = (value) => {
     : date.toLocaleDateString("ro-RO");
 };
 
-function RecentInformation({
-  recent = [],
-  loadingStats,
-}) {
+function RecentInformation({ recent = [], loadingStats }) {
   const navigate = useNavigate();
+
+  const openInformation = (item, config) => {
+    navigate(config.path, {
+      state: {
+        openDocumentId: item.id,
+        openDocumentType: item.type,
+      },
+    });
+  };
 
   return (
     <section className="dashboard-card">
@@ -83,22 +89,16 @@ function RecentInformation({
                 key={`${item.type}-${item.id}`}
                 type="button"
                 className="information-item information-item-button"
-                onClick={() =>
-                  navigate(`${config.path}/${item.id}`)
-                }
+                onClick={() => openInformation(item, config)}
               >
-                <div
-                  className={`item-icon ${config.className}`}
-                >
+                <div className={`item-icon ${config.className}`}>
                   <Icon size={19} />
                 </div>
 
                 <div className="information-content">
                   <strong>{config.label}</strong>
                   <p>{item.title}</p>
-                  <small>
-                    {formatDate(item.created_at)}
-                  </small>
+                  <small>{formatDate(item.created_at)}</small>
                 </div>
 
                 <ArrowRight

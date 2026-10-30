@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Bell, CalendarDays, Check, Crown, Eye, EyeOff, LockKeyhole,
+  Bell, CalendarDays, Crown, Eye, EyeOff, LockKeyhole,
   Mail, Pencil, Save, Settings, Shield, ShieldCheck, UserRound,
-  X, Camera, Search,
+  X, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
@@ -27,7 +27,60 @@ function Profile() {
   const [success, setSuccess] = useState("");
   const [showPasswords, setShowPasswords] = useState({});
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [search, setSearch] = useState("");
+  const avatarInputRef = useRef(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  useEffect(() => {
+    const preference = user?.email_notifications ?? user?.emailNotifications;
+    if (typeof preference === "boolean") setEmailNotifications(preference);
+  }, [user?.email_notifications, user?.emailNotifications]);
+
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Selectează o fotografie JPG, PNG sau WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Fotografia nu poate depăși 5 MB.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("avatar", file);
+    setAvatarUploading(true);
+    try {
+      const response = await api.patch("/auth/avatar", formData);
+      if (!response.data?.user) throw new Error("Răspuns invalid de la server.");
+      updateUser(response.data.user);
+      toast.success("Fotografia de profil a fost actualizată.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || "Fotografia nu a putut fi încărcată.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleEmailNotifications = async (checked) => {
+    if (settingsSaving) return;
+    setSettingsSaving(true);
+    try {
+      const response = await api.patch("/auth/preferences", {
+        emailNotifications: checked,
+      });
+      if (!response.data?.user) throw new Error("Răspuns invalid de la server.");
+      updateUser(response.data.user);
+      setEmailNotifications(checked);
+      toast.success("Preferința pentru notificări a fost salvată.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || "Preferința nu a putut fi salvată.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   useEffect(() => {
     setFullName(user?.fullName || user?.full_name || "");
@@ -158,7 +211,7 @@ function Profile() {
     { icon: Mail, label: "Adresă de e-mail", value: user?.email || "-" },
     { icon: Shield, label: "Rol", value: roleNames[role] || role, badge: true },
   ];
-  const visibleRows = rows.filter((item) => `${item.label} ${item.value}`.toLocaleLowerCase("ro-RO").includes(search.toLocaleLowerCase("ro-RO")));
+  const visibleRows = rows;
 
   return (
     <main className="profile-page profile-modern">
@@ -175,8 +228,37 @@ function Profile() {
         <section className="profile-card profile-identity-card">
           <div className="profile-identity">
             <div className="profile-avatar" aria-label={`Avatar ${displayName}`}>
-              <span>{initial}</span>
-              <span className="profile-avatar-camera" aria-hidden="true"><Camera size={14} /></span>
+              {user?.avatarURL || user?.avatar_url ? (
+                <img
+                  src={(() => {
+                    const avatar = user.avatarURL || user.avatar_url;
+                    return avatar.startsWith("/")
+                      ? `${new URL(api.defaults.baseURL || "/api", window.location.origin).origin}${avatar}`
+                      : avatar;
+                  })()}
+                  alt="Fotografie de profil"
+                  style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                />
+              ) : <span>{initial}</span>}
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarChange}
+                aria-label="Încarcă fotografia de profil"
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                className="profile-avatar-camera"
+                aria-label="Schimbă fotografia de profil"
+                title="Schimbă fotografia de profil"
+                disabled={avatarUploading}
+                onClick={() => avatarInputRef.current?.click()}
+                style={{ cursor: avatarUploading ? "wait" : "pointer", padding: 0 }}
+              >
+                <Camera size={14} />
+              </button>
             </div>
             <div className="profile-identity-text">
               <h2>{displayName}</h2>
@@ -246,11 +328,11 @@ function Profile() {
               <Bell size={19} aria-hidden="true" />
               <div><strong>Notificări e-mail</strong><p>Primește notificări despre noutăți și actualizări</p></div>
               <label className="profile-switch">
-                <input type="checkbox" checked={emailNotifications} onChange={(e) => setEmailNotifications(e.target.checked)} aria-label="Notificări e-mail (preferință demonstrativă)" />
+                <input type="checkbox" checked={emailNotifications} onChange={(e) => handleEmailNotifications(e.target.checked)} disabled={settingsSaving} aria-label="Notificări e-mail" />
                 <span aria-hidden="true" />
               </label>
             </div>
-            <p className="profile-settings-note">Preferință vizuală momentan: pentru salvarea notificărilor în cont este necesar un endpoint dedicat în backend.</p>
+            <p className="profile-settings-note">Setarea se salvează în cont atunci când serverul confirmă modificarea.</p>
           </section>
         </div>
       </div>

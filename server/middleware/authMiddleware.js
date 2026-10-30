@@ -14,7 +14,7 @@ const authenticate = async (req, res, next) => {
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
     );
 
     const result = await pool.query(
@@ -25,10 +25,12 @@ const authenticate = async (req, res, next) => {
          full_name,
          role,
          is_active,
-         session_version
+         session_version,
+         avatar_url,
+         email_notifications
        FROM users
        WHERE id = $1`,
-      [decoded.id]
+      [decoded.id],
     );
 
     if (
@@ -42,7 +44,7 @@ const authenticate = async (req, res, next) => {
 
     const user = result.rows[0];
 
-    // Verificăm dacă sesiunea mai este valabilă
+    // Verificăm dacă sesiunea mai este valabilă.
     if (
       !Number.isInteger(decoded.sessionVersion) ||
       decoded.sessionVersion !== user.session_version
@@ -59,6 +61,8 @@ const authenticate = async (req, res, next) => {
       email: user.email,
       fullName: user.full_name,
       role: user.role,
+      avatarUrl: user.avatar_url,
+      emailNotifications: user.email_notifications,
     };
 
     next();

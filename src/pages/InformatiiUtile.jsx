@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { toast } from "sonner";
 
@@ -185,6 +185,9 @@ function InformatiiUtile() {
   const { user } = useAuth();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const navigationHandledRef = useRef(null);
+  const [targetInfoId, setTargetInfoId] = useState(null);
 
   const [informatii, setInformatii] = useState([]);
 
@@ -207,9 +210,13 @@ function InformatiiUtile() {
   const [selectedInfo, setSelectedInfo] = useState(null);
 
   const [pageSize, setPageSize] = useState(10);
+
   const [importantOnly, setImportantOnly] = useState(false);
+
   const [favoriteBusy, setFavoriteBusy] = useState([]);
+
   const [menuId, setMenuId] = useState(null);
+
   const [attachmentMeta, setAttachmentMeta] = useState({});
 
   const [sort, setSort] = useState("recent");
@@ -306,6 +313,41 @@ function InformatiiUtile() {
     });
   }, [informatii, category, sort, formatFilter, importantOnly, attachmentMeta]);
 
+  // Navigare din Dashboard la informația selectată, fără rute sau componente noi.
+  useEffect(() => {
+    const requestedId = location.state?.openDocumentId;
+    if (loading || requestedId == null) return;
+
+    const navigationKey = `${location.key}:${requestedId}`;
+    if (navigationHandledRef.current === navigationKey) return;
+    navigationHandledRef.current = navigationKey;
+
+    const target = informatii.find(
+      (item) => String(item.id) === String(requestedId),
+    );
+    if (!target) {
+      toast.error("Informația selectată nu a fost găsită.");
+      return;
+    }
+
+    // Resetăm filtrele pentru ca documentul să fie inclus în rezultate.
+    setCategory("Toate");
+    setFormatFilter("Toate");
+    setImportantOnly(false);
+    setSort("recent");
+    setTargetInfoId(String(requestedId));
+  }, [loading, informatii, location.key, location.state]);
+
+  // După resetarea filtrelor calculăm pagina care conține informația.
+  useEffect(() => {
+    if (targetInfoId === null || loading) return;
+    const index = filtered.findIndex(
+      (item) => String(item.id) === targetInfoId,
+    );
+    if (index < 0) return;
+    setPage(Math.floor(index / pageSize) + 1);
+  }, [targetInfoId, loading, filtered, pageSize]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
   const currentPage = Math.min(page, totalPages);
@@ -315,6 +357,26 @@ function InformatiiUtile() {
 
     currentPage * pageSize,
   );
+
+  // Evidențiem și aducem în zona vizibilă documentul, pe mobil și desktop.
+  useEffect(() => {
+    if (targetInfoId === null || loading) return;
+    if (!visibleItems.some((item) => String(item.id) === targetInfoId)) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const element = Array.from(
+        document.querySelectorAll("[data-info-document-id]"),
+      ).find(
+        (node) =>
+          node.getAttribute("data-info-document-id") === targetInfoId &&
+          node.getClientRects().length > 0,
+      );
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTargetInfoId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [targetInfoId, loading, visibleItems]);
 
   // Fișierele sunt private: le cerem cu tokenul Axios și le deschidem ca Blob.
 
@@ -563,26 +625,34 @@ function InformatiiUtile() {
 
   useEffect(() => {
     let cancelled = false;
+
     const missing = visibleItems.filter(
       (item) => !Object.prototype.hasOwnProperty.call(attachmentMeta, item.id),
     );
+
     if (!missing.length) return undefined;
+
     Promise.all(
       missing.map(async (item) => {
         try {
           const response = await api.get(
             `/attachments/informatii_utile/${item.id}`,
           );
+
           const attachments = Array.isArray(response.data?.attachments)
             ? response.data.attachments
             : [];
+
           const file = attachments.find(
             (entry) => entry.attachment_type === "file",
           );
+
           return [
             item.id,
+
             {
               count: attachments.length,
+
               format: file
                 ? getInfoFormat(file)
                 : attachments.some((a) => a.attachment_type === "link")
@@ -598,27 +668,35 @@ function InformatiiUtile() {
       if (!cancelled)
         setAttachmentMeta((old) => ({
           ...old,
+
           ...Object.fromEntries(entries),
         }));
     });
+
     return () => {
       cancelled = true;
     };
   }, [visibleItems.map((item) => item.id).join(",")]);
 
   const isImportant = (item) => item.is_favorite === true;
+
   const toggleFavorite = async (item) => {
     if (favoriteBusy.includes(item.id)) return;
+
     const next = !isImportant(item);
+
     setFavoriteBusy((ids) => [...ids, item.id]);
+
     try {
       if (next) await api.post(`/informatii-utile/${item.id}/favorite`);
       else await api.delete(`/informatii-utile/${item.id}/favorite`);
+
       setInformatii((items) =>
         items.map((entry) =>
           entry.id === item.id ? { ...entry, is_favorite: next } : entry,
         ),
       );
+
       toast.success(
         next ? "Adăugat la importante." : "Eliminat din importante.",
       );
@@ -630,9 +708,12 @@ function InformatiiUtile() {
       setFavoriteBusy((ids) => ids.filter((id) => id !== item.id));
     }
   };
+
   const goPage = (next) => setPage(Math.max(1, Math.min(totalPages, next)));
+
   const pageNumbers = Array.from(
     { length: totalPages },
+
     (_, i) => i + 1,
   ).filter(
     (n) =>
@@ -641,6 +722,7 @@ function InformatiiUtile() {
       n === totalPages ||
       Math.abs(n - currentPage) <= 1,
   );
+
   const pagination = (
     <nav className="info-pages" aria-label="Paginare">
       <button
@@ -651,6 +733,7 @@ function InformatiiUtile() {
       >
         <ChevronsLeft size={19} />
       </button>
+
       <button
         type="button"
         disabled={currentPage === 1}
@@ -659,11 +742,13 @@ function InformatiiUtile() {
       >
         <ChevronLeft size={19} />
       </button>
+
       {pageNumbers.map((n, index) => (
         <span className="info-page-slot" key={n}>
           {index > 0 && n - pageNumbers[index - 1] > 1 && (
             <span className="info-ellipsis">…</span>
           )}
+
           <button
             type="button"
             className={currentPage === n ? "active" : ""}
@@ -674,6 +759,7 @@ function InformatiiUtile() {
           </button>
         </span>
       ))}
+
       <button
         type="button"
         disabled={currentPage === totalPages}
@@ -682,6 +768,7 @@ function InformatiiUtile() {
       >
         <ChevronRight size={19} />
       </button>
+
       <button
         type="button"
         disabled={currentPage === totalPages}
@@ -692,6 +779,7 @@ function InformatiiUtile() {
       </button>
     </nav>
   );
+
   return (
     <main className="informatii-page informatii-modern">
       <header className="informatii-hero">
@@ -699,11 +787,14 @@ function InformatiiUtile() {
           <div className="informatii-eyebrow">
             <BookOpen size={21} /> CENTRU DE RESURSE
           </div>
+
           <h1>Informații utile</h1>
+
           <p className="informatii-description">
             Găsește rapid proceduri, ghiduri și informații necesare activității
             de serviciu.
           </p>
+
           {canEdit && (
             <button
               type="button"
@@ -714,12 +805,16 @@ function InformatiiUtile() {
             </button>
           )}
         </div>
+
         <div className="informatii-hero-art" aria-hidden="true">
           <div className="info-art-back" />
+
           <FileText size={100} strokeWidth={1.2} />
+
           <span>i</span>
         </div>
       </header>
+
       {message && (
         <div className={`informatii-message ${messageType}`} role="status">
           {messageType === "error" ? (
@@ -727,7 +822,9 @@ function InformatiiUtile() {
           ) : (
             <CheckCircle2 size={18} />
           )}
+
           <span>{message}</span>
+
           <button
             type="button"
             onClick={() => setMessage("")}
@@ -737,6 +834,7 @@ function InformatiiUtile() {
           </button>
         </div>
       )}
+
       <section className="informatii-toolbar" aria-label="Filtrare și ordonare">
         <ModernFilter
           icon={FolderOpen}
@@ -744,59 +842,73 @@ function InformatiiUtile() {
           value={category}
           options={categories.map((name) => ({
             value: name,
+
             label: name === "Toate" ? "Toate categoriile" : name,
           }))}
           onChange={(value) => {
             setCategory(value);
+
             setPage(1);
           }}
         />
+
         <ModernFilter
           icon={FileText}
           label="Format"
           value={formatFilter}
           options={[
             { value: "Toate", label: "Toate formatele" },
+
             ...["PDF", "DOCX", "XLSX", "ZIP", "IMG", "VIDEO", "LINK", "—"].map(
               (name) => ({
                 value: name,
+
                 label: name === "—" ? "Nespecificat" : name,
               }),
             ),
           ]}
           onChange={(value) => {
             setFormatFilter(value);
+
             setPage(1);
           }}
         />
+
         <ModernFilter
           icon={ArrowDownUp}
           label="Ordonare"
           value={sort}
           options={[
             { value: "recent", label: "Cele mai recente" },
+
             { value: "az", label: "Titlu A–Z" },
+
             { value: "za", label: "Titlu Z–A" },
           ]}
           onChange={(value) => {
             setSort(value);
+
             setPage(1);
           }}
         />
+
         <ModernFilter
           icon={Star}
           label="Importante"
           value={importantOnly ? "da" : "toate"}
           options={[
             { value: "toate", label: "Toate" },
+
             { value: "da", label: "Doar importante" },
           ]}
           onChange={(value) => {
             setImportantOnly(value === "da");
+
             setPage(1);
           }}
         />
       </section>
+
       <section className="informatii-data">
         <div className="informatii-results">
           <span>
@@ -804,34 +916,43 @@ function InformatiiUtile() {
               ? "Se încarcă..."
               : `${filtered.length} ${filtered.length === 1 ? "rezultat" : "rezultate"}`}
           </span>
+
           <button type="button" disabled={loading} onClick={loadInformatii}>
             <RefreshCw size={19} /> Actualizează
           </button>
         </div>
+
         {loading ? (
           <div className="informatii-state">
             <div className="informatii-spinner" />
+
             <p>Se încarcă informațiile utile...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="informatii-state">
             <FolderOpen size={38} />
+
             <h3>
               {informatii.length
                 ? "Nu am găsit rezultate"
                 : "Nu există încă informații utile"}
             </h3>
+
             <p>
               {informatii.length
                 ? "Modifică filtrele pentru a vedea alte rezultate."
                 : "Materialele publicate vor apărea aici."}
             </p>
+
             <button
               type="button"
               onClick={() => {
                 setCategory("Toate");
+
                 setFormatFilter("Toate");
+
                 setImportantOnly(false);
+
                 setPage(1);
               }}
             >
@@ -861,6 +982,7 @@ function InformatiiUtile() {
                                 ? [
                                     ...new Set([
                                       ...ids,
+
                                       ...visibleItems.map((i) => i.id),
                                     ]),
                                   ]
@@ -872,21 +994,32 @@ function InformatiiUtile() {
                           }
                         />
                       </th>
+
                       <th>#</th>
+
                       <th>Document</th>
+
                       <th>Descriere</th>
+
                       <th>Categorie</th>
+
                       <th>Format</th>
+
                       <th>Data</th>
+
                       <th>Important</th>
+
                       <th>Fișiere</th>
+
                       <th>Adăugat de</th>
+
                       <th>Acțiuni</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {visibleItems.map((item, index) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} data-info-document-id={String(item.id)}>
                         <td>
                           <input
                             type="checkbox"
@@ -901,7 +1034,9 @@ function InformatiiUtile() {
                             }
                           />
                         </td>
+
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
+
                         <td>
                           <button
                             type="button"
@@ -913,13 +1048,16 @@ function InformatiiUtile() {
                             >
                               <FileText size={25} />
                             </span>
+
                             <strong>{item.title}</strong>
                           </button>
                         </td>
+
                         <td className="info-description-cell">
                           {item.content?.trim() ||
                             "Apasă pentru a deschide materialul atașat."}
                         </td>
+
                         <td>
                           <span
                             className={`info-table-badge tone-${getCategoryTone(item.category)}`}
@@ -927,6 +1065,7 @@ function InformatiiUtile() {
                             {item.category || "General"}
                           </span>
                         </td>
+
                         <td>
                           <span
                             className={`info-format-badge format-${(attachmentMeta[item.id]?.format || getInfoFormat(item)).toLowerCase()}`}
@@ -935,7 +1074,9 @@ function InformatiiUtile() {
                               getInfoFormat(item)}
                           </span>
                         </td>
+
                         <td>{formatDate(item.created_at) || "—"}</td>
+
                         <td>
                           <button
                             type="button"
@@ -960,17 +1101,21 @@ function InformatiiUtile() {
                             />
                           </button>
                         </td>
+
                         <td>
                           <span className="info-attachment-count">
                             <Paperclip size={16} />
+
                             {attachmentMeta[item.id]?.count ?? "—"}
                           </span>
                         </td>
+
                         <td>
                           {item.created_by_name ||
                             item.created_by_username ||
                             "—"}
                         </td>
+
                         <td>
                           <div className="info-table-actions">
                             {canEdit && (
@@ -984,6 +1129,7 @@ function InformatiiUtile() {
                                 <Pencil size={19} />
                               </button>
                             )}
+
                             {canDelete && (
                               <button
                                 type="button"
@@ -995,6 +1141,7 @@ function InformatiiUtile() {
                                 <Trash2 size={19} />
                               </button>
                             )}
+
                             <button
                               type="button"
                               title="Deschide"
@@ -1010,20 +1157,27 @@ function InformatiiUtile() {
                 </table>
               </div>
             </div>
+
             <div className="informatii-mobile-list">
               {visibleItems.map((item) => (
-                <article className="informatii-card" key={item.id}>
+                <article
+                  className="informatii-card"
+                  key={item.id}
+                  data-info-document-id={String(item.id)}
+                >
                   <span
                     className={`informatii-card-icon tone-${getCategoryTone(item.category)}`}
                   >
                     <FileText size={30} />
                   </span>
+
                   <div className="informatii-card-content">
                     <span
                       className={`info-table-badge tone-${getCategoryTone(item.category)}`}
                     >
                       {item.category || "General"}
                     </span>
+
                     <button
                       type="button"
                       className="informatii-card-title"
@@ -1031,25 +1185,32 @@ function InformatiiUtile() {
                     >
                       {item.title}
                     </button>
+
                     <p>
                       {item.content?.trim() ||
                         "Apasă pentru a deschide materialul atașat."}
                     </p>
+
                     <div className="informatii-card-meta">
                       <span>
                         <UserRound size={16} />
+
                         {item.created_by_name ||
                           item.created_by_username ||
                           "—"}
                       </span>
+
                       <span>
                         <CalendarDays size={16} />
+
                         {formatDate(item.created_at) || "—"}
                       </span>
                     </div>
                   </div>
+
                   <div className="informatii-card-top-actions">
                     <span className="informatii-card-id">#{item.id}</span>
+
                     <button
                       type="button"
                       className="info-favorite-button"
@@ -1070,6 +1231,7 @@ function InformatiiUtile() {
                         fill={isImportant(item) ? "currentColor" : "none"}
                       />
                     </button>
+
                     <button
                       type="button"
                       aria-label="Deschide materialul"
@@ -1078,6 +1240,7 @@ function InformatiiUtile() {
                       <MoreVertical size={21} />
                     </button>
                   </div>
+
                   <div className="informatii-card-footer">
                     <button
                       type="button"
@@ -1085,10 +1248,12 @@ function InformatiiUtile() {
                       onClick={() => openUsefulInfo(item)}
                     >
                       <Paperclip size={20} />
+
                       {attachmentMeta[item.id]?.count == null
                         ? "Fișiere atașate"
                         : `${attachmentMeta[item.id].count} ${attachmentMeta[item.id].count === 1 ? "fișier atașat" : "fișiere atașate"}`}
                     </button>
+
                     <div className="informatii-actions">
                       {canEdit && (
                         <button
@@ -1100,6 +1265,7 @@ function InformatiiUtile() {
                           <Pencil size={18} /> Editează
                         </button>
                       )}
+
                       {canDelete && (
                         <button
                           type="button"
@@ -1115,25 +1281,32 @@ function InformatiiUtile() {
                 </article>
               ))}
             </div>
+
             <footer className="info-pagination">
               <span className="info-pagination-summary">
                 Afișate {(currentPage - 1) * pageSize + 1} –{" "}
                 {Math.min(currentPage * pageSize, filtered.length)} din{" "}
                 {filtered.length} rezultate
               </span>
+
               {pagination}
+
               <label className="info-pagination-size">
                 Elemente pe pagină:{" "}
                 <select
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
+
                     setPage(1);
                   }}
                 >
                   <option value={3}>3</option>
+
                   <option value={10}>10</option>
+
                   <option value={20}>20</option>
+
                   <option value={50}>50</option>
                 </select>
               </label>
@@ -1141,6 +1314,7 @@ function InformatiiUtile() {
           </>
         )}
       </section>
+
       {gallery && (
         <TelegramGallery
           entityType="informatii_utile"

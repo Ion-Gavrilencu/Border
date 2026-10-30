@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { toast } from "sonner";
 
@@ -71,6 +71,12 @@ const dateValue = (value) => {
 
 function Telegrame() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const targetTelegramId =
+    location.state?.openDocumentType === "telegrama"
+      ? location.state?.openDocumentId
+      : null;
+  const pendingScrollId = useRef(null);
 
   const { user } = useAuth();
 
@@ -168,12 +174,16 @@ function Telegrame() {
 
         return [
           telegram.title,
+
           telegram.number,
+
           telegram.created_by_name,
+
           telegram.created_by_username,
         ].some((value) =>
           String(value ?? "")
             .toLocaleLowerCase("ro-RO")
+
             .includes(normalized),
         );
       })
@@ -188,12 +198,14 @@ function Telegrame() {
         if (sort === "title-asc")
           return String(a.title ?? "").localeCompare(
             String(b.title ?? ""),
+
             "ro",
           );
 
         if (sort === "title-desc")
           return String(b.title ?? "").localeCompare(
             String(a.title ?? ""),
+
             "ro",
           );
 
@@ -206,6 +218,7 @@ function Telegrame() {
 
   const totalPages = Math.max(
     1,
+
     Math.ceil(filteredTelegrams.length / pageSize),
   );
 
@@ -213,8 +226,57 @@ function Telegrame() {
 
   const visibleTelegrams = filteredTelegrams.slice(
     (currentPage - 1) * pageSize,
+
     currentPage * pageSize,
   );
+
+  // Din Dashboard: găsește telegrama, elimină filtrele și selectează pagina ei.
+  useEffect(() => {
+    if (loading || targetTelegramId == null) return;
+
+    const index = [...telegrame]
+      .sort(
+        (a, b) =>
+          dateValue(b.telegram_date) - dateValue(a.telegram_date) ||
+          Number(b.id) - Number(a.id),
+      )
+      .findIndex((item) => String(item.id) === String(targetTelegramId));
+
+    if (index === -1) {
+      toast.error("Telegrama selectată nu a fost găsită.");
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+
+    pendingScrollId.current = String(targetTelegramId);
+    setQuery("");
+    setOnlyFavorites(false);
+    setTab("all");
+    setSort("date-desc");
+    setPageSize(INITIAL_PAGE_SIZE);
+    setView("list");
+    setPage(Math.floor(index / INITIAL_PAGE_SIZE) + 1);
+  }, [loading, targetTelegramId, telegrame, navigate, location.pathname]);
+
+  // Derulează numai după ce documentul este efectiv randat în pagina corectă.
+  useEffect(() => {
+    const targetId = pendingScrollId.current;
+    if (!targetId || loading) return;
+    if (!visibleTelegrams.some((item) => String(item.id) === targetId)) return;
+
+    const frame = requestAnimationFrame(() => {
+      const element = Array.from(
+        document.querySelectorAll("[data-telegram-id]"),
+      ).find((node) => node.dataset.telegramId === targetId);
+
+      if (!element) return;
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      pendingScrollId.current = null;
+      navigate(location.pathname, { replace: true, state: null });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [visibleTelegrams, loading, navigate, location.pathname]);
 
   const favoritesCount = telegrame.filter(
     (telegram) => telegram.is_favorite,
@@ -449,6 +511,7 @@ function Telegrame() {
     <article
       className={`telegrame-document telegrame-document-${index % 3}`}
       key={telegram.id}
+      data-telegram-id={telegram.id}
     >
       <div className="telegrame-document-main">
         <div className="telegrame-document-icon">
@@ -462,6 +525,7 @@ function Telegrame() {
             onClick={() => handleOpenTelegram(telegram)}
           >
             {telegram.number ? `TELEGRAMĂ Nr. ${telegram.number} — ` : ""}
+
             {telegram.title}
           </button>
 
@@ -508,6 +572,7 @@ function Telegrame() {
                   type="button"
                   onClick={() => {
                     setMenuId(null);
+
                     handleOpenTelegram(telegram);
                   }}
                 >
@@ -519,6 +584,7 @@ function Telegrame() {
                     type="button"
                     onClick={() => {
                       setMenuId(null);
+
                       navigate(`/telegrame/${telegram.id}/edit`);
                     }}
                   >
@@ -531,6 +597,7 @@ function Telegrame() {
                     type="button"
                     onClick={() => {
                       setMenuId(null);
+
                       handleDeleteTelegram(telegram);
                     }}
                   >
@@ -587,15 +654,21 @@ function Telegrame() {
         <div className="telegrame-hero-art" aria-hidden="true">
           <div className="telegrame-art-sheet telegrame-art-sheet-back">
             <span />
+
             <span />
+
             <span />
           </div>
 
           <div className="telegrame-art-sheet telegrame-art-sheet-front">
             <span />
+
             <span />
+
             <span />
+
             <span />
+
             <i />
           </div>
         </div>
@@ -604,6 +677,7 @@ function Telegrame() {
       {error && (
         <div className="telegrame-error" role="alert">
           <AlertCircle size={18} />
+
           <span>{error}</span>
 
           <button
@@ -626,6 +700,7 @@ function Telegrame() {
             type="button"
             onClick={() => {
               setTab("all");
+
               setOnlyFavorites(false);
             }}
           >
@@ -637,6 +712,7 @@ function Telegrame() {
             type="button"
             onClick={() => {
               setTab("recent");
+
               setOnlyFavorites(false);
             }}
           >
@@ -648,6 +724,7 @@ function Telegrame() {
             type="button"
             onClick={() => {
               setTab("important");
+
               setOnlyFavorites(true);
             }}
           >
@@ -765,6 +842,7 @@ function Telegrame() {
         ) : visibleTelegrams.length === 0 ? (
           <div className="telegrame-empty">
             <FileText size={36} />
+
             <strong>
               {error
                 ? "Nu s-au putut încărca telegramele."
@@ -854,7 +932,9 @@ function Telegrame() {
                 onChange={(e) => setPageSize(Number(e.target.value))}
               >
                 <option value={8}>8</option>
+
                 <option value={12}>12</option>
+
                 <option value={24}>24</option>
               </select>
             </label>
