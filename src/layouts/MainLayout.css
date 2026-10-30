@@ -257,8 +257,6 @@
 .sidebar-close,
 .sidebar-backdrop,
 .mobile-menu-button,
-.mobile-search-button,
-.mobile-search-close,
 .mobile-brand {
   display: none;
 }
@@ -941,11 +939,6 @@
   .topbar-right {
     gap: 5px;
     flex-shrink: 0;
-  }
-
-  .mobile-search-button,
-  .mobile-search-close {
-    display: none;
   }
 
   .icon-button {

@@ -39,10 +39,8 @@ function MainLayout() {
   const [searchError, setSearchError] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
-  const searchInputRef = useRef(null);
 
   // Actualizează prezența doar cât timp utilizatorul este autentificat.
   useEffect(() => {
@@ -91,7 +89,6 @@ function MainLayout() {
     setSidebarOpen(false);
     setShowUserMenu(false);
     setShowSearchResults(false);
-    setMobileSearchOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -171,13 +168,6 @@ function MainLayout() {
     setSearchTerm("");
     setSearchResults([]);
     setShowSearchResults(false);
-    setMobileSearchOpen(false);
-  };
-
-  const openMobileSearch = () => {
-    setMobileSearchOpen(true);
-    setShowUserMenu(false);
-    requestAnimationFrame(() => searchInputRef.current?.focus());
   };
 
   return (
@@ -276,9 +266,7 @@ function MainLayout() {
       </aside>
 
       <div className="main-area">
-        <header
-          className={`topbar ${mobileSearchOpen ? "topbar--search-open" : ""}`}
-        >
+        <header className="topbar">
           <button
             type="button"
             className="mobile-menu-button"
@@ -293,7 +281,6 @@ function MainLayout() {
           <div className="topbar-search" ref={searchRef}>
             <Search size={19} />
             <input
-              ref={searchInputRef}
               type="search"
               aria-label="Caută în documente"
               placeholder="Caută în pagină..."
@@ -305,22 +292,9 @@ function MainLayout() {
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   setShowSearchResults(false);
-                  setMobileSearchOpen(false);
                 }
               }}
             />
-            <button
-              type="button"
-              className="mobile-search-close"
-              aria-label="Închide căutarea"
-              onClick={() => {
-                setMobileSearchOpen(false);
-                setSearchTerm("");
-                setShowSearchResults(false);
-              }}
-            >
-              <X size={20} />
-            </button>
             {showSearchResults && (
               <motion.div
                 className="search-results"
@@ -376,14 +350,6 @@ function MainLayout() {
             )}
           </div>
           <div className="topbar-right">
-            <button
-              type="button"
-              className="icon-button mobile-search-button"
-              aria-label="Caută documente"
-              onClick={openMobileSearch}
-            >
-              <Search size={21} />
-            </button>
             <NotificationBell />
             <div className="user-menu-container" ref={userMenuRef}>
               <button
