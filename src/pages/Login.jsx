@@ -14,35 +14,39 @@ import { useAuth } from "../context/authStore";
 import "./Login.css";
 
 const getSafeDestination = (from) => {
-  if (
-    typeof from !== "string" ||
-    !from.startsWith("/") ||
-    from.startsWith("//")
-  ) {
-    return "/dashboard";
-  }
-
-  if (/[\\\r\n]/.test(from)) {
+  if (typeof from !== "string" || !from.startsWith("/") ||
+      from.startsWith("//") || /[\\\r\n]/.test(from)) {
     return "/dashboard";
   }
 
   try {
     const url = new URL(from, "https://internal.invalid");
-    if (url.origin !== "https://internal.invalid") return "/dashboard";
 
-    const allowedPaths = new Set([
+    if (url.origin !== "https://internal.invalid") {
+      return "/dashboard";
+    }
+
+    const documentPaths = new Set([
       "/dashboard",
       "/telegrame",
       "/ordine",
       "/legislatie",
       "/informatii-utile",
-      "/profil",
-      "/admin",
-      "/monitorizare-utilizatori",
     ]);
 
-    if (!allowedPaths.has(url.pathname)) return "/dashboard";
-    return `${url.pathname}${url.search}${url.hash}`;
+    // Redirecționăm după login doar pentru linkuri
+    // care indică explicit un document.
+    const documentId = url.searchParams.get("open");
+
+    if (
+      documentPaths.has(url.pathname) &&
+      documentId &&
+      /^[1-9]\d*$/.test(documentId)
+    ) {
+      return `${url.pathname}?open=${documentId}`;
+    }
+
+    return "/dashboard";
   } catch {
     return "/dashboard";
   }
