@@ -471,10 +471,22 @@ function NewsSection() {
 
       {/* PREVIZUALIZARE FOTOGRAFIE */}
       <ImageLightbox
-        attachment={previewImage}
-        PrivateImageComponent={PrivateNewsImage}
-        onClose={() => setPreviewImage(null)}
-      />
+  attachment={previewImage}
+  attachments={
+    selectedArticle
+      ? (newsAttachments[selectedArticle.id] || [])
+          .filter(
+            (item) =>
+              item.attachment_type === "file" &&
+              item.file_category === "image"
+          )
+          .sort((a, b) => Number(a.id) - Number(b.id))
+      : []
+  }
+  PrivateImageComponent={PrivateNewsImage}
+  onChange={setPreviewImage}
+  onClose={() => setPreviewImage(null)}
+/>
     </>
   );
 }
