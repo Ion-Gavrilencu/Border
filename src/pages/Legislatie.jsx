@@ -83,14 +83,57 @@ const getAttachmentCount = (item) => {
     : null;
 };
 
+// Construiește titlul afișat fără să modifice datele salvate.
+
+const getLegislationDisplayTitle = (item) => {
+  const title = String(item.title || "Act normativ fără titlu").trim();
+
+  const number = String(item.law_number ?? "")
+    .trim()
+    .replace(/^nr\.?\s*/i, "");
+
+  if (!number) return title;
+
+  // Eliminăm numărul existent pentru a evita dublarea.
+  const escapedNumber = number.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const numberPattern = new RegExp(
+    `\\s*(?:nr\\.?\\s*)?${escapedNumber}(?!\\d)`,
+    "i",
+  );
+
+  const cleanTitle = title
+    .replace(numberPattern, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Identificăm tipul actului legislativ.
+  const prefix = cleanTitle.match(
+    /^(HG|H\.G\.|Hotărârea(?:\s+Guvernului)?|Legea|Lege|Ordinul|Ordin|Regulamentul|Regulament)\b\.?\s*/i,
+  );
+
+  if (prefix) {
+    const type = prefix[1];
+    const description = cleanTitle.slice(prefix[0].length).trim();
+
+    return `${type} ${number} ${description}`.trim();
+  }
+
+  // Dacă tipul actului nu este identificat.
+  return `${number} ${cleanTitle}`.trim();
+};
+
 function Legislatie() {
   const navigate = useNavigate();
 
   const location = useLocation();
 
   const emailTargetId = new URLSearchParams(location.search).get("open");
+
   const dashboardTargetId = location.state?.openDocumentId;
+
   const targetId = emailTargetId || dashboardTargetId;
+
   const [highlightedId, setHighlightedId] = useState(null);
 
   const [pendingTarget, setPendingTarget] = useState(() =>
@@ -352,6 +395,7 @@ function Legislatie() {
   useEffect(() => {
     if (targetId != null && /^[1-9]\d*$/.test(String(targetId))) {
       setPendingTarget(String(targetId));
+
       setHighlightedId(String(targetId));
     }
   }, [targetId, location.key]);
@@ -402,11 +446,15 @@ function Legislatie() {
       if (!card) return;
 
       card.scrollIntoView({ behavior: "smooth", block: "center" });
+
       setPendingTarget(null);
+
       // Păstrăm parametrul ?open=ID în adresă pentru partajarea linkului.
+
       if (location.state) {
         navigate(location.pathname + location.search, {
           replace: true,
+
           state: null,
         });
       }
@@ -678,7 +726,9 @@ function Legislatie() {
                   highlightedId === String(item.id)
                     ? {
                         outline: "3px solid #2563eb",
+
                         outlineOffset: "3px",
+
                         borderRadius: "16px",
                       }
                     : undefined
@@ -695,7 +745,7 @@ function Legislatie() {
                     className="legislatie-card-title"
                     onClick={() => handleOpenLegislation(item)}
                   >
-                    {item.title || "Act normativ fără titlu"}
+                    {getLegislationDisplayTitle(item)}
                   </button>
 
                   <div className="legislatie-card-meta">
@@ -720,12 +770,9 @@ function Legislatie() {
                     </div>
                   )}
 
-                  {item.law_number && (
+                  {item.law_date && (
                     <div className="legislatie-card-detail">
-                      Nr. {item.law_number}
-                      {item.law_date
-                        ? ` · ${new Date(item.law_date).toLocaleDateString("ro-RO")}`
-                        : ""}
+                      {new Date(item.law_date).toLocaleDateString("ro-RO")}
                     </div>
                   )}
                 </div>

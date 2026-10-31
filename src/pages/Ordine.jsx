@@ -450,7 +450,7 @@ function Ordine() {
             </span>
             <span className="ordine-author">
               <Tag size={17} />{" "}
-              <span className="ordine-meta-muted">Creat de:</span>{" "}
+              <span className="ordine-meta-muted">Adăugat de:</span>{" "}
               {order.created_by_name || order.created_by_username || "—"}
             </span>
           </div>

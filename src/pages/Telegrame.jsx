@@ -417,7 +417,7 @@ function Telegrame() {
             </span>
             <span className="telegrame-author">
               <Tag size={17} />{" "}
-              <span className="telegrame-meta-muted">Creat de:</span>{" "}
+              <span className="telegrame-meta-muted">Adăugat de:</span>{" "}
               {telegram.created_by_name || telegram.created_by_username || "—"}
             </span>
           </div>
