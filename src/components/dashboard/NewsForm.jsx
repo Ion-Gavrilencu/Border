@@ -23,8 +23,7 @@ const categories = [
   { value: "migratie", label: "Migrație ilegală" },
   { value: "altele", label: "Alte noutăți" },
 ];
-const getFileName = (attachment) =>
-  attachment.original_name || attachment.name || "Document";
+const getFileName = (attachment) => attachment.original_name || attachment.name || "Document";
 const formatFileSize = (bytes) => {
   const size = Number(bytes);
   return Number.isFinite(size) ? `${(size / 1024 / 1024).toFixed(2)} MB` : "";
@@ -89,9 +88,7 @@ export default function NewsForm({
           <div className="border-news-type-grid">
             <button
               type="button"
-              className={`border-news-type-option ${
-                form.type === "internal" ? "active" : ""
-              }`}
+              className={`border-news-type-option ${form.type === "internal" ? "active" : ""}`}
               disabled={saving}
               aria-pressed={form.type === "internal"}
               onClick={() =>
@@ -113,9 +110,7 @@ export default function NewsForm({
 
             <button
               type="button"
-              className={`border-news-type-option ${
-                form.type === "external" ? "active" : ""
-              }`}
+              className={`border-news-type-option ${form.type === "external" ? "active" : ""}`}
               disabled={saving}
               aria-pressed={form.type === "external"}
               onClick={() =>
@@ -218,9 +213,8 @@ export default function NewsForm({
           placeholder="https://exemplu.md/fotografie.jpg"
         />
         <small>
-          Introdu adresa directă a fotografiei (JPG, PNG sau WEBP). Dacă încarci
-          și fotografii private, prima fotografie încărcată are prioritate în
-          lista știrilor.
+          Introdu adresa directă a fotografiei (JPG, PNG sau WEBP). Dacă încarci și fotografii
+          private, prima fotografie încărcată are prioritate în lista știrilor.
         </small>
       </label>
 
@@ -244,8 +238,8 @@ export default function NewsForm({
             />
           </div>
           <small>
-            Dacă imaginea nu apare, verifică dacă linkul duce direct la o
-            fotografie și dacă site-ul permite afișarea ei.
+            Dacă imaginea nu apare, verifică dacă linkul duce direct la o fotografie și dacă site-ul
+            permite afișarea ei.
           </small>
         </div>
       )}
@@ -257,9 +251,9 @@ export default function NewsForm({
             <h4>Fotografii și documente</h4>
 
             <p>
-              Poți încărca mai multe fotografii și documente PDF sau Word. Prima
-              fotografie încărcată va fi afișată ca imagine principală. Maximum
-              10 fișiere în total, câte 4 MB fiecare.
+              Poți încărca mai multe fotografii și documente PDF sau Word. Prima fotografie
+              încărcată va fi afișată ca imagine principală. Maximum 10 fișiere în total, câte 4 MB
+              fiecare.
             </p>
           </div>
 
@@ -284,9 +278,8 @@ export default function NewsForm({
           disabled={
             saving ||
             selectedFiles.length +
-              editingAttachments.filter(
-                (attachment) => attachment.attachment_type === "file",
-              ).length >=
+              editingAttachments.filter((attachment) => attachment.attachment_type === "file")
+                .length >=
               MAX_FILES
           }
           onClick={() => fileInputRef.current?.click()}
@@ -317,10 +310,7 @@ export default function NewsForm({
             </div>
 
             {selectedFiles.map((file, index) => (
-              <div
-                className="border-news-selected-item"
-                key={`${file.name}-${file.size}-${index}`}
-              >
+              <div className="border-news-selected-item" key={`${file.name}-${file.size}-${index}`}>
                 <FileIcon size={19} />
 
                 <div>
@@ -382,9 +372,7 @@ export default function NewsForm({
                   {canDelete && (
                     <button
                       type="button"
-                      disabled={
-                        saving || removingAttachmentId === attachment.id
-                      }
+                      disabled={saving || removingAttachmentId === attachment.id}
                       onClick={() => handleRemoveAttachment(attachment)}
                       title="Șterge atașamentul"
                     >
@@ -401,8 +389,8 @@ export default function NewsForm({
           <LockKeyhole size={16} />
 
           <span>
-            Fișierele încărcate sunt păstrate în spațiul privat și accesate prin
-            autentificarea aplicației.
+            Fișierele încărcate sunt păstrate în spațiul privat și accesate prin autentificarea
+            aplicației.
           </span>
         </div>
 
@@ -417,12 +405,7 @@ export default function NewsForm({
 
       {/* ACȚIUNI */}
       <div className="border-news-form-actions">
-        <button
-          type="button"
-          className="border-news-cancel"
-          onClick={onCancel}
-          disabled={saving}
-        >
+        <button type="button" className="border-news-cancel" onClick={onCancel} disabled={saving}>
           Anulează
         </button>
 

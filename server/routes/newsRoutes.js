@@ -1,4 +1,3 @@
-
 const express = require("express");
 
 const {
@@ -19,27 +18,12 @@ router.get("/", authenticate, getNews);
 router.get("/:id", authenticate, getNewsById);
 
 // Adăugare: EDITOR și ADMIN
-router.post(
-  "/",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  createNews
-);
+router.post("/", authenticate, authorizeRoles("EDITOR", "ADMIN"), createNews);
 
 // Modificare: EDITOR și ADMIN
-router.patch(
-  "/:id",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  updateNews
-);
+router.patch("/:id", authenticate, authorizeRoles("EDITOR", "ADMIN"), updateNews);
 
 // Ștergere: doar ADMIN
-router.delete(
-  "/:id",
-  authenticate,
-  authorizeRoles("ADMIN"),
-  deleteNews
-);
+router.delete("/:id", authenticate, authorizeRoles("ADMIN"), deleteNews);
 
 module.exports = router;

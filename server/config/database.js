@@ -14,9 +14,7 @@ const requiredVariables = ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"];
 const missingVariables = requiredVariables.filter((name) => !process.env[name]);
 
 if (missingVariables.length > 0) {
-  throw new Error(
-    `Lipsesc variabilele PostgreSQL: ${missingVariables.join(", ")}`,
-  );
+  throw new Error(`Lipsesc variabilele PostgreSQL: ${missingVariables.join(", ")}`);
 }
 
 const pool = new Pool({

@@ -65,16 +65,12 @@ function Dashboard() {
 
       setStats(normalizedStats);
 
-      setRecent(
-        Array.isArray(response.data.recent) ? response.data.recent : [],
-      );
+      setRecent(Array.isArray(response.data.recent) ? response.data.recent : []);
     } catch (err) {
       console.error("DASHBOARD ERROR:", err);
 
       const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Datele nu au putut fi încărcate.";
+        err.response?.data?.message || err.message || "Datele nu au putut fi încărcate.";
 
       setError(message);
 
@@ -161,8 +157,6 @@ function Dashboard() {
           <AlertCircle size={19} />
 
           <span>{error}</span>
-
-          
         </div>
       )}
 

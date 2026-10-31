@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Newspaper, AlertCircle } from "lucide-react";
@@ -73,10 +72,7 @@ export default function AdaugaStire() {
       try {
         const response = await api.get("/auth/me");
 
-        const user =
-          response.data?.user ||
-          response.data?.data?.user ||
-          response.data;
+        const user = response.data?.user || response.data?.data?.user || response.data;
 
         if (active) {
           setRole(user?.role || "USER");
@@ -114,23 +110,16 @@ export default function AdaugaStire() {
     if (files.length === 0) return;
 
     const invalidFile = files.find(
-      (file) =>
-        !acceptedFileTypes.has(file.type) ||
-        file.size > MAX_FILE_SIZE ||
-        file.size === 0,
+      (file) => !acceptedFileTypes.has(file.type) || file.size > MAX_FILE_SIZE || file.size === 0,
     );
 
     if (invalidFile) {
-      setError(
-        "Sunt permise JPG, PNG, WEBP, PDF, DOC și DOCX, maximum 4 MB per fișier.",
-      );
+      setError("Sunt permise JPG, PNG, WEBP, PDF, DOC și DOCX, maximum 4 MB per fișier.");
       return;
     }
 
     if (selectedFiles.length + files.length > MAX_FILES) {
-      setError(
-        `Poți încărca maximum ${MAX_FILES} fișiere pentru o știre.`,
-      );
+      setError(`Poți încărca maximum ${MAX_FILES} fișiere pentru o știre.`);
       return;
     }
 
@@ -140,9 +129,7 @@ export default function AdaugaStire() {
 
   // ELIMINAREA UNUI FIȘIER SELECTAT
   const removeSelectedFile = (index) => {
-    setSelectedFiles((current) =>
-      current.filter((_, i) => i !== index),
-    );
+    setSelectedFiles((current) => current.filter((_, i) => i !== index));
   };
 
   // PUBLICAREA ȘTIRII
@@ -159,43 +146,26 @@ export default function AdaugaStire() {
       return;
     }
 
-    if (
-      form.type === "external" &&
-      !validUrl(form.url.trim())
-    ) {
+    if (form.type === "external" && !validUrl(form.url.trim())) {
       setError("Introdu un link valid către articol.");
       return;
     }
 
-    if (
-      form.type === "internal" &&
-      !form.content.trim()
-    ) {
+    if (form.type === "internal" && !form.content.trim()) {
       setError("Introdu textul știrii proprii.");
       return;
     }
 
-    if (
-      form.image_url?.trim() &&
-      !validUrl(form.image_url.trim())
-    ) {
-      setError(
-        "Introdu un URL HTTP/HTTPS valid pentru fotografie.",
-      );
+    if (form.image_url?.trim() && !validUrl(form.image_url.trim())) {
+      setError("Introdu un URL HTTP/HTTPS valid pentru fotografie.");
       return;
     }
 
     const payload = {
       title: form.title.trim(),
       type: form.type,
-      url:
-        form.type === "external"
-          ? form.url.trim()
-          : "",
-      content:
-        form.type === "internal"
-          ? form.content.trim()
-          : "",
+      url: form.type === "external" ? form.url.trim() : "",
+      content: form.type === "internal" ? form.content.trim() : "",
       category: form.category,
       source: form.source.trim(),
       image_url: form.image_url?.trim() || "",
@@ -215,9 +185,7 @@ export default function AdaugaStire() {
         currentId = response.data?.article?.id;
 
         if (!currentId) {
-          throw new Error(
-            "Serverul nu a returnat ID-ul știrii.",
-          );
+          throw new Error("Serverul nu a returnat ID-ul știrii.");
         }
 
         setSavedId(currentId);
@@ -232,9 +200,7 @@ export default function AdaugaStire() {
       for (let i = 0; i < filesToUpload.length; i++) {
         const file = filesToUpload[i];
 
-        setUploadProgress(
-          `Se încarcă ${i + 1} din ${filesToUpload.length}: ${file.name}`,
-        );
+        setUploadProgress(`Se încarcă ${i + 1} din ${filesToUpload.length}: ${file.name}`);
 
         const data = new FormData();
 
@@ -246,9 +212,7 @@ export default function AdaugaStire() {
         await api.post("/attachments/upload", data);
 
         // Eliminăm din listă fișierul încărcat
-        setSelectedFiles((current) =>
-          current.filter((item) => item !== file),
-        );
+        setSelectedFiles((current) => current.filter((item) => item !== file));
       }
 
       setUploadProgress("");
@@ -263,9 +227,7 @@ export default function AdaugaStire() {
       console.error("SAVE NEWS ERROR:", err);
 
       const serverMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Știrea nu a putut fi salvată.";
+        err.response?.data?.message || err.message || "Știrea nu a putut fi salvată.";
 
       if (articleSaved) {
         setError(
@@ -282,11 +244,7 @@ export default function AdaugaStire() {
 
   // VERIFICAREA ROLULUI
   if (role === null) {
-    return (
-      <main className="adauga-stire-page">
-        Se verifică permisiunile...
-      </main>
-    );
+    return <main className="adauga-stire-page">Se verifică permisiunile...</main>;
   }
 
   if (!canEdit) {
@@ -294,11 +252,7 @@ export default function AdaugaStire() {
       <main className="adauga-stire-page">
         <p>Nu ai permisiunea de a adăuga știri.</p>
 
-        <button
-          type="button"
-          className="adauga-stire-back"
-          onClick={() => navigate("/dashboard")}
-        >
+        <button type="button" className="adauga-stire-back" onClick={() => navigate("/dashboard")}>
           <ArrowLeft size={18} />
           Înapoi la listă
         </button>
@@ -318,10 +272,7 @@ export default function AdaugaStire() {
 
           <h1>Adaugă știre</h1>
 
-          <p>
-            Publică o știre internă sau un articol extern și
-            atașează materialele aferente.
-          </p>
+          <p>Publică o știre internă sau un articol extern și atașează materialele aferente.</p>
         </header>
 
         <button

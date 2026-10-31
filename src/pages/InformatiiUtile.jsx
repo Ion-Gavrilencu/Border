@@ -47,11 +47,7 @@ import TelegramGallery from "../components/TelegramGallery";
 
 const getInfoFormat = (item) => {
   const value = String(
-    item.format ||
-      item.file_format ||
-      item.mime_type ||
-      item.original_name ||
-      "",
+    item.format || item.file_format || item.mime_type || item.original_name || "",
   ).toLowerCase();
 
   if (value.includes("pdf")) return "PDF";
@@ -62,8 +58,7 @@ const getInfoFormat = (item) => {
 
   if (value.includes("zip")) return "ZIP";
 
-  if (value.includes("image") || /\.(jpg|jpeg|png|webp)$/i.test(value))
-    return "IMG";
+  if (value.includes("image") || /\.(jpg|jpeg|png|webp)$/i.test(value)) return "IMG";
 
   if (value.includes("video") || /\.(mp4|webm)$/i.test(value)) return "VIDEO";
 
@@ -72,16 +67,14 @@ const getInfoFormat = (item) => {
   return "—";
 };
 
-const formatBytes = (n) =>
-  !Number(n) ? "—" : `${(Number(n) / 1048576).toFixed(1)} MB`;
+const formatBytes = (n) => (!Number(n) ? "—" : `${(Number(n) / 1048576).toFixed(1)} MB`);
 
 const getCategoryTone = (value) => {
   const name = String(value || "").toLocaleLowerCase("ro-RO");
 
   if (name.includes("procedur")) return "proceduri";
 
-  if (name.includes("legisla") || name.includes("normativ"))
-    return "legislatie";
+  if (name.includes("legisla") || name.includes("normativ")) return "legislatie";
 
   if (name.includes("inform") || name.includes("contact")) return "informativ";
 
@@ -255,15 +248,12 @@ function InformatiiUtile() {
 
       const response = await api.get("/informatii-utile");
 
-      setInformatii(
-        Array.isArray(response.data.informatii) ? response.data.informatii : [],
-      );
+      setInformatii(Array.isArray(response.data.informatii) ? response.data.informatii : []);
     } catch (error) {
       console.error("GET INFORMATII UTILE:", error);
 
       notify(
-        error.response?.data?.message ||
-          "Informațiile nu au putut fi încărcate.",
+        error.response?.data?.message || "Informațiile nu au putut fi încărcate.",
 
         "error",
       );
@@ -283,11 +273,7 @@ function InformatiiUtile() {
 
       .filter(Boolean);
 
-    return [
-      "Toate",
-
-      ...Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "ro")),
-    ];
+    return ["Toate", ...Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, "ro"))];
   }, [informatii]);
 
   const filtered = useMemo(() => {
@@ -299,19 +285,13 @@ function InformatiiUtile() {
 
       const matchesFormat = formatFilter === "Toate" || format === formatFilter;
 
-      return (
-        matchesCategory &&
-        matchesFormat &&
-        (!importantOnly || item.is_favorite === true)
-      );
+      return matchesCategory && matchesFormat && (!importantOnly || item.is_favorite === true);
     });
 
     return [...items].sort((a, b) => {
-      if (sort === "az")
-        return String(a.title || "").localeCompare(String(b.title || ""), "ro");
+      if (sort === "az") return String(a.title || "").localeCompare(String(b.title || ""), "ro");
 
-      if (sort === "za")
-        return String(b.title || "").localeCompare(String(a.title || ""), "ro");
+      if (sort === "za") return String(b.title || "").localeCompare(String(a.title || ""), "ro");
 
       return (
         (new Date(b.created_at || 0).getTime() || Number(b.id) || 0) -
@@ -333,9 +313,7 @@ function InformatiiUtile() {
 
     navigationHandledRef.current = navigationKey;
 
-    const target = informatii.find(
-      (item) => String(item.id) === String(requestedId),
-    );
+    const target = informatii.find((item) => String(item.id) === String(requestedId));
 
     if (!target) {
       toast.error("Informația selectată nu a fost găsită.");
@@ -363,9 +341,7 @@ function InformatiiUtile() {
   useEffect(() => {
     if (targetInfoId === null || loading) return;
 
-    const index = filtered.findIndex(
-      (item) => String(item.id) === targetInfoId,
-    );
+    const index = filtered.findIndex((item) => String(item.id) === targetInfoId);
 
     if (index < 0) return;
 
@@ -390,9 +366,7 @@ function InformatiiUtile() {
     if (!visibleItems.some((item) => String(item.id) === targetInfoId)) return;
 
     const frame = window.requestAnimationFrame(() => {
-      const element = Array.from(
-        document.querySelectorAll("[data-info-document-id]"),
-      ).find(
+      const element = Array.from(document.querySelectorAll("[data-info-document-id]")).find(
         (node) =>
           node.getAttribute("data-info-document-id") === targetInfoId &&
           node.getClientRects().length > 0,
@@ -411,8 +385,7 @@ function InformatiiUtile() {
   const openMaterial = async (attachment) => {
     if (
       attachment.attachment_type === "file" &&
-      (attachment.file_category === "image" ||
-        attachment.mime_type?.startsWith("image/"))
+      (attachment.file_category === "image" || attachment.mime_type?.startsWith("image/"))
     ) {
       if (viewer?.item) {
         setGallery({ item: viewer.item, initialAttachmentId: attachment.id });
@@ -457,8 +430,7 @@ function InformatiiUtile() {
 
         link.href = blobUrl;
 
-        link.download =
-          attachment.original_name || attachment.name || "document";
+        link.download = attachment.original_name || attachment.name || "document";
 
         document.body.appendChild(link);
 
@@ -485,6 +457,30 @@ function InformatiiUtile() {
     }
   };
 
+  const downloadMaterial = async (attachment) => {
+    if (attachment.attachment_type !== "file") return;
+
+    try {
+      setOpeningId(attachment.id);
+      const response = await api.get(`/attachments/file/${attachment.id}?download=1`, {
+        responseType: "blob",
+      });
+      const blobUrl = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = attachment.original_name || attachment.name || "document";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+    } catch (error) {
+      console.error("DOWNLOAD ATTACHMENT:", error);
+      notify(error.response?.data?.message || "Fișierul nu a putut fi descărcat.", "error");
+    } finally {
+      setOpeningId(null);
+    }
+  };
+
   const openUsefulInfo = async (item) => {
     if (openingCardId !== null) return;
 
@@ -495,9 +491,7 @@ function InformatiiUtile() {
     try {
       setOpeningCardId(item.id);
 
-      const response = await api.get(
-        `/attachments/informatii_utile/${item.id}`,
-      );
+      const response = await api.get(`/attachments/informatii_utile/${item.id}`);
 
       const attachments = Array.isArray(response.data?.attachments)
         ? response.data.attachments
@@ -506,8 +500,7 @@ function InformatiiUtile() {
       const images = attachments.filter(
         (attachment) =>
           attachment.attachment_type === "file" &&
-          (attachment.file_category === "image" ||
-            attachment.mime_type?.startsWith("image/")),
+          (attachment.file_category === "image" || attachment.mime_type?.startsWith("image/")),
       );
 
       // Dacă toate materialele sunt fotografii,
@@ -545,35 +538,9 @@ function InformatiiUtile() {
           return;
         }
 
-        const fileResponse = await api.get(
-          `/attachments/file/${attachment.id}`,
-
-          { responseType: "blob" },
-        );
-
-        const blobUrl = URL.createObjectURL(fileResponse.data);
-
-        if (preopenedTab) {
-          preopenedTab.location.replace(blobUrl);
-        } else {
-          const link = document.createElement("a");
-
-          link.href = blobUrl;
-
-          link.download =
-            attachment.original_name || attachment.name || "document";
-
-          document.body.appendChild(link);
-
-          link.click();
-
-          link.remove();
-        }
-
-        setTimeout(() => {
-          URL.revokeObjectURL(blobUrl);
-        }, 120000);
-
+        preopenedTab?.close();
+        setGallery(null);
+        setViewer({ item, attachments });
         return;
       }
 
@@ -590,9 +557,7 @@ function InformatiiUtile() {
       console.error("OPEN USEFUL INFO:", error);
 
       notify(
-        error.response?.data?.message ||
-          error.message ||
-          "Nu s-a putut deschide materialul.",
+        error.response?.data?.message || error.message || "Nu s-a putut deschide materialul.",
 
         "error",
       );
@@ -633,9 +598,7 @@ function InformatiiUtile() {
 
       await api.delete(`/informatii-utile/${item.id}`);
 
-      setInformatii((current) =>
-        current.filter((entry) => entry.id !== item.id),
-      );
+      setInformatii((current) => current.filter((entry) => entry.id !== item.id));
 
       notify("Informația a fost ștearsă.");
     } catch (error) {
@@ -663,17 +626,13 @@ function InformatiiUtile() {
     Promise.all(
       missing.map(async (item) => {
         try {
-          const response = await api.get(
-            `/attachments/informatii_utile/${item.id}`,
-          );
+          const response = await api.get(`/attachments/informatii_utile/${item.id}`);
 
           const attachments = Array.isArray(response.data?.attachments)
             ? response.data.attachments
             : [];
 
-          const file = attachments.find(
-            (entry) => entry.attachment_type === "file",
-          );
+          const file = attachments.find((entry) => entry.attachment_type === "file");
 
           return [
             item.id,
@@ -720,18 +679,12 @@ function InformatiiUtile() {
       else await api.delete(`/informatii-utile/${item.id}/favorite`);
 
       setInformatii((items) =>
-        items.map((entry) =>
-          entry.id === item.id ? { ...entry, is_favorite: next } : entry,
-        ),
+        items.map((entry) => (entry.id === item.id ? { ...entry, is_favorite: next } : entry)),
       );
 
-      toast.success(
-        next ? "Adăugat la importante." : "Eliminat din importante.",
-      );
+      toast.success(next ? "Adăugat la importante." : "Eliminat din importante.");
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Nu s-a putut actualiza favoritul.",
-      );
+      toast.error(error.response?.data?.message || "Nu s-a putut actualiza favoritul.");
     } finally {
       setFavoriteBusy((ids) => ids.filter((id) => id !== item.id));
     }
@@ -743,13 +696,7 @@ function InformatiiUtile() {
     { length: totalPages },
 
     (_, i) => i + 1,
-  ).filter(
-    (n) =>
-      totalPages <= 7 ||
-      n === 1 ||
-      n === totalPages ||
-      Math.abs(n - currentPage) <= 1,
-  );
+  ).filter((n) => totalPages <= 7 || n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1);
 
   const pagination = (
     <nav className="info-pages" aria-label="Paginare">
@@ -773,9 +720,7 @@ function InformatiiUtile() {
 
       {pageNumbers.map((n, index) => (
         <span className="info-page-slot" key={n}>
-          {index > 0 && n - pageNumbers[index - 1] > 1 && (
-            <span className="info-ellipsis">…</span>
-          )}
+          {index > 0 && n - pageNumbers[index - 1] > 1 && <span className="info-ellipsis">…</span>}
 
           <button
             type="button"
@@ -819,8 +764,7 @@ function InformatiiUtile() {
           <h1>Informații utile</h1>
 
           <p className="informatii-description">
-            Găsește rapid proceduri, ghiduri și informații necesare activității
-            de serviciu.
+            Găsește rapid proceduri, ghiduri și informații necesare activității de serviciu.
           </p>
 
           {canEdit && (
@@ -838,30 +782,31 @@ function InformatiiUtile() {
           <svg
             className="informatii-art-svg"
             viewBox="0 0 320 240"
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="http://www\.w3.org/2000/svg"
             focusable="false"
           >
             <defs>
               <radialGradient id="infoHeroGlow">
                 <stop offset="0" stopColor="#c1ddff" stopOpacity=".95" />
+
                 <stop offset=".62" stopColor="#deefff" stopOpacity=".7" />
+
                 <stop offset="1" stopColor="#eaf5ff" stopOpacity="0" />
               </radialGradient>
+
               <linearGradient id="infoHeroPaper" x1="0" y1="0" x2="1" y2="1">
                 <stop stopColor="#fff" />
+
                 <stop offset="1" stopColor="#f8fbff" />
               </linearGradient>
+
               <linearGradient id="infoHeroBlue" x1="0" y1="0" x2="1" y2="1">
                 <stop stopColor="#2d9bff" />
+
                 <stop offset="1" stopColor="#0063ec" />
               </linearGradient>
-              <filter
-                id="infoHeroShadow"
-                x="-45%"
-                y="-45%"
-                width="190%"
-                height="200%"
-              >
+
+              <filter id="infoHeroShadow" x="-45%" y="-45%" width="190%" height="200%">
                 <feDropShadow
                   dx="0"
                   dy="10"
@@ -871,25 +816,12 @@ function InformatiiUtile() {
                 />
               </filter>
             </defs>
-            <ellipse
-              cx="168"
-              cy="122"
-              rx="151"
-              ry="112"
-              fill="url(#infoHeroGlow)"
-            />
-            <g
-              transform="translate(82 54) rotate(-19 68 84)"
-              filter="url(#infoHeroShadow)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="134"
-                height="170"
-                rx="12"
-                fill="url(#infoHeroPaper)"
-              />
+
+            <ellipse cx="168" cy="122" rx="151" ry="112" fill="url(#infoHeroGlow)" />
+
+            <g transform="translate(82 54) rotate(-19 68 84)" filter="url(#infoHeroShadow)">
+              <rect x="0" y="0" width="134" height="170" rx="12" fill="url(#infoHeroPaper)" />
+
               <path
                 d="M22 48H102 M22 69H108 M22 90H95 M22 111H103"
                 stroke="#c3defd"
@@ -897,20 +829,20 @@ function InformatiiUtile() {
                 strokeLinecap="round"
               />
             </g>
-            <g
-              transform="translate(126 22) rotate(10 74 94)"
-              filter="url(#infoHeroShadow)"
-            >
+
+            <g transform="translate(126 22) rotate(10 74 94)" filter="url(#infoHeroShadow)">
               <path
                 d="M12 0H105L148 43V176Q148 188 136 188H12Q0 188 0 176V12Q0 0 12 0Z"
                 fill="url(#infoHeroPaper)"
               />
+
               <path
                 d="M105 0V31Q105 43 117 43H148"
                 fill="#eff7ff"
                 stroke="#e5f1ff"
                 strokeWidth="2"
               />
+
               <path
                 d="M27 57H79 M27 83H116 M27 109H108 M27 135H83 M27 158H65"
                 stroke="#a9d0ff"
@@ -918,8 +850,10 @@ function InformatiiUtile() {
                 strokeLinecap="round"
               />
             </g>
+
             <g filter="url(#infoHeroShadow)">
               <circle cx="246" cy="171" r="43" fill="url(#infoHeroBlue)" />
+
               <text
                 x="246"
                 y="200"
@@ -939,19 +873,11 @@ function InformatiiUtile() {
 
       {message && (
         <div className={`informatii-message ${messageType}`} role="status">
-          {messageType === "error" ? (
-            <AlertCircle size={18} />
-          ) : (
-            <CheckCircle2 size={18} />
-          )}
+          {messageType === "error" ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
 
           <span>{message}</span>
 
-          <button
-            type="button"
-            onClick={() => setMessage("")}
-            aria-label="Închide mesajul"
-          >
+          <button type="button" onClick={() => setMessage("")} aria-label="Închide mesajul">
             <X size={16} />
           </button>
         </div>
@@ -981,13 +907,11 @@ function InformatiiUtile() {
           options={[
             { value: "Toate", label: "Toate formatele" },
 
-            ...["PDF", "DOCX", "XLSX", "ZIP", "IMG", "VIDEO", "LINK", "—"].map(
-              (name) => ({
-                value: name,
+            ...["PDF", "DOCX", "XLSX", "ZIP", "IMG", "VIDEO", "LINK", "—"].map((name) => ({
+              value: name,
 
-                label: name === "—" ? "Nespecificat" : name,
-              }),
-            ),
+              label: name === "—" ? "Nespecificat" : name,
+            })),
           ]}
           onChange={(value) => {
             setFormatFilter(value);
@@ -1055,9 +979,7 @@ function InformatiiUtile() {
             <FolderOpen size={38} />
 
             <h3>
-              {informatii.length
-                ? "Nu am găsit rezultate"
-                : "Nu există încă informații utile"}
+              {informatii.length ? "Nu am găsit rezultate" : "Nu există încă informații utile"}
             </h3>
 
             <p>
@@ -1094,24 +1016,13 @@ function InformatiiUtile() {
                           aria-label="Selectează pagina"
                           checked={
                             visibleItems.length > 0 &&
-                            visibleItems.every((item) =>
-                              checkedIds.includes(item.id),
-                            )
+                            visibleItems.every((item) => checkedIds.includes(item.id))
                           }
                           onChange={(e) =>
                             setCheckedIds((ids) =>
                               e.target.checked
-                                ? [
-                                    ...new Set([
-                                      ...ids,
-
-                                      ...visibleItems.map((i) => i.id),
-                                    ]),
-                                  ]
-                                : ids.filter(
-                                    (id) =>
-                                      !visibleItems.some((i) => i.id === id),
-                                  ),
+                                ? [...new Set([...ids, ...visibleItems.map((i) => i.id)])]
+                                : ids.filter((id) => !visibleItems.some((i) => i.id === id)),
                             )
                           }
                         />
@@ -1190,8 +1101,7 @@ function InformatiiUtile() {
                         </td>
 
                         <td className="info-description-cell">
-                          {item.content?.trim() ||
-                            "Apasă pentru a deschide materialul atașat."}
+                          {item.content?.trim() || "Apasă pentru a deschide materialul atașat."}
                         </td>
 
                         <td>
@@ -1206,8 +1116,7 @@ function InformatiiUtile() {
                           <span
                             className={`info-format-badge format-${(attachmentMeta[item.id]?.format || getInfoFormat(item)).toLowerCase()}`}
                           >
-                            {attachmentMeta[item.id]?.format ||
-                              getInfoFormat(item)}
+                            {attachmentMeta[item.id]?.format || getInfoFormat(item)}
                           </span>
                         </td>
 
@@ -1218,9 +1127,7 @@ function InformatiiUtile() {
                             type="button"
                             className="info-favorite-button"
                             aria-label={
-                              isImportant(item)
-                                ? "Elimină din importante"
-                                : "Adaugă la importante"
+                              isImportant(item) ? "Elimină din importante" : "Adaugă la importante"
                             }
                             aria-pressed={isImportant(item)}
                             disabled={favoriteBusy.includes(item.id)}
@@ -1228,11 +1135,7 @@ function InformatiiUtile() {
                           >
                             <Star
                               size={22}
-                              className={
-                                isImportant(item)
-                                  ? "info-star active"
-                                  : "info-star"
-                              }
+                              className={isImportant(item) ? "info-star active" : "info-star"}
                               fill={isImportant(item) ? "currentColor" : "none"}
                             />
                           </button>
@@ -1246,11 +1149,7 @@ function InformatiiUtile() {
                           </span>
                         </td>
 
-                        <td>
-                          {item.created_by_name ||
-                            item.created_by_username ||
-                            "—"}
-                        </td>
+                        <td>{item.created_by_name || item.created_by_username || "—"}</td>
 
                         <td>
                           <div className="info-table-actions">
@@ -1258,9 +1157,7 @@ function InformatiiUtile() {
                               <button
                                 type="button"
                                 title="Editează"
-                                onClick={() =>
-                                  navigate(`/informatii-utile/${item.id}/edit`)
-                                }
+                                onClick={() => navigate(`/informatii-utile/${item.id}/edit`)}
                               >
                                 <Pencil size={19} />
                               </button>
@@ -1301,16 +1198,12 @@ function InformatiiUtile() {
                   key={item.id}
                   data-info-document-id={String(item.id)}
                 >
-                  <span
-                    className={`informatii-card-icon tone-${getCategoryTone(item.category)}`}
-                  >
+                  <span className={`informatii-card-icon tone-${getCategoryTone(item.category)}`}>
                     <FileText size={30} />
                   </span>
 
                   <div className="informatii-card-content">
-                    <span
-                      className={`info-table-badge tone-${getCategoryTone(item.category)}`}
-                    >
+                    <span className={`info-table-badge tone-${getCategoryTone(item.category)}`}>
                       {item.category || "General"}
                     </span>
 
@@ -1322,18 +1215,13 @@ function InformatiiUtile() {
                       {item.title}
                     </button>
 
-                    <p>
-                      {item.content?.trim() ||
-                        "Apasă pentru a deschide materialul atașat."}
-                    </p>
+                    <p>{item.content?.trim() || "Apasă pentru a deschide materialul atașat."}</p>
 
                     <div className="informatii-card-meta">
                       <span>
                         <UserRound size={16} />
 
-                        {item.created_by_name ||
-                          item.created_by_username ||
-                          "—"}
+                        {item.created_by_name || item.created_by_username || "—"}
                       </span>
 
                       <span>
@@ -1351,9 +1239,7 @@ function InformatiiUtile() {
                       type="button"
                       className="info-favorite-button"
                       aria-label={
-                        isImportant(item)
-                          ? "Elimină din importante"
-                          : "Adaugă la importante"
+                        isImportant(item) ? "Elimină din importante" : "Adaugă la importante"
                       }
                       aria-pressed={isImportant(item)}
                       disabled={favoriteBusy.includes(item.id)}
@@ -1361,9 +1247,7 @@ function InformatiiUtile() {
                     >
                       <Star
                         size={22}
-                        className={
-                          isImportant(item) ? "info-star active" : "info-star"
-                        }
+                        className={isImportant(item) ? "info-star active" : "info-star"}
                         fill={isImportant(item) ? "currentColor" : "none"}
                       />
                     </button>
@@ -1394,9 +1278,7 @@ function InformatiiUtile() {
                       {canEdit && (
                         <button
                           type="button"
-                          onClick={() =>
-                            navigate(`/informatii-utile/${item.id}/edit`)
-                          }
+                          onClick={() => navigate(`/informatii-utile/${item.id}/edit`)}
                         >
                           <Pencil size={18} /> Editează
                         </button>
@@ -1421,8 +1303,7 @@ function InformatiiUtile() {
             <footer className="info-pagination">
               <span className="info-pagination-summary">
                 Afișate {(currentPage - 1) * pageSize + 1} –{" "}
-                {Math.min(currentPage * pageSize, filtered.length)} din{" "}
-                {filtered.length} rezultate
+                {Math.min(currentPage * pageSize, filtered.length)} din {filtered.length} rezultate
               </span>
 
               {pagination}
@@ -1462,10 +1343,7 @@ function InformatiiUtile() {
       )}
 
       {viewer && (
-        <div
-          className="informatii-viewer-backdrop"
-          onClick={() => setViewer(null)}
-        >
+        <div className="informatii-viewer-backdrop" onClick={() => setViewer(null)}>
           <section
             className="informatii-viewer-dialog"
             role="dialog"
@@ -1484,11 +1362,7 @@ function InformatiiUtile() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setViewer(null)}
-                aria-label="Închide"
-              >
+              <button type="button" onClick={() => setViewer(null)} aria-label="Închide">
                 <X size={20} />
               </button>
             </div>
@@ -1501,38 +1375,48 @@ function InformatiiUtile() {
                   const category = attachment.file_category;
 
                   return (
-                    <button
-                      type="button"
-                      key={attachment.id}
-                      className="informatii-viewer-item"
-                      disabled={openingId === attachment.id}
-                      onClick={() => openMaterial(attachment)}
-                    >
-                      {isLink ? (
-                        <Link2 size={21} />
-                      ) : category === "image" ? (
-                        <ImageIcon size={21} />
-                      ) : category === "video" ? (
-                        <Video size={21} />
-                      ) : (
-                        <FileText size={21} />
+                    <div className="informatii-viewer-file-row" key={attachment.id}>
+                      <button
+                        type="button"
+                        className="informatii-viewer-item"
+                        disabled={openingId === attachment.id}
+                        onClick={() => openMaterial(attachment)}
+                        title={isLink ? "Deschide linkul" : "Deschide fișierul"}
+                      >
+                        {isLink ? (
+                          <Link2 size={21} />
+                        ) : category === "image" ? (
+                          <ImageIcon size={21} />
+                        ) : category === "video" ? (
+                          <Video size={21} />
+                        ) : (
+                          <FileText size={21} />
+                        )}
+                        <span>
+                          {attachment.original_name || attachment.name || "Material atașat"}
+                        </span>
+                        <ExternalLink size={17} />
+                      </button>
+                      {!isLink && (
+                        <button
+                          type="button"
+                          className="informatii-viewer-download"
+                          disabled={openingId === attachment.id}
+                          onClick={() => downloadMaterial(attachment)}
+                          aria-label={`Descarcă ${attachment.original_name || attachment.name || "fișier"}`}
+                          title="Descarcă fișierul"
+                        >
+                          <Download size={19} />
+                          <span>Descarcă</span>
+                        </button>
                       )}
-
-                      <span>
-                        {attachment.original_name ||
-                          attachment.name ||
-                          "Material atașat"}
-                      </span>
-
-                      <ExternalLink size={17} />
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             ) : (
               <div className="informatii-viewer-text">
-                {viewer.item.content?.trim() ||
-                  "Nu există materiale atașate acestui card."}
+                {viewer.item.content?.trim() || "Nu există materiale atașate acestui card."}
               </div>
             )}
           </section>

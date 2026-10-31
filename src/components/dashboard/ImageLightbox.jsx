@@ -1,35 +1,20 @@
-
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import "./ImageLightbox.css";
 
-function ImageLightbox({
-  attachment,
-  attachments = [],
-  PrivateImageComponent,
-  onClose,
-  onChange,
-}) {
-  const images = attachments.length > 0
-    ? attachments
-    : attachment
-      ? [attachment]
-      : [];
+function ImageLightbox({ attachment, attachments = [], PrivateImageComponent, onClose, onChange }) {
+  const images = attachments.length > 0 ? attachments : attachment ? [attachment] : [];
 
-  const currentIndex = images.findIndex(
-    (image) => String(image.id) === String(attachment?.id)
-  );
+  const currentIndex = images.findIndex((image) => String(image.id) === String(attachment?.id));
 
-  const hasNavigation =
-    images.length > 1 && typeof onChange === "function";
+  const hasNavigation = images.length > 1 && typeof onChange === "function";
 
   const goToImage = (direction) => {
     if (!hasNavigation) return;
 
-    const nextIndex =
-      (currentIndex + direction + images.length) % images.length;
+    const nextIndex = (currentIndex + direction + images.length) % images.length;
 
     onChange(images[nextIndex]);
   };
@@ -100,10 +85,7 @@ function ImageLightbox({
           </button>
         )}
 
-        <PrivateImageComponent
-          attachment={attachment}
-          className="border-news-lightbox-image"
-        />
+        <PrivateImageComponent attachment={attachment} className="border-news-lightbox-image" />
 
         {hasNavigation && (
           <button
@@ -123,7 +105,7 @@ function ImageLightbox({
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 

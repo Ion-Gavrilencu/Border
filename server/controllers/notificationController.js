@@ -1,4 +1,3 @@
-
 const pool = require("../config/database");
 
 // Obține notificările utilizatorului autentificat.
@@ -19,7 +18,7 @@ const getNotifications = async (req, res) => {
        WHERE user_id = $1
        ORDER BY created_at DESC
        LIMIT 50`,
-      [userId]
+      [userId],
     );
 
     const countResult = await pool.query(
@@ -27,7 +26,7 @@ const getNotifications = async (req, res) => {
        FROM notifications
        WHERE user_id = $1
          AND is_read = FALSE`,
-      [userId]
+      [userId],
     );
 
     return res.json({
@@ -61,7 +60,7 @@ const markNotificationRead = async (req, res) => {
        WHERE id = $1
          AND user_id = $2
        RETURNING id, is_read`,
-      [id, userId]
+      [id, userId],
     );
 
     if (result.rowCount === 0) {
@@ -93,7 +92,7 @@ const markAllNotificationsRead = async (req, res) => {
        SET is_read = TRUE
        WHERE user_id = $1
          AND is_read = FALSE`,
-      [userId]
+      [userId],
     );
 
     return res.json({

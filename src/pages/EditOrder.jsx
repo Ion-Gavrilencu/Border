@@ -2,15 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  ArrowLeft,
-  FileText,
-  Image,
-  Link2,
-  ExternalLink,
-  Trash2,
-  Save,
-} from "lucide-react";
+import { ArrowLeft, FileText, Image, Link2, ExternalLink, Trash2, Save } from "lucide-react";
 
 import api from "../services/api";
 
@@ -32,8 +24,7 @@ const getCategory = (file) => {
   return "other";
 };
 
-const isImage = (item) =>
-  item.file_category === "image" || item.mime_type?.startsWith("image/");
+const isImage = (item) => item.file_category === "image" || item.mime_type?.startsWith("image/");
 
 const isLink = (item) => item.attachment_type === "link";
 
@@ -98,9 +89,7 @@ function EditOrder() {
 
           number: order.number || "",
 
-          orderDate: order.order_date
-            ? String(order.order_date).slice(0, 10)
-            : "",
+          orderDate: order.order_date ? String(order.order_date).slice(0, 10) : "",
 
           content: order.content || "",
         });
@@ -110,9 +99,7 @@ function EditOrder() {
         console.error("Eroare încărcare ordin:", err);
 
         if (active) {
-          setError(
-            err.response?.data?.message || "Ordinul nu a putut fi încărcat.",
-          );
+          setError(err.response?.data?.message || "Ordinul nu a putut fi încărcat.");
         }
       } finally {
         if (active) setLoading(false);
@@ -140,8 +127,7 @@ function EditOrder() {
     if (isLink(attachment)) {
       try {
         const url = new URL(attachment.url);
-        if (!["http:", "https:"].includes(url.protocol))
-          throw new Error("Link invalid");
+        if (!["http:", "https:"].includes(url.protocol)) throw new Error("Link invalid");
         window.open(url.href, "_blank", "noopener,noreferrer");
       } catch {
         setError("Adresa linkului nu este validă.");
@@ -157,9 +143,7 @@ function EditOrder() {
         responseType: "blob",
       });
       const mime =
-        response.headers?.["content-type"] ||
-        response.data.type ||
-        "application/octet-stream";
+        response.headers?.["content-type"] || response.data.type || "application/octet-stream";
       const blob = new Blob([response.data], { type: mime });
       const objectUrl = URL.createObjectURL(blob);
       if (tab && !tab.closed) {
@@ -168,10 +152,7 @@ function EditOrder() {
         const link = document.createElement("a");
         link.href = objectUrl;
         link.download =
-          attachment.original_name ||
-          attachment.file_name ||
-          attachment.name ||
-          "document";
+          attachment.original_name || attachment.file_name || attachment.name || "document";
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -179,18 +160,14 @@ function EditOrder() {
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     } catch (err) {
       if (tab && !tab.closed) tab.close();
-      setError(
-        err.response?.data?.message || "Fișierul nu a putut fi deschis.",
-      );
+      setError(err.response?.data?.message || "Fișierul nu a putut fi deschis.");
     }
   };
 
   const handleDeleteAttachment = async (attachment) => {
     if (!canDelete || deletingId !== null || saving) return;
 
-    const confirmed = window.confirm(
-      "Sigur dorești să ștergi acest atașament?",
-    );
+    const confirmed = window.confirm("Sigur dorești să ștergi acest atașament?");
 
     if (!confirmed) return;
 
@@ -201,15 +178,11 @@ function EditOrder() {
     try {
       await api.delete(`/attachments/${attachment.id}`);
 
-      setAttachments((current) =>
-        current.filter((item) => item.id !== attachment.id),
-      );
+      setAttachments((current) => current.filter((item) => item.id !== attachment.id));
     } catch (err) {
       console.error("Eroare ștergere atașament:", err);
 
-      setError(
-        err.response?.data?.message || "Atașamentul nu a putut fi șters.",
-      );
+      setError(err.response?.data?.message || "Atașamentul nu a putut fi șters.");
     } finally {
       setDeletingId(null);
     }
@@ -300,9 +273,7 @@ function EditOrder() {
       }
 
       if (failed.length > 0) {
-        setError(
-          `Datele au fost salvate, dar nu s-au adăugat: ${failed.join(", ")}.`,
-        );
+        setError(`Datele au fost salvate, dar nu s-au adăugat: ${failed.join(", ")}.`);
 
         const response = await api.get(`/attachments/ordine/${id}`);
 
@@ -315,9 +286,7 @@ function EditOrder() {
     } catch (err) {
       console.error("Eroare modificare ordin:", err);
 
-      setError(
-        err.response?.data?.message || "Ordinul nu a putut fi modificat.",
-      );
+      setError(err.response?.data?.message || "Ordinul nu a putut fi modificat.");
     } finally {
       setSaving(false);
     }
@@ -342,11 +311,7 @@ function EditOrder() {
           <p>Modifică informațiile și documentele atașate.</p>
         </div>
 
-        <button
-          type="button"
-          className="edit-order-back-button"
-          onClick={goBack}
-        >
+        <button type="button" className="edit-order-back-button" onClick={goBack}>
           <ArrowLeft size={17} />
           Înapoi
         </button>
@@ -418,11 +383,7 @@ function EditOrder() {
             ) : (
               <div className="edit-order-attachments">
                 {attachments.map((attachment) => {
-                  const Icon = isLink(attachment)
-                    ? Link2
-                    : isImage(attachment)
-                      ? Image
-                      : FileText;
+                  const Icon = isLink(attachment) ? Link2 : isImage(attachment) ? Image : FileText;
 
                   return (
                     <div key={attachment.id} className="edit-order-attachment">
@@ -482,8 +443,8 @@ function EditOrder() {
               <h3>Adaugă documente, fotografii sau link</h3>
 
               <p className="edit-order-section-description">
-                Încarcă fișiere noi sau adaugă un link extern. Documentele
-                existente vor fi păstrate.
+                Încarcă fișiere noi sau adaugă un link extern. Documentele existente vor fi
+                păstrate.
               </p>
 
               <DocumentUploader
@@ -510,11 +471,7 @@ function EditOrder() {
           </button>
 
           {canEdit && (
-            <button
-              type="submit"
-              className="edit-order-save-button"
-              disabled={saving}
-            >
+            <button type="submit" className="edit-order-save-button" disabled={saving}>
               <Save size={17} />
 
               {saving ? "Se salvează..." : "Salvează modificările"}

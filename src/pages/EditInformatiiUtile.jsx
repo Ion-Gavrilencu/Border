@@ -44,8 +44,7 @@ const getFileCategory = (file) => {
   return "other";
 };
 
-const errorText = (error, fallback) =>
-  error.response?.data?.message || fallback;
+const errorText = (error, fallback) => error.response?.data?.message || fallback;
 
 function EditInformatiiUtile() {
   const { id } = useParams();
@@ -108,12 +107,7 @@ function EditInformatiiUtile() {
         if (active) {
           console.error("Eroare la încărcarea informației:", error);
 
-          setMessage(
-            errorText(
-              error,
-              error.message || "Informația nu a putut fi încărcată.",
-            ),
-          );
+          setMessage(errorText(error, error.message || "Informația nu a putut fi încărcată."));
         }
       } finally {
         if (active) setLoading(false);
@@ -170,9 +164,7 @@ function EditInformatiiUtile() {
       } catch {
         setMessageType("error");
 
-        setMessage(
-          "Introdu un link valid, care începe cu https\:// sau http\://.",
-        );
+        setMessage("Introdu un link valid, care începe cu https\:// sau http\://.");
 
         return;
       }
@@ -180,11 +172,7 @@ function EditInformatiiUtile() {
 
     // Înlocuirea materialelor existente necesită permisiuni ADMIN în backend.
 
-    if (
-      hasReplacement &&
-      existingAttachments.length > 0 &&
-      user?.role !== "ADMIN"
-    ) {
+    if (hasReplacement && existingAttachments.length > 0 && user?.role !== "ADMIN") {
       setMessageType("error");
 
       setMessage(
@@ -255,11 +243,7 @@ function EditInformatiiUtile() {
           try {
             await api.delete(`/attachments/${old.id}`);
           } catch (error) {
-            console.error(
-              "Nu s-a putut șterge atașamentul vechi:",
-              old.id,
-              error,
-            );
+            console.error("Nu s-a putut șterge atașamentul vechi:", old.id, error);
 
             deletionFailures.push(old.name || `#${old.id}`);
           }
@@ -357,11 +341,7 @@ function EditInformatiiUtile() {
 
       {message && (
         <div className={`edit-informatii-message ${messageType}`} role="status">
-          {messageType === "success" ? (
-            <CheckCircle2 size={18} />
-          ) : (
-            <AlertCircle size={18} />
-          )}
+          {messageType === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
 
           <span>{message}</span>
         </div>
@@ -455,9 +435,7 @@ function EditInformatiiUtile() {
 
             {existingAttachments.length > 0 && (
               <div className="edit-informatii-existing">
-                <strong>
-                  Materiale existente ({existingAttachments.length})
-                </strong>
+                <strong>Materiale existente ({existingAttachments.length})</strong>
 
                 <ul>
                   {existingAttachments.map((item) => (
@@ -505,11 +483,7 @@ function EditInformatiiUtile() {
             Anulează
           </button>
 
-          <button
-            type="submit"
-            className="edit-informatii-save-button"
-            disabled={saving}
-          >
+          <button type="submit" className="edit-informatii-save-button" disabled={saving}>
             <Save size={17} />
 
             {saving ? "Se salvează..." : "Salvează modificările"}

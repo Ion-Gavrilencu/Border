@@ -1,8 +1,5 @@
 const pool = require("../config/database");
-const {
-  touchMonitoringSession,
-  logMonitoringEvent,
-} = require("../services/monitoringService");
+const { touchMonitoringSession, logMonitoringEvent } = require("../services/monitoringService");
 const ONLINE_INTERVAL = "2 minutes";
 
 async function heartbeat(req, res) {
@@ -12,14 +9,11 @@ async function heartbeat(req, res) {
       userId: req.user.id,
       req,
     });
-    if (!updated)
-      return res.status(401).json({ message: "Sesiunea nu mai este activă." });
+    if (!updated) return res.status(401).json({ message: "Sesiunea nu mai este activă." });
     return res.json({ ok: true });
   } catch (error) {
     console.error("MONITORING HEARTBEAT ERROR:", error);
-    return res
-      .status(500)
-      .json({ message: "Nu s-a putut actualiza prezența." });
+    return res.status(500).json({ message: "Nu s-a putut actualiza prezența." });
   }
 }
 
@@ -75,9 +69,7 @@ async function getOverview(req, res) {
     return res.json({ users: users.rows, stats: stats.rows[0] });
   } catch (error) {
     console.error("MONITORING OVERVIEW ERROR:", error);
-    return res
-      .status(500)
-      .json({ message: "Nu s-au putut încărca statisticile." });
+    return res.status(500).json({ message: "Nu s-au putut încărca statisticile." });
   }
 }
 
@@ -94,21 +86,12 @@ function validDate(value) {
 
 async function getActivities(req, res) {
   try {
-    const page = Math.max(
-      1,
-      Math.min(100000, Number.parseInt(req.query.page, 10) || 1),
-    );
-    const limit = Math.max(
-      1,
-      Math.min(50, Number.parseInt(req.query.limit, 10) || 10),
-    );
+    const page = Math.max(1, Math.min(100000, Number.parseInt(req.query.page, 10) || 1));
+    const limit = Math.max(1, Math.min(50, Number.parseInt(req.query.limit, 10) || 10));
     const userId = req.query.userId ? Number(req.query.userId) : null;
-    const action =
-      typeof req.query.action === "string" ? req.query.action.trim() : "";
+    const action = typeof req.query.action === "string" ? req.query.action.trim() : "";
     const search =
-      typeof req.query.search === "string"
-        ? req.query.search.trim().slice(0, 120)
-        : "";
+      typeof req.query.search === "string" ? req.query.search.trim().slice(0, 120) : "";
     const start = typeof req.query.start === "string" ? req.query.start : "";
     const end = typeof req.query.end === "string" ? req.query.end : "";
     if (
@@ -128,19 +111,12 @@ async function getActivities(req, res) {
     if (userId !== null) add("e.user_id = ?", userId);
     if (action && action !== "all") add("e.action = ?", action);
     if (search) add("COALESCE(e.details, '') ILIKE ?", `%${search}%`);
-    if (start)
-      add("e.created_at >= (?::date AT TIME ZONE 'Europe/Chisinau')", start);
+    if (start) add("e.created_at >= (?::date AT TIME ZONE 'Europe/Chisinau')", start);
     if (end)
-      add(
-        "e.created_at < ((?::date + INTERVAL '1 day') AT TIME ZONE 'Europe/Chisinau')",
-        end,
-      );
+      add("e.created_at < ((?::date + INTERVAL '1 day') AT TIME ZONE 'Europe/Chisinau')", end);
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
     const base = `FROM monitoring_events e LEFT JOIN users u ON u.id = e.user_id ${where}`;
-    const count = await pool.query(
-      `SELECT COUNT(*)::int AS total ${base}`,
-      values,
-    );
+    const count = await pool.query(`SELECT COUNT(*)::int AS total ${base}`, values);
     const result = await pool.query(
       `SELECT e.id, e.user_id, e.action, e.details, e.ip_address, e.user_agent,
               e.created_at, u.username, u.full_name ${base}
@@ -169,9 +145,7 @@ async function recordPageView(req, res) {
       path.startsWith("//") ||
       path.length > 200
     ) {
-      return res
-        .status(400)
-        .json({ message: "Pagina accesată este invalidă." });
+      return res.status(400).json({ message: "Pagina accesată este invalidă." });
     }
     await logMonitoringEvent({
       userId: req.user.id,

@@ -55,10 +55,7 @@ const confirmDialog = (options) =>
 function AdminDesktopAvatar({ user }) {
   const [imageFailed, setImageFailed] = useState(false);
   const avatarValue = user.avatar_url || user.avatarURL || "";
-  const apiOrigin = new URL(
-    api.defaults.baseURL || "/api",
-    window.location.origin,
-  ).origin;
+  const apiOrigin = new URL(api.defaults.baseURL || "/api", window.location.origin).origin;
   const avatarUrl =
     typeof avatarValue === "string" && avatarValue.trim()
       ? avatarValue.startsWith("http://") || avatarValue.startsWith("https://")
@@ -75,12 +72,7 @@ function AdminDesktopAvatar({ user }) {
   return (
     <span className="admin-desktop-avatar" aria-hidden="true">
       {avatarUrl && !imageFailed ? (
-        <img
-          src={avatarUrl}
-          alt=""
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-        />
+        <img src={avatarUrl} alt="" loading="lazy" onError={() => setImageFailed(true)} />
       ) : (
         <span>{initial}</span>
       )}
@@ -113,8 +105,7 @@ function Administrare() {
       setUsers(response.data.users || []);
     } catch (err) {
       console.error("GET USERS ERROR:", err);
-      const message =
-        err.response?.data?.message || "Nu s-au putut încărca utilizatorii.";
+      const message = err.response?.data?.message || "Nu s-au putut încărca utilizatorii.";
 
       setError(message);
       toast.error(message);
@@ -152,10 +143,7 @@ function Administrare() {
       await loadUsers(false);
     } catch (err) {
       console.error("CREATE USER ERROR:", err);
-      toast.error(
-        err.response?.data?.message || "Contul nu a putut fi creat.",
-        { duration: 6000 },
-      );
+      toast.error(err.response?.data?.message || "Contul nu a putut fi creat.", { duration: 6000 });
 
       // Dacă backendul a salvat contul, dar e-mailul
       // a eșuat, actualizăm lista fără a crea duplicate.
@@ -182,9 +170,7 @@ function Administrare() {
       toast.success("Rolul utilizatorului a fost actualizat.");
     } catch (err) {
       console.error("UPDATE ROLE ERROR:", err);
-      toast.error(
-        err.response?.data?.message || "Rolul nu a putut fi modificat.",
-      );
+      toast.error(err.response?.data?.message || "Rolul nu a putut fi modificat.");
     } finally {
       setUpdatingUserId(null);
     }
@@ -214,14 +200,10 @@ function Administrare() {
         current.map((user) => (user.id === userId ? response.data.user : user)),
       );
 
-      toast.success(
-        currentStatus ? "Contul a fost dezactivat." : "Contul a fost activat.",
-      );
+      toast.success(currentStatus ? "Contul a fost dezactivat." : "Contul a fost activat.");
     } catch (err) {
       console.error("UPDATE STATUS ERROR:", err);
-      toast.error(
-        err.response?.data?.message || "Statusul nu a putut fi modificat.",
-      );
+      toast.error(err.response?.data?.message || "Statusul nu a putut fi modificat.");
     } finally {
       setUpdatingUserId(null);
     }
@@ -243,14 +225,10 @@ function Administrare() {
 
       const response = await api.post(`/users/${userId}/resend-activation`);
 
-      toast.success(
-        response.data.message || "E-mailul de activare a fost trimis.",
-      );
+      toast.success(response.data.message || "E-mailul de activare a fost trimis.");
     } catch (err) {
       console.error("RESEND ACTIVATION ERROR:", err);
-      toast.error(
-        err.response?.data?.message || "Nu s-a putut retrimite activarea.",
-      );
+      toast.error(err.response?.data?.message || "Nu s-a putut retrimite activarea.");
     } finally {
       setUpdatingUserId(null);
     }
@@ -280,9 +258,7 @@ function Administrare() {
       toast.success("Utilizatorul a fost șters.");
     } catch (err) {
       console.error("DELETE USER ERROR:", err);
-      toast.error(
-        err.response?.data?.message || "Utilizatorul nu a putut fi șters.",
-      );
+      toast.error(err.response?.data?.message || "Utilizatorul nu a putut fi șters.");
     } finally {
       setUpdatingUserId(null);
     }
@@ -309,17 +285,12 @@ function Administrare() {
         );
       const matchesRole =
         roleFilter === "ALL" ||
-        (roleFilter === "ACTIVE"
-          ? Boolean(user.is_active)
-          : user.role === roleFilter);
+        (roleFilter === "ACTIVE" ? Boolean(user.is_active) : user.role === roleFilter);
       return matchesSearch && matchesRole;
     })
     .sort((a, b) => {
       if (sortOrder === "name")
-        return String(a.username || "").localeCompare(
-          String(b.username || ""),
-          "ro",
-        );
+        return String(a.username || "").localeCompare(String(b.username || ""), "ro");
       if (sortOrder === "oldest") return Number(a.id) - Number(b.id);
       return Number(b.id) - Number(a.id);
     });
@@ -346,8 +317,7 @@ function Administrare() {
         <div>
           <h1>Administrare utilizatori</h1>
           <p className="admin-description">
-            Gestionarea conturilor, rolurilor și drepturilor utilizatorilor
-            platformei.
+            Gestionarea conturilor, rolurilor și drepturilor utilizatorilor platformei.
           </p>
         </div>
 
@@ -428,17 +398,12 @@ function Administrare() {
                   </span>
                 </div>
               </div>
-              <form
-                className="border-admin-modal-form"
-                onSubmit={handleCreateUser}
-              >
+              <form className="border-admin-modal-form" onSubmit={handleCreateUser}>
                 <div className="border-admin-form-fields">
                   <div className="border-admin-field">
                     <UserRound size={21} aria-hidden="true" />
                     <div>
-                      <label htmlFor="admin-new-fullname">
-                        Nume și prenume
-                      </label>
+                      <label htmlFor="admin-new-fullname">Nume și prenume</label>
                       <input
                         id="admin-new-fullname"
                         type="text"
@@ -459,9 +424,7 @@ function Administrare() {
                   <div className="border-admin-field">
                     <UserRound size={21} aria-hidden="true" />
                     <div>
-                      <label htmlFor="admin-new-username">
-                        Nume de utilizator
-                      </label>
+                      <label htmlFor="admin-new-username">Nume de utilizator</label>
                       <input
                         id="admin-new-username"
                         type="text"
@@ -477,10 +440,7 @@ function Administrare() {
                           }))
                         }
                       />
-                      <small>
-                        Se vor folosi litere mici, cifre și simbolul _
-                        (underscore).
-                      </small>
+                      <small>Se vor folosi litere mici, cifre și simbolul _ (underscore).</small>
                     </div>
                   </div>
                   <div className="border-admin-field">
@@ -526,8 +486,7 @@ function Administrare() {
                       <div className="border-admin-role-hint">
                         <Info size={16} />
                         <span>
-                          Rolul determină drepturile de acces ale utilizatorului
-                          în platformă.
+                          Rolul determină drepturile de acces ale utilizatorului în platformă.
                         </span>
                       </div>
                     </div>
@@ -537,9 +496,7 @@ function Administrare() {
                   <Mail size={21} aria-hidden="true" />
                   <span>
                     <strong>Trimite notificare pe e-mail</strong>
-                    <small>
-                      Utilizatorul va primi un e-mail cu informații despre cont.
-                    </small>
+                    <small>Utilizatorul va primi un e-mail cu informații despre cont.</small>
                   </span>
                   <input
                     type="checkbox"
@@ -557,11 +514,7 @@ function Administrare() {
                   >
                     <X size={18} /> Anulează
                   </button>
-                  <button
-                    className="border-admin-create-btn"
-                    type="submit"
-                    disabled={creatingUser}
-                  >
+                  <button className="border-admin-create-btn" type="submit" disabled={creatingUser}>
                     {creatingUser ? (
                       <LoaderCircle size={19} className="border-admin-spin" />
                     ) : (
@@ -703,9 +656,7 @@ function Administrare() {
                       <td data-label="Utilizator">
                         <span className="admin-desktop-identity">
                           <AdminDesktopAvatar key={user.id} user={user} />
-                          <span className="admin-username">
-                            {user.username}
-                          </span>
+                          <span className="admin-username">{user.username}</span>
                         </span>
                       </td>
 
@@ -721,20 +672,14 @@ function Administrare() {
                             value={user.role}
                             disabled={busy}
                             aria-label={`Rolul utilizatorului ${user.username}`}
-                            onChange={(event) =>
-                              handleRoleChange(user.id, event.target.value)
-                            }
+                            onChange={(event) => handleRoleChange(user.id, event.target.value)}
                           >
                             <option value="USER">USER</option>
                             <option value="EDITOR">EDITOR</option>
                             <option value="ADMIN">ADMIN</option>
                           </select>
 
-                          {busy && (
-                            <span className="admin-saving">
-                              Se procesează...
-                            </span>
-                          )}
+                          {busy && <span className="admin-saving">Se procesează...</span>}
                         </div>
                       </td>
 
@@ -742,9 +687,7 @@ function Administrare() {
                         <div className="admin-status-cell">
                           <span
                             className={`admin-status ${
-                              user.is_active
-                                ? "admin-status-active"
-                                : "admin-status-inactive"
+                              user.is_active ? "admin-status-active" : "admin-status-inactive"
                             }`}
                           >
                             <span className="admin-status-dot" />
@@ -755,9 +698,7 @@ function Administrare() {
                             type="button"
                             className="admin-status-button"
                             disabled={busy}
-                            onClick={() =>
-                              handleStatusChange(user.id, user.is_active)
-                            }
+                            onClick={() => handleStatusChange(user.id, user.is_active)}
                           >
                             {user.is_active ? "Dezactivează" : "Activează"}
                           </button>
@@ -828,11 +769,7 @@ function Administrare() {
                         className="admin-mobile-menu-trigger"
                         aria-label={`Opțiuni pentru ${user.username}`}
                         aria-expanded={openMenuId === user.id}
-                        onClick={() =>
-                          setOpenMenuId((id) =>
-                            id === user.id ? null : user.id,
-                          )
-                        }
+                        onClick={() => setOpenMenuId((id) => (id === user.id ? null : user.id))}
                       >
                         <MoreVertical size={19} />
                       </button>
@@ -846,14 +783,8 @@ function Administrare() {
                               handleStatusChange(user.id, user.is_active);
                             }}
                           >
-                            {user.is_active ? (
-                              <XCircle size={15} />
-                            ) : (
-                              <Check size={15} />
-                            )}
-                            {user.is_active
-                              ? "Dezactivează contul"
-                              : "Activează contul"}
+                            {user.is_active ? <XCircle size={15} /> : <Check size={15} />}
+                            {user.is_active ? "Dezactivează contul" : "Activează contul"}
                           </button>
                           {!user.is_active && (
                             <button
@@ -878,9 +809,7 @@ function Administrare() {
                     </div>
                     <div className="admin-mobile-detail">
                       <Mail size={15} /> <span>Email</span>
-                      <strong className="admin-mobile-email">
-                        {user.email || "—"}
-                      </strong>
+                      <strong className="admin-mobile-email">{user.email || "—"}</strong>
                     </div>
                     <div className="admin-mobile-detail admin-mobile-role-row">
                       <ShieldCheck size={15} /> <span>Rol</span>
@@ -913,9 +842,7 @@ function Administrare() {
                           disabled={busy}
                           aria-label={`Modifică rolul pentru ${user.username}`}
                           onClick={() =>
-                            setEditingRoleId((id) =>
-                              id === user.id ? null : user.id,
-                            )
+                            setEditingRoleId((id) => (id === user.id ? null : user.id))
                           }
                         >
                           <Pencil size={16} />

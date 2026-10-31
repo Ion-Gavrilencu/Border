@@ -1,15 +1,11 @@
-
 const pool = require("../config/database");
-const {
-  logMonitoringEvent,
-} = require("../services/monitoringService");
+const { logMonitoringEvent } = require("../services/monitoringService");
 
 const globalSearch = async (req, res) => {
   try {
     const { q } = req.query;
 
-    const searchTerm =
-      typeof q === "string" ? q.trim() : "";
+    const searchTerm = typeof q === "string" ? q.trim() : "";
 
     if (!searchTerm) {
       return res.status(200).json({
@@ -78,7 +74,7 @@ const globalSearch = async (req, res) => {
       ORDER BY created_at DESC
       LIMIT 50
       `,
-      [search]
+      [search],
     );
 
     // Înregistrăm căutarea în sistemul de monitorizare.

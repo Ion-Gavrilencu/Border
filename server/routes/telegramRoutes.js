@@ -1,4 +1,3 @@
-
 const express = require("express");
 
 const {
@@ -20,44 +19,21 @@ const router = express.Router();
 router.get("/", authenticate, getTelegrame);
 
 // USER, EDITOR, ADMIN — adăugare la favorite
-router.post(
-  "/:id/favorite",
-  authenticate,
-  addTelegramFavorite
-);
+router.post("/:id/favorite", authenticate, addTelegramFavorite);
 
 // USER, EDITOR, ADMIN — eliminare din favorite
-router.delete(
-  "/:id/favorite",
-  authenticate,
-  removeTelegramFavorite
-);
+router.delete("/:id/favorite", authenticate, removeTelegramFavorite);
 
 // USER, EDITOR, ADMIN — detaliile unei telegrame
 router.get("/:id", authenticate, getTelegramById);
 
 // EDITOR, ADMIN — creare telegramă
-router.post(
-  "/",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  createTelegram
-);
+router.post("/", authenticate, authorizeRoles("EDITOR", "ADMIN"), createTelegram);
 
 // EDITOR, ADMIN — modificare telegramă
-router.patch(
-  "/:id",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  updateTelegram
-);
+router.patch("/:id", authenticate, authorizeRoles("EDITOR", "ADMIN"), updateTelegram);
 
 // ADMIN — ștergere telegramă
-router.delete(
-  "/:id",
-  authenticate,
-  authorizeRoles("ADMIN"),
-  deleteTelegram
-);
+router.delete("/:id", authenticate, authorizeRoles("ADMIN"), deleteTelegram);
 
 module.exports = router;

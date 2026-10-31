@@ -6,8 +6,7 @@ const formatDate = (value) => {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ro-RO");
 };
 
-const getFileName = (attachment) =>
-  attachment.original_name || attachment.name || "Document";
+const getFileName = (attachment) => attachment.original_name || attachment.name || "Document";
 
 const formatFileSize = (bytes) => {
   const size = Number(bytes);
@@ -28,14 +27,10 @@ function NewsModal({
 }) {
   if (!article) return null;
 
-  const images = attachments
-    .filter(isImageAttachment)
-    .sort((a, b) => Number(a.id) - Number(b.id));
+  const images = attachments.filter(isImageAttachment).sort((a, b) => Number(a.id) - Number(b.id));
 
   const documents = attachments.filter(
-    (attachment) =>
-      attachment.attachment_type === "file" &&
-      attachment.file_category !== "image",
+    (attachment) => attachment.attachment_type === "file" && attachment.file_category !== "image",
   );
 
   return (
@@ -82,10 +77,7 @@ function NewsModal({
                         Mărește fotografia
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onDownloadAttachment(attachment)}
-                    >
+                    <button type="button" onClick={() => onDownloadAttachment(attachment)}>
                       <Download size={16} />
                       {index === 0
                         ? "Descarcă fotografia principală"
@@ -108,10 +100,7 @@ function NewsModal({
                       <strong>{getFileName(attachment)}</strong>
                       <small>{formatFileSize(attachment.file_size)}</small>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onDownloadAttachment(attachment)}
-                    >
+                    <button type="button" onClick={() => onDownloadAttachment(attachment)}>
                       <Download size={17} />
                       Descarcă
                     </button>

@@ -6,12 +6,7 @@ const ACTIVE_INTERVAL = "2 minutes";
 // ÎNREGISTRAREA ACTIVITĂȚILOR
 // =====================================================
 
-async function logMonitoringEvent({
-  userId,
-  action,
-  details = null,
-  req = null,
-}) {
+async function logMonitoringEvent({ userId, action, details = null, req = null }) {
   if (!userId || !action) return;
 
   try {
@@ -19,13 +14,7 @@ async function logMonitoringEvent({
       `INSERT INTO monitoring_events
        (user_id, action, details, ip_address, user_agent)
        VALUES ($1, $2, $3, $4, $5)`,
-      [
-        userId,
-        action,
-        details,
-        req?.ip || null,
-        req?.get?.("user-agent") || null,
-      ],
+      [userId, action, details, req?.ip || null, req?.get?.("user-agent") || null],
     );
   } catch (error) {
     console.error("MONITORING LOG ERROR:", error);
@@ -104,13 +93,7 @@ async function createMonitoringSession({ sessionId, userId, expiresAt, req }) {
      )
      VALUES ($1, $2, NOW(), NOW(), $3, $4, $5)
      RETURNING session_id`,
-    [
-      sessionId,
-      userId,
-      expiresAt,
-      req?.get?.("user-agent") || null,
-      req?.ip || null,
-    ],
+    [sessionId, userId, expiresAt, req?.get?.("user-agent") || null, req?.ip || null],
   );
 
   return result.rows[0];

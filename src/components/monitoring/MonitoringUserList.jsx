@@ -62,11 +62,7 @@ export default function MonitoringUserList({
           aria-label="Caută utilizatori"
         />
         {search && (
-          <button
-            type="button"
-            aria-label="Șterge căutarea"
-            onClick={() => onSearchChange("")}
-          >
+          <button type="button" aria-label="Șterge căutarea" onClick={() => onSearchChange("")}>
             <X size={16} />
           </button>
         )}
@@ -108,9 +104,7 @@ export default function MonitoringUserList({
             {filteredUsers.map((user) => (
               <tr
                 key={user.id}
-                className={
-                  String(selectedId) === String(user.id) ? "selected" : ""
-                }
+                className={String(selectedId) === String(user.id) ? "selected" : ""}
               >
                 <td>
                   <button

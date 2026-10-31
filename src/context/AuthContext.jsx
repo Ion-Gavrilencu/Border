@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { AuthContext } from "./authStore";
@@ -12,11 +11,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    setUser((previousUser) =>
-      previousUser
-        ? { ...previousUser, ...updatedUser }
-        : previousUser,
-    );
+    setUser((previousUser) => (previousUser ? { ...previousUser, ...updatedUser } : previousUser));
   };
 
   const checkAuth = async () => {
@@ -44,9 +39,7 @@ export function AuthProvider({ children }) {
     const authenticatedUser = response.data?.user;
 
     if (!authenticatedUser) {
-      throw new Error(
-        "Serverul nu a returnat datele utilizatorului.",
-      );
+      throw new Error("Serverul nu a returnat datele utilizatorului.");
     }
 
     setUser(authenticatedUser);

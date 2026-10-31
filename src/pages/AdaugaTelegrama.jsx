@@ -66,8 +66,7 @@ function AdaugaTelegrama() {
     if (url) {
       try {
         const parsed = new URL(url);
-        if (!["http:", "https:"].includes(parsed.protocol))
-          throw new Error("Protocol invalid");
+        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Protocol invalid");
       } catch {
         setError("Introdu un link HTTP sau HTTPS valid.");
         return;
@@ -84,9 +83,7 @@ function AdaugaTelegrama() {
       });
       const telegram = response.data?.telegram;
       if (!telegram?.id) {
-        toast.warning(
-          "Telegrama a fost creată, dar serverul nu a returnat ID-ul. Verifică lista.",
-        );
+        toast.warning("Telegrama a fost creată, dar serverul nu a returnat ID-ul. Verifică lista.");
         navigate("/telegrame");
         return;
       }
@@ -121,19 +118,14 @@ function AdaugaTelegrama() {
       }
 
       if (failed.length) {
-        toast.warning(
-          `Telegrama a fost creată, dar nu s-au salvat: ${failed.join(", ")}.`,
-        );
+        toast.warning(`Telegrama a fost creată, dar nu s-au salvat: ${failed.join(", ")}.`);
       } else {
         toast.success("Telegrama a fost salvată cu succes.");
       }
       navigate("/telegrame");
     } catch (requestError) {
       console.error("Eroare salvare telegramă:", requestError);
-      setError(
-        requestError.response?.data?.message ||
-          "Telegrama nu a putut fi salvată.",
-      );
+      setError(requestError.response?.data?.message || "Telegrama nu a putut fi salvată.");
     } finally {
       setSaving(false);
     }
@@ -161,9 +153,7 @@ function AdaugaTelegrama() {
         <div className="adauga-telegrama-heading-content">
           <span className="adauga-telegrama-eyebrow">GESTIONARE CONȚINUT</span>
           <h1>Adaugă telegramă</h1>
-          <p>
-            Înregistrează o telegramă nouă și atașează materialele aferente.
-          </p>
+          <p>Înregistrează o telegramă nouă și atașează materialele aferente.</p>
         </div>
         <div className="adauga-telegrama-illustration" aria-hidden="true">
           <div className="adauga-telegrama-illustration-halo" />
@@ -198,10 +188,7 @@ function AdaugaTelegrama() {
           </div>
         )}
         <div className="adauga-telegrama-panel-grid">
-          <section
-            className="adauga-telegrama-info-panel"
-            aria-labelledby="tg-info-heading"
-          >
+          <section className="adauga-telegrama-info-panel" aria-labelledby="tg-info-heading">
             <div className="adauga-telegrama-form-header">
               <span className="adauga-telegrama-header-icon">
                 <FilePlus2 size={29} strokeWidth={1.9} />
@@ -241,10 +228,7 @@ function AdaugaTelegrama() {
                     aria-label="Data telegramei"
                   />
                   {!formData.telegramDate && (
-                    <span
-                      className="adauga-telegrama-date-placeholder"
-                      aria-hidden="true"
-                    >
+                    <span className="adauga-telegrama-date-placeholder" aria-hidden="true">
                       Selectează data
                     </span>
                   )}
@@ -285,9 +269,7 @@ function AdaugaTelegrama() {
                 <Paperclip size={29} strokeWidth={2.1} />
               </span>
               <div>
-                <h2 id="tg-attachments-heading">
-                  Documente și materiale atașate
-                </h2>
+                <h2 id="tg-attachments-heading">Documente și materiale atașate</h2>
                 <p>Adaugă fotografii, PDF, Word, videoclipuri sau un link.</p>
               </div>
               <span
@@ -310,11 +292,7 @@ function AdaugaTelegrama() {
           </section>
         </div>
         <footer className="adauga-telegrama-actions">
-          <button
-            type="submit"
-            className="adauga-telegrama-submit"
-            disabled={saving}
-          >
+          <button type="submit" className="adauga-telegrama-submit" disabled={saving}>
             {saving ? (
               <LoaderCircle size={23} className="adauga-telegrama-spin" />
             ) : (

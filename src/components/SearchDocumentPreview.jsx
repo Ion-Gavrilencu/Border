@@ -52,51 +52,34 @@ const fileName = (attachment) =>
   `Atașament ${attachment?.id ?? ""}`;
 const fileMime = (attachment) =>
   String(
-    attachment?.mime_type ||
-      attachment?.mimetype ||
-      attachment?.file_type ||
-      "",
+    attachment?.mime_type || attachment?.mimetype || attachment?.file_type || "",
   ).toLowerCase();
 const safeUrl = (value) => {
   if (typeof value !== "string") return "";
   try {
     const url = new URL(value.trim());
-    return ["http:", "https:"].includes(url.protocol)
-      ? url.href
-      : "";
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
   } catch {
     return "";
   }
 };
-const isExternalLink = (attachment) =>
-  attachment?.attachment_type === "link";
+const isExternalLink = (attachment) => attachment?.attachment_type === "link";
 const getExternalUrl = (attachment) =>
-  safeUrl(attachment?.url) ||
-  safeUrl(attachment?.link) ||
-  safeUrl(attachment?.external_url);
+  safeUrl(attachment?.url) || safeUrl(attachment?.link) || safeUrl(attachment?.external_url);
 const getFileKind = (attachment) => {
   if (isExternalLink(attachment)) return "link";
   const mime = fileMime(attachment);
   const name = fileName(attachment);
-  if (
-    mime.startsWith("image/") ||
-    /\.(png|jpe?g|webp|gif)$/i.test(name)
-  ) {
+  if (mime.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(name)) {
     return "image";
   }
   if (mime.includes("pdf") || /\.pdf$/i.test(name)) {
     return "pdf";
   }
-  if (
-    mime.startsWith("video/") ||
-    /\.(mp4|webm|mov|ogg)$/i.test(name)
-  ) {
+  if (mime.startsWith("video/") || /\.(mp4|webm|mov|ogg)$/i.test(name)) {
     return "video";
   }
-  if (
-    mime.includes("word") ||
-    /\.(doc|docx|odt)$/i.test(name)
-  ) {
+  if (mime.includes("word") || /\.(doc|docx|odt)$/i.test(name)) {
     return "word";
   }
   return "file";
@@ -104,9 +87,7 @@ const getFileKind = (attachment) => {
 const formatDate = (value) => {
   if (!value) return "";
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? String(value)
-    : date.toLocaleDateString("ro-RO");
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("ro-RO");
 };
 const getFileError = (error) => {
   const status = error?.response?.status;
@@ -122,10 +103,7 @@ const getFileError = (error) => {
   if (status === 410) {
     return "Fișierul nu mai este disponibil în sistemul de stocare. Este posibil să fie necesară reîncărcarea lui.";
   }
-  return (
-    error?.response?.data?.message ||
-    "Fișierul nu a putut fi încărcat."
-  );
+  return error?.response?.data?.message || "Fișierul nu a putut fi încărcat.";
 };
 function FileIcon({ kind, size = 21 }) {
   switch (kind) {
@@ -166,21 +144,15 @@ function AttachmentPreview({ attachment }) {
     setLoading(true);
     const loadFile = async () => {
       try {
-        const response = await api.get(
-          `/attachments/file/${attachment.id}`,
-          {
-            responseType: "blob",
-            signal: controller.signal,
-          },
-        );
+        const response = await api.get(`/attachments/file/${attachment.id}`, {
+          responseType: "blob",
+          signal: controller.signal,
+        });
         if (controller.signal.aborted) return;
         objectUrl = URL.createObjectURL(response.data);
         setBlobUrl(objectUrl);
       } catch (err) {
-        if (
-          controller.signal.aborted ||
-          err?.code === "ERR_CANCELED"
-        ) {
+        if (controller.signal.aborted || err?.code === "ERR_CANCELED") {
           return;
         }
         setError(getFileError(err));
@@ -247,12 +219,7 @@ function AttachmentPreview({ attachment }) {
         </div>
         {url && (
           <div className="sdp-preview-actions">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="sdp-action-primary"
-            >
+            <a href={url} target="_blank" rel="noopener noreferrer" className="sdp-action-primary">
               <ExternalLink size={16} />
               Deschide
             </a>
@@ -281,17 +248,10 @@ function AttachmentPreview({ attachment }) {
             <Link2 size={25} />
             <div>
               <strong>Link extern disponibil</strong>
-              <a
-                href={linkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={linkUrl} target="_blank" rel="noopener noreferrer">
                 {linkUrl}
               </a>
-              <p>
-                Apasă pe link pentru a deschide resursa
-                într-o filă nouă.
-              </p>
+              <p>Apasă pe link pentru a deschide resursa într-o filă nouă.</p>
             </div>
           </div>
         ) : (
@@ -311,41 +271,23 @@ function AttachmentPreview({ attachment }) {
           {error}
         </div>
       ) : !blobUrl ? (
-        <div className="sdp-preview-state">
-          Previzualizarea nu este disponibilă.
-        </div>
+        <div className="sdp-preview-state">Previzualizarea nu este disponibilă.</div>
       ) : kind === "image" ? (
-        <img
-          className="sdp-image"
-          src={blobUrl}
-          alt={name}
-        />
+        <img className="sdp-image" src={blobUrl} alt={name} />
       ) : kind === "pdf" ? (
-        <iframe
-          className="sdp-frame"
-          src={blobUrl}
-          title={name}
-        />
+        <iframe className="sdp-frame" src={blobUrl} title={name} />
       ) : kind === "video" ? (
-        <video
-          className="sdp-video"
-          src={blobUrl}
-          controls
-        />
+        <video className="sdp-video" src={blobUrl} controls />
       ) : (
         <div className="sdp-preview-state">
           <FileText size={23} />
-          Acest format nu poate fi previzualizat direct.
-          Folosește butonul Deschide sau Descarcă.
+          Acest format nu poate fi previzualizat direct. Folosește butonul Deschide sau Descarcă.
         </div>
       )}
     </section>
   );
 }
-export default function SearchDocumentPreview({
-  item,
-  onClose,
-}) {
+export default function SearchDocumentPreview({ item, onClose }) {
   const [data, setData] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -364,43 +306,25 @@ export default function SearchDocumentPreview({
     setSelected(0);
     const loadDocument = async () => {
       const results = await Promise.allSettled([
-        api.get(
-          `/${config.endpoint}/${item.id}`,
-          { signal: controller.signal },
-        ),
-        api.get(
-          `/attachments/${config.attachmentType}/${item.id}`,
-          { signal: controller.signal },
-        ),
+        api.get(`/${config.endpoint}/${item.id}`, { signal: controller.signal }),
+        api.get(`/attachments/${config.attachmentType}/${item.id}`, { signal: controller.signal }),
       ]);
       if (controller.signal.aborted) return;
       const [details, files] = results;
       if (details.status === "fulfilled") {
         const body = details.value.data;
-        setData(
-          body?.[config.key] ||
-            body?.data ||
-            body,
-        );
+        setData(body?.[config.key] || body?.data || body);
       } else {
-        setError(
-          details.reason?.response?.data?.message ||
-            "Documentul nu a putut fi încărcat.",
-        );
+        setError(details.reason?.response?.data?.message || "Documentul nu a putut fi încărcat.");
       }
       if (files.status === "fulfilled") {
         const body = files.value.data;
         const list = Array.isArray(body)
           ? body
-          : body?.attachments ||
-            body?.files ||
-            body?.data ||
-            [];
+          : body?.attachments || body?.files || body?.data || [];
         setAttachments(Array.isArray(list) ? list : []);
       } else {
-        setAttachmentsError(
-          "Atașamentele nu au putut fi încărcate.",
-        );
+        setAttachmentsError("Atașamentele nu au putut fi încărcate.");
       }
       setLoading(false);
     };
@@ -423,16 +347,8 @@ export default function SearchDocumentPreview({
     };
   }, [item, onClose]);
   if (!item || !config) return null;
-  const date =
-    data?.telegram_date ||
-    data?.order_date ||
-    data?.document_date ||
-    data?.created_at;
-  const content =
-    data?.content ||
-    data?.description ||
-    data?.text ||
-    "";
+  const date = data?.telegram_date || data?.order_date || data?.document_date || data?.created_at;
+  const content = data?.content || data?.description || data?.text || "";
   const selectedAttachment = attachments[selected];
   return (
     <div
@@ -454,14 +370,8 @@ export default function SearchDocumentPreview({
             <FileText size={26} />
           </div>
           <div className="sdp-header-text">
-            <span className="sdp-eyebrow">
-              {config.label}
-            </span>
-            <h2>
-              {data?.title ||
-                item.title ||
-                "Previzualizare document"}
-            </h2>
+            <span className="sdp-eyebrow">{config.label}</span>
+            <h2>{data?.title || item.title || "Previzualizare document"}</h2>
             <p>Vizualizare document și atașamente</p>
           </div>
           <button
@@ -476,10 +386,7 @@ export default function SearchDocumentPreview({
         <div className="sdp-body">
           {loading && (
             <p className="sdp-loading">
-              <LoaderCircle
-                className="sdp-spin"
-                size={20}
-              />
+              <LoaderCircle className="sdp-spin" size={20} />
               Se încarcă documentul...
             </p>
           )}
@@ -525,13 +432,9 @@ export default function SearchDocumentPreview({
                 )}
               </div>
               {content ? (
-                <div className="sdp-content">
-                  {content}
-                </div>
+                <div className="sdp-content">{content}</div>
               ) : (
-                <p className="sdp-muted">
-                  Nu există conținut textual disponibil.
-                </p>
+                <p className="sdp-muted">Nu există conținut textual disponibil.</p>
               )}
             </section>
           )}
@@ -539,9 +442,7 @@ export default function SearchDocumentPreview({
             <h3>
               <Paperclip size={19} />
               Atașamente
-              <span className="sdp-count">
-                {attachments.length}
-              </span>
+              <span className="sdp-count">{attachments.length}</span>
             </h3>
             {attachmentsError && (
               <p className="sdp-error" role="alert">
@@ -559,53 +460,30 @@ export default function SearchDocumentPreview({
                       <button
                         key={attachment.id ?? index}
                         type="button"
-                        className={`sdp-file-choice ${
-                          active ? "sdp-file-selected" : ""
-                        }`}
+                        className={`sdp-file-choice ${active ? "sdp-file-selected" : ""}`}
                         onClick={() => setSelected(index)}
                       >
-                        <span
-                          className={`sdp-choice-icon sdp-kind-${kind}`}
-                        >
+                        <span className={`sdp-choice-icon sdp-kind-${kind}`}>
                           <FileIcon kind={kind} />
                         </span>
                         <span className="sdp-choice-text">
-                          <strong>
-                            {fileName(attachment)}
-                          </strong>
-                          <small>
-                            {kind === "link"
-                              ? "Link extern"
-                              : "Fișier atașat"}
-                          </small>
+                          <strong>{fileName(attachment)}</strong>
+                          <small>{kind === "link" ? "Link extern" : "Fișier atașat"}</small>
                         </span>
-                        {active && (
-                          <CheckCircle2
-                            className="sdp-choice-check"
-                            size={19}
-                          />
-                        )}
+                        {active && <CheckCircle2 className="sdp-choice-check" size={19} />}
                       </button>
                     );
                   })}
                 </div>
                 {selectedAttachment && (
                   <AttachmentPreview
-                    key={
-                      selectedAttachment.id ??
-                      `attachment-${selected}`
-                    }
+                    key={selectedAttachment.id ?? `attachment-${selected}`}
                     attachment={selectedAttachment}
                   />
                 )}
               </>
             ) : (
-              !loading &&
-              !attachmentsError && (
-                <p className="sdp-muted">
-                  Nu există atașamente.
-                </p>
-              )
+              !loading && !attachmentsError && <p className="sdp-muted">Nu există atașamente.</p>
             )}
           </section>
         </div>

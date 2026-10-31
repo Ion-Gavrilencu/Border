@@ -1,12 +1,6 @@
 const pool = require("../config/database");
 
-const ALLOWED_TYPES = new Set([
-  "telegrama",
-  "ordin",
-  "legislatie",
-  "informatii",
-  "stire",
-]);
+const ALLOWED_TYPES = new Set(["telegrama", "ordin", "legislatie", "informatii", "stire"]);
 
 const DOCUMENT_LABELS = {
   telegrama: "Vezi telegrama",
@@ -317,8 +311,7 @@ const notifyUsers = async ({ actorId, title, message, type, link }) => {
     [cleanTitle, cleanMessage, type, link, id],
   );
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM } =
-    process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM } = process.env;
 
   // SMTP neconfigurat:
   // notificările interne rămân funcționale.
@@ -401,14 +394,10 @@ const notifyUsers = async ({ actorId, title, message, type, link }) => {
       ),
     );
 
-    const failed = outcomes.filter(
-      (outcome) => outcome.status === "rejected",
-    ).length;
+    const failed = outcomes.filter((outcome) => outcome.status === "rejected").length;
 
     if (failed > 0) {
-      console.error(
-        `NOTIFICATION EMAIL: ${failed} trimiteri eșuate din ${outcomes.length}.`,
-      );
+      console.error(`NOTIFICATION EMAIL: ${failed} trimiteri eșuate din ${outcomes.length}.`);
     }
 
     transport.close();

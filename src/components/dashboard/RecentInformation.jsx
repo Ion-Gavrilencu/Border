@@ -1,11 +1,4 @@
-
-import {
-  Megaphone,
-  FileText,
-  Scale,
-  Info,
-  ArrowRight,
-} from "lucide-react";
+import { Megaphone, FileText, Scale, Info, ArrowRight } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -41,9 +34,7 @@ const formatDate = (value) => {
 
   const date = new Date(value);
 
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toLocaleDateString("ro-RO");
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ro-RO");
 };
 
 function RecentInformation({ recent = [], loadingStats }) {
@@ -69,13 +60,9 @@ function RecentInformation({ recent = [], loadingStats }) {
 
       <div className="information-list">
         {loadingStats ? (
-          <p className="dashboard-empty">
-            Se încarcă informațiile...
-          </p>
+          <p className="dashboard-empty">Se încarcă informațiile...</p>
         ) : recent.length === 0 ? (
-          <p className="dashboard-empty">
-            Nu există documente recente.
-          </p>
+          <p className="dashboard-empty">Nu există documente recente.</p>
         ) : (
           recent.map((item) => {
             const config = recentTypes[item.type];
@@ -101,10 +88,7 @@ function RecentInformation({ recent = [], loadingStats }) {
                   <small>{formatDate(item.created_at)}</small>
                 </div>
 
-                <ArrowRight
-                  size={17}
-                  className="information-arrow"
-                />
+                <ArrowRight size={17} className="information-arrow" />
               </button>
             );
           })

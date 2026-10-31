@@ -1,17 +1,90 @@
 /* Stiluri specifice editării informațiilor utile */
-.edit-informatii-page {--edit-blue:#0869f5;--edit-navy:#092768;--edit-muted:#6880aa;--edit-border:#d8e6fb;}
-.edit-informatii-field {position:relative;min-width:0;}
-.edit-informatii-field-icon {position:absolute;left:14px;top:14px;color:#6885b4;pointer-events:none;}
-.edit-informatii-form-group input,.edit-informatii-form-group textarea {padding:12px 14px 12px 43px;}
-.edit-informatii-form-group textarea {min-height:145px;resize:vertical;}
-.edit-informatii-form-header {display:flex;align-items:center;gap:13px;}
-.edit-informatii-form-header-icon,.edit-informatii-attachments-icon {display:grid;place-items:center;width:48px;height:48px;flex:none;background:#e8f2ff;color:#0869f5;border-radius:12px;}
-.edit-informatii-attachments-header {display:flex;align-items:center;gap:13px;margin:16px 0;}
-.edit-informatii-attachments-header h3 {margin:0 0 5px;color:#092768;}
-.edit-informatii-attachments-header p {margin:0;color:#6880aa;font-size:13px;}
-.edit-informatii-existing {padding:16px;border:1px solid #dce8fa;border-radius:12px;background:#f7fbff;margin-bottom:16px;}
-.edit-informatii-existing li {overflow-wrap:anywhere;}
-.edit-informatii-required {color:#fa3056;}
-.edit-informatii-loading {min-height:230px;display:grid;place-content:center;color:#6880aa;}
-.edit-informatii-spinner {width:28px;height:28px;border:3px solid #d8e6fb;border-top-color:#0869f5;border-radius:50%;animation:edit-spin .7s linear infinite;margin:0 auto 12px;}
-@keyframes edit-spin {to {transform:rotate(360deg)}}
+.edit-informatii-page {
+  --edit-blue: #0869f5;
+  --edit-navy: #092768;
+  --edit-muted: #6880aa;
+  --edit-border: #d8e6fb;
+}
+.edit-informatii-field {
+  position: relative;
+  min-width: 0;
+}
+.edit-informatii-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  color: #6885b4;
+  pointer-events: none;
+}
+.edit-informatii-form-group input,
+.edit-informatii-form-group textarea {
+  padding: 12px 14px 12px 43px;
+}
+.edit-informatii-form-group textarea {
+  min-height: 145px;
+  resize: vertical;
+}
+.edit-informatii-form-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.edit-informatii-form-header-icon,
+.edit-informatii-attachments-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  background: #e8f2ff;
+  color: #0869f5;
+  border-radius: 12px;
+}
+.edit-informatii-attachments-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 16px 0;
+}
+.edit-informatii-attachments-header h3 {
+  margin: 0 0 5px;
+  color: #092768;
+}
+.edit-informatii-attachments-header p {
+  margin: 0;
+  color: #6880aa;
+  font-size: 13px;
+}
+.edit-informatii-existing {
+  padding: 16px;
+  border: 1px solid #dce8fa;
+  border-radius: 12px;
+  background: #f7fbff;
+  margin-bottom: 16px;
+}
+.edit-informatii-existing li {
+  overflow-wrap: anywhere;
+}
+.edit-informatii-required {
+  color: #fa3056;
+}
+.edit-informatii-loading {
+  min-height: 230px;
+  display: grid;
+  place-content: center;
+  color: #6880aa;
+}
+.edit-informatii-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #d8e6fb;
+  border-top-color: #0869f5;
+  border-radius: 50%;
+  animation: edit-spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes edit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

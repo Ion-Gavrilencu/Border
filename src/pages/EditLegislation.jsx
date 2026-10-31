@@ -2,15 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  ArrowLeft,
-  FileText,
-  Image,
-  Link2,
-  ExternalLink,
-  Trash2,
-  Save,
-} from "lucide-react";
+import { ArrowLeft, FileText, Image, Link2, ExternalLink, Trash2, Save } from "lucide-react";
 
 import api from "../services/api";
 
@@ -30,8 +22,7 @@ const getCategory = (file) => {
   return "other";
 };
 
-const isImage = (item) =>
-  item.file_category === "image" || item.mime_type?.startsWith("image/");
+const isImage = (item) => item.file_category === "image" || item.mime_type?.startsWith("image/");
 
 const isLink = (item) => item.attachment_type === "link";
 
@@ -96,9 +87,7 @@ function EditLegislation() {
 
           lawNumber: legislation.law_number || "",
 
-          lawDate: legislation.law_date
-            ? String(legislation.law_date).split("T")[0]
-            : "",
+          lawDate: legislation.law_date ? String(legislation.law_date).split("T")[0] : "",
 
           content: legislation.content || "",
         });
@@ -108,10 +97,7 @@ function EditLegislation() {
         console.error("Eroare încărcare act normativ:", err);
 
         if (active) {
-          setError(
-            err.response?.data?.message ||
-              "Legislationa nu a putut fi încărcată.",
-          );
+          setError(err.response?.data?.message || "Legislationa nu a putut fi încărcată.");
         }
       } finally {
         if (active) setLoading(false);
@@ -138,9 +124,7 @@ function EditLegislation() {
   const handleDeleteAttachment = async (attachment) => {
     if (!canDelete || deletingId !== null || saving) return;
 
-    const confirmed = window.confirm(
-      "Sigur dorești să ștergi acest atașament?",
-    );
+    const confirmed = window.confirm("Sigur dorești să ștergi acest atașament?");
 
     if (!confirmed) return;
 
@@ -151,15 +135,11 @@ function EditLegislation() {
 
       await api.delete(`/attachments/${attachment.id}`);
 
-      setAttachments((current) =>
-        current.filter((item) => item.id !== attachment.id),
-      );
+      setAttachments((current) => current.filter((item) => item.id !== attachment.id));
     } catch (err) {
       console.error("Eroare ștergere atașament:", err);
 
-      setError(
-        err.response?.data?.message || "Atașamentul nu a putut fi șters.",
-      );
+      setError(err.response?.data?.message || "Atașamentul nu a putut fi șters.");
     } finally {
       setDeletingId(null);
     }
@@ -169,8 +149,7 @@ function EditLegislation() {
     if (isLink(attachment)) {
       try {
         const url = new URL(attachment.url);
-        if (!["http:", "https:"].includes(url.protocol))
-          throw new Error("Link invalid");
+        if (!["http:", "https:"].includes(url.protocol)) throw new Error("Link invalid");
         window.open(url.href, "_blank", "noopener,noreferrer");
       } catch {
         setError("Adresa linkului nu este validă.");
@@ -186,9 +165,7 @@ function EditLegislation() {
         responseType: "blob",
       });
       const mime =
-        response.headers?.["content-type"] ||
-        response.data.type ||
-        "application/octet-stream";
+        response.headers?.["content-type"] || response.data.type || "application/octet-stream";
       const blob = new Blob([response.data], { type: mime });
       const objectUrl = URL.createObjectURL(blob);
       if (tab && !tab.closed) {
@@ -197,10 +174,7 @@ function EditLegislation() {
         const link = document.createElement("a");
         link.href = objectUrl;
         link.download =
-          attachment.original_name ||
-          attachment.file_name ||
-          attachment.name ||
-          "document";
+          attachment.original_name || attachment.file_name || attachment.name || "document";
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -208,9 +182,7 @@ function EditLegislation() {
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     } catch (err) {
       if (tab && !tab.closed) tab.close();
-      setError(
-        err.response?.data?.message || "Fișierul nu a putut fi deschis.",
-      );
+      setError(err.response?.data?.message || "Fișierul nu a putut fi deschis.");
     }
   };
 
@@ -299,9 +271,7 @@ function EditLegislation() {
       }
 
       if (failed.length > 0) {
-        setError(
-          `Datele au fost salvate, dar nu s-au adăugat: ${failed.join(", ")}.`,
-        );
+        setError(`Datele au fost salvate, dar nu s-au adăugat: ${failed.join(", ")}.`);
 
         return;
       }
@@ -310,9 +280,7 @@ function EditLegislation() {
     } catch (err) {
       console.error("Eroare modificare act normativ:", err);
 
-      setError(
-        err.response?.data?.message || "Legislationa nu a putut fi modificată.",
-      );
+      setError(err.response?.data?.message || "Legislationa nu a putut fi modificată.");
     } finally {
       setSaving(false);
     }
@@ -321,9 +289,7 @@ function EditLegislation() {
   if (loading) {
     return (
       <div className="edit-legislation-page">
-        <div className="edit-legislation-loading">
-          Se încarcă actul normativ...
-        </div>
+        <div className="edit-legislation-loading">Se încarcă actul normativ...</div>
       </div>
     );
   }
@@ -332,20 +298,14 @@ function EditLegislation() {
     <div className="edit-legislation-page">
       <header className="edit-legislation-header">
         <div>
-          <span className="edit-legislation-label">
-            GESTIONARE ACTELOR NORMATIV
-          </span>
+          <span className="edit-legislation-label">GESTIONARE ACTELOR NORMATIV</span>
 
           <h1>Editează actul normativ</h1>
 
           <p>Modifică informațiile și documentele atașate.</p>
         </div>
 
-        <button
-          type="button"
-          className="edit-legislation-back-button"
-          onClick={goBack}
-        >
+        <button type="button" className="edit-legislation-back-button" onClick={goBack}>
           <ArrowLeft size={17} />
           Înapoi
         </button>
@@ -394,9 +354,7 @@ function EditLegislation() {
             </div>
 
             <div className="edit-legislation-form-group edit-legislation-full">
-              <label htmlFor="legislation-title">
-                Denumirea actului normativ
-              </label>
+              <label htmlFor="legislation-title">Denumirea actului normativ</label>
 
               <input
                 id="legislation-title"
@@ -415,23 +373,14 @@ function EditLegislation() {
             <h3>Documente și linkuri existente</h3>
 
             {attachments.length === 0 ? (
-              <p className="edit-legislation-empty">
-                Nu există documente atașate.
-              </p>
+              <p className="edit-legislation-empty">Nu există documente atașate.</p>
             ) : (
               <div className="edit-legislation-attachments">
                 {attachments.map((attachment) => {
-                  const Icon = isLink(attachment)
-                    ? Link2
-                    : isImage(attachment)
-                      ? Image
-                      : FileText;
+                  const Icon = isLink(attachment) ? Link2 : isImage(attachment) ? Image : FileText;
 
                   return (
-                    <div
-                      key={attachment.id}
-                      className="edit-legislation-attachment"
-                    >
+                    <div key={attachment.id} className="edit-legislation-attachment">
                       <div className="edit-legislation-attachment-icon">
                         <Icon size={19} />
                       </div>
@@ -488,8 +437,8 @@ function EditLegislation() {
               <h3>Adaugă documente, fotografii sau link</h3>
 
               <p className="edit-legislation-section-description">
-                Încarcă fișiere noi sau adaugă un link extern. Documentele
-                existente vor fi păstrate.
+                Încarcă fișiere noi sau adaugă un link extern. Documentele existente vor fi
+                păstrate.
               </p>
 
               <DocumentUploader
@@ -516,11 +465,7 @@ function EditLegislation() {
           </button>
 
           {canEdit && (
-            <button
-              type="submit"
-              className="edit-legislation-save-button"
-              disabled={saving}
-            >
+            <button type="submit" className="edit-legislation-save-button" disabled={saving}>
               <Save size={17} />
 
               {saving ? "Se salvează..." : "Salvează modificările"}

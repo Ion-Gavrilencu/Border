@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 const cheerio = require("cheerio");
 const pool = require("../config/database");
@@ -6,10 +5,7 @@ const pool = require("../config/database");
 const SOURCE_URL = "https://border.gov.md/noutati";
 const SOURCE_NAME = "Poliția de Frontieră";
 
-const SOURCE_HOSTS = new Set([
-  "border.gov.md",
-  "www.border.gov.md",
-]);
+const SOURCE_HOSTS = new Set(["border.gov.md", "www.border.gov.md"]);
 
 const cleanText = (value) =>
   String(value || "")
@@ -75,33 +71,23 @@ async function fetchBorderNews() {
 
     const pathname = new URL(url).pathname;
 
-    if (
-      ["/", "/noutati", "/news", "/contacte"].includes(pathname) ||
-      seen.has(url)
-    ) {
+    if (["/", "/noutati", "/news", "/contacte"].includes(pathname) || seen.has(url)) {
       return;
     }
 
-    const container = anchor.closest(
-      "article, .views-row, .node, .news-item"
-    );
+    const container = anchor.closest("article, .views-row, .node, .news-item");
 
     if (!container.length) return;
 
     const imageElement = container.find("img").first();
 
-    const imageUrl = normalizeUrl(
-      imageElement.attr("data-src") ||
-      imageElement.attr("src")
-    );
+    const imageUrl = normalizeUrl(imageElement.attr("data-src") || imageElement.attr("src"));
 
     const summary = cleanText(
       container
-        .find(
-          ".field--name-body, .field--name-field-description, .summary, p"
-        )
+        .find(".field--name-body, .field--name-field-description, .summary, p")
         .first()
-        .text()
+        .text(),
     ).slice(0, 300);
 
     seen.add(url);
@@ -120,9 +106,7 @@ async function fetchBorderNews() {
   });
 
   if (articles.length === 0) {
-    throw new Error(
-      "Nu au fost identificate articole. Verifică structura HTML a sursei."
-    );
+    throw new Error("Nu au fost identificate articole. Verifică structura HTML a sursei.");
   }
 
   return articles;
@@ -139,9 +123,7 @@ async function syncBorderNews() {
     await client.query("BEGIN");
 
     // O singură sincronizare poate scrie în tabel la un moment dat.
-    await client.query(
-      "SELECT pg_advisory_xact_lock(4391, 2026)"
-    );
+    await client.query("SELECT pg_advisory_xact_lock(4391, 2026)");
 
     for (const article of articles) {
       const result = await client.query(
@@ -212,7 +194,7 @@ async function syncBorderNews() {
           article.image_url,
           JSON.stringify(article.images),
           article.external_source_id,
-        ]
+        ],
       );
 
       if (result.rowCount === 1) {

@@ -1,4 +1,7 @@
-
+.telegram-gallery-overlay,
+.telegram-gallery-overlay * {
+  box-sizing: border-box;
+}
 .telegram-gallery-overlay {
   position: fixed;
   inset: 0;
@@ -6,112 +9,444 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  background: rgba(5, 15, 30, 0.9);
-  box-sizing: border-box;
+  padding: 18px;
+  background: rgba(4, 13, 30, 0.88);
+  backdrop-filter: blur(12px);
 }
-
 .telegram-gallery {
   display: flex;
   flex-direction: column;
-  width: min(1200px, 100%);
-  max-height: 95vh;
-  color: #fff;
+  width: min(1320px, 100%);
+  height: min(920px, 94dvh);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(165, 191, 231, 0.18);
+  border-radius: 20px;
+  background: #0b1629;
+  color: #f5f8ff;
+  box-shadow: 0 25px 100px rgba(0, 0, 0, 0.5);
+  outline: none;
 }
-
+.telegram-gallery:fullscreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
 .telegram-gallery-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 18px;
+  gap: 12px;
+  flex: none;
+  min-height: 78px;
+  padding: 13px 20px;
+  border-bottom: 1px solid rgba(172, 196, 231, 0.12);
+  background: #111f35;
 }
-
-.telegram-gallery-header h2 {
-  margin: 0 0 6px;
-  font-size: 19px;
-  font-weight: 650;
-}
-
-.telegram-gallery-header span {
-  color: #a9bbcf;
-  font-size: 13px;
-}
-
-.telegram-gallery-header button {
+.telegram-gallery-heading {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #46556a;
-  border-radius: 10px;
-  background: #243247;
-  color: #fff;
+  min-width: 0;
+  gap: 12px;
+}
+.telegram-gallery-heading-icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  flex: none;
+  border-radius: 12px;
+  color: #91c7ff;
+  background: #1d3758;
+}
+.telegram-gallery-heading-copy {
+  min-width: 0;
+}
+.telegram-gallery-header h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 750;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.telegram-gallery-header .telegram-gallery-heading-copy span {
+  font-size: 12px;
+  color: #9fb3d1;
+}
+.telegram-gallery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.telegram-gallery-overlay button {
+  font: inherit;
   cursor: pointer;
 }
-
-.telegram-gallery-content {
+.telegram-gallery-overlay button:focus-visible {
+  outline: 2px solid #70b6ff;
+  outline-offset: 2px;
+}
+.tg-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 11px;
+  border: 1px solid #334966;
+  border-radius: 11px;
+  background: #1b2c45;
+  color: #f4f8ff;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.tg-icon-button:hover:not(:disabled) {
+  background: #294361;
+  border-color: #50729a;
+}
+.tg-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.tg-download {
+  padding: 0 16px;
+  border-color: #2875ce;
+  background: linear-gradient(115deg, #1165bf, #087ee8);
+  font-weight: 700 !important;
+}
+.tg-download:hover:not(:disabled) {
+  background: #1778df;
+}
+.tg-close {
+  background: #243249;
+}
+.telegram-gallery-stage {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #172b47 0%, #081120 80%);
+}
+.telegram-gallery-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.15;
+  background-image:
+    linear-gradient(45deg, #263c59 25%, transparent 25%, transparent 75%, #263c59 75%),
+    linear-gradient(45deg, #263c59 25%, transparent 25%, transparent 75%, #263c59 75%);
+  background-size: 22px 22px;
+  background-position:
+    0 0,
+    11px 11px;
+}
+.telegram-gallery-image-area {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  min-height: 300px;
-  flex: 1;
   overflow: hidden;
+  touch-action: none;
+  cursor: zoom-in;
+  user-select: none;
 }
-
-.telegram-gallery-content img {
+.telegram-gallery-image-area.is-zoomed {
+  cursor: grab;
+}
+.telegram-gallery-image-area.is-dragging {
+  cursor: grabbing;
+}
+.telegram-gallery-image-area img {
   display: block;
   width: auto;
-  max-width: calc(100% - 120px);
-  max-height: 75vh;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 3px;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
 }
-
 .telegram-gallery-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(168, 193, 225, 0.35);
+  border-radius: 50%;
+  background: rgba(15, 31, 52, 0.84);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.telegram-gallery-arrow:hover {
+  background: #2a507c;
+}
+.tg-prev {
+  left: 14px;
+}
+.tg-next {
+  right: 14px;
+}
+.telegram-gallery-zoom {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 46px;
-  height: 46px;
-  border: 1px solid #46556a;
-  border-radius: 50%;
-  background: #243247;
-  color: #fff;
-  cursor: pointer;
+  gap: 4px;
+  transform: translateX(-50%);
+  padding: 6px;
+  border: 1px solid rgba(157, 187, 226, 0.25);
+  border-radius: 13px;
+  background: rgba(12, 27, 46, 0.92);
+  box-shadow: 0 8px 30px #0005;
+  backdrop-filter: blur(10px);
 }
-
-.telegram-gallery-arrow:hover,
-.telegram-gallery-header button:hover {
-  background: #36506d;
+.telegram-gallery-zoom button {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #e5efff;
 }
-
-.telegram-gallery-footer {
-  padding-top: 18px;
-  color: #b7c6d7;
-  font-size: 12px;
+.telegram-gallery-zoom button:hover:not(:disabled) {
+  background: #294866;
+}
+.telegram-gallery-zoom button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.telegram-gallery-zoom span:not(.tg-zoom-divider) {
+  min-width: 49px;
   text-align: center;
-  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
-
-@media (max-width: 600px) {
-  .telegram-gallery-overlay {
-    padding: 12px;
+.tg-zoom-divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 3px;
+  background: #3b5271;
+}
+.tg-empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #b7c9e4;
+  text-align: center;
+  padding: 24px;
+}
+.tg-empty p {
+  margin: 0;
+}
+.tg-error {
+  color: #ffb8b8;
+}
+.tg-spinner {
+  animation: tg-spin 0.8s linear infinite;
+}
+@keyframes tg-spin {
+  to {
+    transform: rotate(360deg);
   }
-
-  .telegram-gallery-content {
+}
+.telegram-gallery-footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(172, 196, 231, 0.12);
+  background: #111f35;
+}
+.tg-file-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 5px;
+}
+.tg-filename {
+  font-size: 13px;
+  font-weight: 650;
+  color: #e7f1ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tg-help {
+  font-size: 11px;
+  color: #90a7c6;
+}
+.tg-thumbnails-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid #334966;
+  border-radius: 9px;
+  background: #1c2e49;
+  color: #cfe3ff;
+  font-size: 12px !important;
+}
+.tg-thumbnails-toggle:hover {
+  background: #2b4565;
+}
+.telegram-gallery-thumbnails {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  height: 98px;
+  padding: 10px 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #0c182a;
+  scrollbar-width: thin;
+  scrollbar-color: #456184 transparent;
+}
+.tg-thumbnail {
+  position: relative;
+  flex: 0 0 103px;
+  width: 103px;
+  height: 72px;
+  overflow: hidden;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #23344b;
+  opacity: 0.68;
+}
+.tg-thumbnail:hover {
+  opacity: 1;
+}
+.tg-thumbnail.is-active {
+  opacity: 1;
+  border-color: #40a1ff;
+  box-shadow: 0 0 0 1px #40a1ff44;
+}
+.tg-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.tg-thumbnail span {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  min-width: 18px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: #071427c9;
+  color: #fff;
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+  .telegram-gallery-overlay {
+    padding: 0;
+  }
+  .telegram-gallery {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .telegram-gallery-header {
+    min-height: 68px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .telegram-gallery-heading {
+    gap: 8px;
+  }
+  .telegram-gallery-heading-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .telegram-gallery-header h2 {
+    font-size: 14px;
+  }
+  .telegram-gallery-header-actions {
     gap: 5px;
   }
-
-  .telegram-gallery-content img {
-    max-width: calc(100% - 90px);
+  .tg-icon-button {
+    min-width: 36px;
+    height: 38px;
+    padding: 0 8px;
   }
-
+  .tg-download {
+    padding: 0 10px;
+  }
+  .tg-download span {
+    display: none;
+  }
   .telegram-gallery-arrow {
     width: 38px;
     height: 38px;
+  }
+  .tg-prev {
+    left: 7px;
+  }
+  .tg-next {
+    right: 7px;
+  }
+  .telegram-gallery-zoom {
+    bottom: 12px;
+  }
+  .telegram-gallery-footer {
+    padding: 11px 12px;
+  }
+  .tg-help {
+    display: none;
+  }
+  .tg-thumbnails-toggle {
+    font-size: 0 !important;
+    padding: 9px;
+  }
+  .tg-thumbnails-toggle svg {
+    width: 19px;
+    height: 19px;
+  }
+  .telegram-gallery-thumbnails {
+    height: 83px;
+    padding: 8px 12px;
+  }
+  .tg-thumbnail {
+    flex-basis: 85px;
+    width: 85px;
+    height: 62px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .telegram-gallery-overlay *,
+  .telegram-gallery-overlay *::before {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
@@ -47,10 +46,7 @@ function ActivateAccount() {
       setPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Activarea contului nu a reușit."
-      );
+      setError(err.response?.data?.message || "Activarea contului nu a reușit.");
     } finally {
       setLoading(false);
     }
@@ -77,9 +73,7 @@ function ActivateAccount() {
       >
         <h1 className="page-title">Activare cont</h1>
 
-        <p className="page-subtitle">
-          Stabilește parola pentru Platforma de Serviciu.
-        </p>
+        <p className="page-subtitle">Stabilește parola pentru Platforma de Serviciu.</p>
 
         {error && (
           <p role="alert" style={{ color: "var(--danger)" }}>
@@ -93,11 +87,7 @@ function ActivateAccount() {
               {success}
             </p>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => navigate("/login")}
-            >
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/login")}>
               Mergi la autentificare
             </button>
           </div>
@@ -120,9 +110,7 @@ function ActivateAccount() {
             </div>
 
             <div style={{ marginTop: "18px" }}>
-              <label htmlFor="confirmPassword">
-                Confirmă parola
-              </label>
+              <label htmlFor="confirmPassword">Confirmă parola</label>
 
               <input
                 id="confirmPassword"
@@ -133,9 +121,7 @@ function ActivateAccount() {
                 maxLength={128}
                 required
                 value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(e.target.value)
-                }
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
 

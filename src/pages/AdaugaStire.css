@@ -1,4 +1,3 @@
-
 /* ==========================================
    BORDER — PAGINA ADAUGĂ ȘTIRE
    DESKTOP / TABLETĂ / TELEFON
@@ -380,8 +379,7 @@
   font-weight: 800;
 }
 
-.adauga-stire-card .border-news-upload-zone:hover
-  .border-news-upload-button {
+.adauga-stire-card .border-news-upload-zone:hover .border-news-upload-button {
   background: #0755ad;
 }
 
@@ -528,9 +526,7 @@
   color: #fff;
 }
 
-.adauga-stire-card
-  .border-news-form-actions
-  .border-news-add:hover:not(:disabled) {
+.adauga-stire-card .border-news-form-actions .border-news-add:hover:not(:disabled) {
   background: #0755ad;
 }
 

@@ -1,4 +1,3 @@
-
 const multer = require("multer");
 
 const allowedTypes = new Set([
@@ -24,9 +23,7 @@ const upload = multer({
   fileFilter(req, file, callback) {
     if (!allowedTypes.has(file.mimetype)) {
       return callback(
-        new Error(
-          "Format neacceptat. Sunt permise JPG, PNG, WEBP, PDF, DOC și DOCX."
-        )
+        new Error("Format neacceptat. Sunt permise JPG, PNG, WEBP, PDF, DOC și DOCX."),
       );
     }
 

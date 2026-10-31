@@ -45,10 +45,7 @@ export default function MonitoringActivity({
   const to = Math.min(page * LIMIT, total);
 
   return (
-    <section
-      className="mon-panel mon-activity"
-      aria-label="Istoricul activității"
-    >
+    <section className="mon-panel mon-activity" aria-label="Istoricul activității">
       <div className="mon-activity-title">
         <h2>
           <Activity size={19} /> Istoricul activității
@@ -65,11 +62,7 @@ export default function MonitoringActivity({
         </button>
       </div>
 
-      <div
-        className="mon-action-tabs"
-        role="group"
-        aria-label="Filtrează după acțiune"
-      >
+      <div className="mon-action-tabs" role="group" aria-label="Filtrează după acțiune">
         {tabs.map(([value, label]) => (
           <button
             type="button"
@@ -153,10 +146,7 @@ export default function MonitoringActivity({
         </table>
       </div>
 
-      <div
-        className="mon-activity-mobile"
-        aria-label="Activități în format mobil"
-      >
+      <div className="mon-activity-mobile" aria-label="Activități în format mobil">
         {activities.map((item) => (
           <article className="mon-activity-card" key={item.id}>
             <div className="mon-activity-card-head">
@@ -187,9 +177,7 @@ export default function MonitoringActivity({
       </div>
 
       {!loading && !activities.length && !error && (
-        <p className="mon-empty">
-          Nu există activități înregistrate pentru filtrele selectate.
-        </p>
+        <p className="mon-empty">Nu există activități înregistrate pentru filtrele selectate.</p>
       )}
       {loading && (
         <p className="mon-empty" role="status">

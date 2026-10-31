@@ -41,8 +41,7 @@ const createUser = async (req, res) => {
       console.error("CREATE USER: FRONTEND_URL lipsește.");
 
       return res.status(503).json({
-        message:
-          "Serviciul de activare nu este configurat. Contactează administratorul.",
+        message: "Serviciul de activare nu este configurat. Contactează administratorul.",
       });
     }
 
@@ -85,10 +84,7 @@ const createUser = async (req, res) => {
     // GENERARE TOKEN ACTIVARE
     const activationToken = crypto.randomBytes(32).toString("hex");
 
-    const activationTokenHash = crypto
-      .createHash("sha256")
-      .update(activationToken)
-      .digest("hex");
+    const activationTokenHash = crypto.createHash("sha256").update(activationToken).digest("hex");
 
     const activationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -410,10 +406,7 @@ const resendActivation = async (req, res) => {
     // Generăm un token nou.
     const activationToken = crypto.randomBytes(32).toString("hex");
 
-    const activationTokenHash = crypto
-      .createHash("sha256")
-      .update(activationToken)
-      .digest("hex");
+    const activationTokenHash = crypto.createHash("sha256").update(activationToken).digest("hex");
 
     const activationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 

@@ -1,4 +1,3 @@
-
 .sdp-backdrop,
 .sdp-backdrop * {
   box-sizing: border-box;
@@ -244,10 +243,7 @@
 
 .sdp-file-list {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(min(240px, 100%), 1fr)
-  );
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }

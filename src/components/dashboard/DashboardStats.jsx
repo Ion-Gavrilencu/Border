@@ -1,4 +1,3 @@
-
 import { Megaphone, FileText, Scale, Info, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -51,17 +50,10 @@ function DashboardStats({ stats, loadingStats }) {
             <div className="stat-content">
               <span>{section.title}</span>
 
-              <strong>
-                {loadingStats
-                  ? "..."
-                  : stats?.[section.key] ?? 0}
-              </strong>
+              <strong>{loadingStats ? "..." : (stats?.[section.key] ?? 0)}</strong>
             </div>
 
-            <ArrowRight
-              size={17}
-              className="stat-arrow"
-            />
+            <ArrowRight size={17} className="stat-arrow" />
           </button>
         );
       })}

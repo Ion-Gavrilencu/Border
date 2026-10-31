@@ -36,8 +36,7 @@ const getFileCategory = (file) => {
   return "word";
 };
 
-const getFileName = (attachment) =>
-  attachment.original_name || attachment.name || "Document";
+const getFileName = (attachment) => attachment.original_name || attachment.name || "Document";
 
 const validUrl = (value) => {
   try {
@@ -115,9 +114,7 @@ export default function EditStire() {
         // Folosim lista existentă /news pentru a găsi știrea.
         const response = await api.get("/news");
 
-        const articles = Array.isArray(response.data?.articles)
-          ? response.data.articles
-          : [];
+        const articles = Array.isArray(response.data?.articles) ? response.data.articles : [];
 
         const article = articles.find((item) => String(item.id) === String(id));
 
@@ -153,11 +150,7 @@ export default function EditStire() {
         console.error("LOAD NEWS ERROR:", err);
 
         if (active) {
-          setError(
-            err.response?.data?.message ||
-              err.message ||
-              "Știrea nu a putut fi încărcată.",
-          );
+          setError(err.response?.data?.message || err.message || "Știrea nu a putut fi încărcată.");
         }
       } finally {
         if (active) setLoading(false);
@@ -195,10 +188,7 @@ export default function EditStire() {
     if (!files.length) return;
 
     const invalid = files.find(
-      (file) =>
-        !acceptedFileTypes.has(file.type) ||
-        file.size === 0 ||
-        file.size > MAX_FILE_SIZE,
+      (file) => !acceptedFileTypes.has(file.type) || file.size === 0 || file.size > MAX_FILE_SIZE,
     );
 
     if (invalid) {
@@ -291,9 +281,7 @@ export default function EditStire() {
     } catch (err) {
       console.error("DELETE ATTACHMENT ERROR:", err);
 
-      setError(
-        err.response?.data?.message || "Atașamentul nu a putut fi șters.",
-      );
+      setError(err.response?.data?.message || "Atașamentul nu a putut fi șters.");
     } finally {
       setRemovingAttachmentId(null);
     }
@@ -357,9 +345,7 @@ export default function EditStire() {
       for (let i = 0; i < filesToUpload.length; i++) {
         const file = filesToUpload[i];
 
-        setUploadProgress(
-          `Se încarcă ${i + 1} din ${filesToUpload.length}: ${file.name}`,
-        );
+        setUploadProgress(`Se încarcă ${i + 1} din ${filesToUpload.length}: ${file.name}`);
 
         const data = new FormData();
 
@@ -397,11 +383,7 @@ export default function EditStire() {
           console.error("REFRESH ATTACHMENTS ERROR:", refreshError);
         }
       } else {
-        setError(
-          err.response?.data?.message ||
-            err.message ||
-            "Știrea nu a putut fi actualizată.",
-        );
+        setError(err.response?.data?.message || err.message || "Știrea nu a putut fi actualizată.");
       }
     } finally {
       setSaving(false);
@@ -418,11 +400,7 @@ export default function EditStire() {
           Nu ai permisiunea de a edita știri.
         </div>
 
-        <button
-          type="button"
-          className="edit-stire-back"
-          onClick={() => navigate("/dashboard")}
-        >
+        <button type="button" className="edit-stire-back" onClick={() => navigate("/dashboard")}>
           <ArrowLeft size={18} />
           Înapoi la Dashboard
         </button>
@@ -451,10 +429,7 @@ export default function EditStire() {
 
           <h1>Editează știre</h1>
 
-          <p>
-            Modifică informațiile știrii și gestionează fotografiile și
-            documentele atașate.
-          </p>
+          <p>Modifică informațiile știrii și gestionează fotografiile și documentele atașate.</p>
         </header>
 
         <button

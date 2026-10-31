@@ -29,13 +29,15 @@ const allowedOrigins = [
   "https://ion-gavrilencu.github.io",
   "https://border-4391.vercel.app",
 ];
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Origine neautorizată"));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Origine neautorizată"));
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -43,7 +45,11 @@ app.get("/", (req, res) => res.json({ message: "API Platforma de Serviciu funcț
 app.get("/api/health", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
-    res.json({ status: "OK", message: "Serverul și baza de date funcționează", databaseTime: result.rows[0].now });
+    res.json({
+      status: "OK",
+      message: "Serverul și baza de date funcționează",
+      databaseTime: result.rows[0].now,
+    });
   } catch (error) {
     console.error("HEALTH ERROR:", error.message);
     res.status(500).json({ status: "ERROR", message: "Nu s-a putut conecta la baza de date" });

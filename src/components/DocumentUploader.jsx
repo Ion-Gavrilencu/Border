@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
-  CloudUpload, FileText, Image as ImageIcon, Link2, Trash2,
-  FileCheck2, Video, Upload, FileType2,
+  CloudUpload,
+  FileText,
+  Image as ImageIcon,
+  Link2,
+  Trash2,
+  FileCheck2,
+  Video,
+  Upload,
+  FileType2,
 } from "lucide-react";
 import "./DocumentUploader.css";
 
@@ -19,52 +26,99 @@ const VIDEO_ACCEPTED = {
   "video/webm": [".webm"],
   "video/quicktime": [".mov"],
 };
-const isImage = (file) => file.type.startsWith("image/");
-const isVideo = (file) => file.type.startsWith("video/");
-const formatSize = (bytes) => {
+const isImage = (file) => file?.type?.startsWith("image/") ?? false;
+const isVideo = (file) => file?.type?.startsWith("video/") ?? false;
+const formatSize = (bytes = 0) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 function PreviewFile({ file, onRemove, disabled }) {
-  const previewUrl = useMemo(() => (isImage(file) ? URL.createObjectURL(file) : null), [file]);
-  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+
+  useEffect(() => {
+    setPreviewFailed(false);
+    if (!isImage(file) || !(file instanceof Blob)) {
+      setPreviewUrl(null);
+      return undefined;
+    }
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
   return (
     <div className="du-file">
       <div className="du-file-preview">
-        {previewUrl ? <img src={previewUrl} alt={file.name} /> : isVideo(file) ? <Video size={22} /> : <FileText size={22} />}
+        {previewUrl && !previewFailed ? (
+          <img src={previewUrl} alt={file.name} onError={() => setPreviewFailed(true)} />
+        ) : isVideo(file) ? (
+          <Video size={22} />
+        ) : isImage(file) ? (
+          <ImageIcon size={22} />
+        ) : (
+          <FileText size={22} />
+        )}
       </div>
-      <div className="du-file-info"><strong title={file.name}>{file.name}</strong><span>{formatSize(file.size)}</span></div>
-      <button type="button" className="du-remove" onClick={onRemove} disabled={disabled} title="Elimină fișierul" aria-label={`Elimină ${file.name}`}><Trash2 size={17} /></button>
+      <div className="du-file-info">
+        <strong title={file.name}>{file.name}</strong>
+        <span>{formatSize(file.size)}</span>
+      </div>
+      <button
+        type="button"
+        className="du-remove"
+        onClick={onRemove}
+        disabled={disabled}
+        title="Elimină fișierul"
+        aria-label={`Elimină ${file.name}`}
+      >
+        <Trash2 size={17} />
+      </button>
     </div>
   );
 }
 
 export default function DocumentUploader({
-  files = [], onFilesChange, linkUrl = "", onLinkChange,
-  disabled = false, onError, allowMixed = false, variant = "default",
+  files = [],
+  onFilesChange,
+  linkUrl = "",
+  onLinkChange,
+  disabled = false,
+  onError,
+  allowMixed = false,
+  variant = "default",
 }) {
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
-    if (disabled) return;
-    if (rejectedFiles.length) {
-      onError?.("Unul sau mai multe fișiere au un format neacceptat ori depășesc limita de 100 MB.");
-    }
-    if (!acceptedFiles.length) return;
-    if (allowMixed) {
-      onFilesChange((files || []).concat(acceptedFiles));
-      onError?.("");
-      return;
-    }
-    const allImages = acceptedFiles.every(isImage);
-    if (!allImages && acceptedFiles.length > 1) {
-      onError?.("Poți adăuga mai multe fotografii sau un singur document.");
-      return;
-    }
-    onFilesChange(acceptedFiles);
-    onLinkChange("");
-    onError?.("");
-  }, [disabled, allowMixed, files, onFilesChange, onLinkChange, onError]);
+  const onDrop = useCallback(
+    (acceptedFiles, rejectedFiles) => {
+      if (disabled) return;
+      if (rejectedFiles.length) {
+        onError?.(
+          "Unul sau mai multe fișiere au un format neacceptat ori depășesc limita de 100 MB.",
+        );
+      }
+      if (!acceptedFiles.length) return;
+      if (allowMixed) {
+        onFilesChange((files || []).concat(acceptedFiles));
+        if (!rejectedFiles.length) onError?.("");
+        return;
+      }
+      const allImages = acceptedFiles.every(isImage);
+      if (!allImages && acceptedFiles.length > 1) {
+        onError?.("Poți adăuga mai multe fotografii sau un singur document.");
+        return;
+      }
+      onFilesChange(acceptedFiles);
+      onLinkChange?.("");
+      if (!rejectedFiles.length) onError?.("");
+    },
+    [disabled, allowMixed, files, onFilesChange, onLinkChange, onError],
+  );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
@@ -80,46 +134,98 @@ export default function DocumentUploader({
     <div className={`du-container${isTelegram ? " du-telegram" : ""}`}>
       <div {...getRootProps({ className: `du-dropzone ${isDragActive ? "du-active" : ""}` })}>
         <input {...getInputProps()} />
-        <div className="du-upload-icon"><CloudUpload size={isTelegram ? 54 : 28} strokeWidth={1.8} /></div>
+        <div className="du-upload-icon">
+          <CloudUpload size={isTelegram ? 54 : 28} strokeWidth={1.8} />
+        </div>
         <strong>{isDragActive ? "Eliberează fișierele aici" : "Trage fișierele aici"}</strong>
         <p>Sau selectează-le de pe calculator</p>
-        <button type="button" className="du-select-button" onClick={open} disabled={disabled}><Upload size={19} />Alege fișiere</button>
+        <button type="button" className="du-select-button" onClick={open} disabled={disabled}>
+          <Upload size={19} />
+          Alege fișiere
+        </button>
         <div className="du-formats">
           {isTelegram ? (
             <>
-              <span className="du-format-pdf"><FileText size={18} />PDF</span>
-              <span className="du-format-word"><FileType2 size={18} />Word</span>
-              <span className="du-format-image"><ImageIcon size={18} />JPG / PNG / WEBP</span>
+              <span className="du-format-pdf">
+                <FileText size={18} />
+                PDF
+              </span>
+              <span className="du-format-word">
+                <FileType2 size={18} />
+                Word
+              </span>
+              <span className="du-format-image">
+                <ImageIcon size={18} />
+                JPG / PNG / WEBP
+              </span>
             </>
           ) : (
             <>
-              <span><FileText size={13} />PDF / Word</span>
-              <span><ImageIcon size={13} />JPG / PNG / WEBP</span>
+              <span>
+                <FileText size={13} />
+                PDF / Word
+              </span>
+              <span>
+                <ImageIcon size={13} />
+                JPG / PNG / WEBP
+              </span>
             </>
           )}
-          {allowMixed && <span><Video size={13} />MP4 / WEBM / MOV</span>}
+          {allowMixed && (
+            <span>
+              <Video size={13} />
+              MP4 / WEBM / MOV
+            </span>
+          )}
         </div>
-        <small>{allowMixed ? "Poți selecta mai multe fișiere și adăuga un link." : "Mai multe fotografii sau un singur document."} Max. 100 MB/fișier.</small>
+        <small>
+          {allowMixed
+            ? "Poți selecta mai multe fișiere și adăuga un link."
+            : "Mai multe fotografii sau un singur document."}{" "}
+          Max. 100 MB/fișier.
+        </small>
       </div>
       {files.length > 0 && (
         <div className="du-selected">
-          <div className="du-selected-header"><span><FileCheck2 size={16} />Fișiere selectate</span><span className="du-count">{files.length}</span></div>
+          <div className="du-selected-header">
+            <span>
+              <FileCheck2 size={16} />
+              Fișiere selectate
+            </span>
+            <span className="du-count">{files.length}</span>
+          </div>
           <div className="du-files-grid">
             {files.map((file, index) => (
-              <PreviewFile key={`${file.name}-${file.lastModified}-${index}`} file={file} disabled={disabled} onRemove={() => onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))} />
+              <PreviewFile
+                key={`${file.name}-${file.lastModified}-${index}`}
+                file={file}
+                disabled={disabled}
+                onRemove={() => onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))}
+              />
             ))}
           </div>
         </div>
       )}
-      <div className="du-separator"><span /><small>{allowMixed ? "ADAUGĂ ȘI UN LINK" : "SAU ADAUGĂ UN LINK"}</small><span /></div>
+      <div className="du-separator">
+        <span />
+        <small>{allowMixed ? "ADAUGĂ ȘI UN LINK" : "SAU ADAUGĂ UN LINK"}</small>
+        <span />
+      </div>
       <div className="du-link-wrapper">
         <Link2 size={23} />
-        <input type="url" placeholder="https://exemplu.md/document" aria-label="Link extern" value={linkUrl} disabled={disabled} onChange={(event) => {
-          const value = event.target.value;
-          onLinkChange(value);
-          if (!allowMixed && value.trim()) onFilesChange([]);
-          onError?.("");
-        }} />
+        <input
+          type="url"
+          placeholder="https://exemplu.md/document"
+          aria-label="Link extern"
+          value={linkUrl}
+          disabled={disabled}
+          onChange={(event) => {
+            const value = event.target.value;
+            onLinkChange?.(value);
+            if (!allowMixed && value.trim()) onFilesChange([]);
+            onError?.("");
+          }}
+        />
       </div>
     </div>
   );

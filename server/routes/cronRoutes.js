@@ -21,10 +21,7 @@ const authorizeCron = (req, res, next) => {
   const expected = Buffer.from(`Bearer ${secret}`);
   const received = Buffer.from(authorization);
 
-  if (
-    expected.length !== received.length ||
-    !crypto.timingSafeEqual(expected, received)
-  ) {
+  if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
     return res.status(401).json({
       message: "Acces neautorizat.",
     });

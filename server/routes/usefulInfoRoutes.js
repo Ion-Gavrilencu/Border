@@ -1,4 +1,3 @@
-
 const express = require("express");
 
 const {
@@ -20,44 +19,21 @@ const router = express.Router();
 router.get("/", authenticate, getUsefulInfo);
 
 // USER, EDITOR, ADMIN — adăugare la favorite
-router.post(
-  "/:id/favorite",
-  authenticate,
-  addUsefulInfoFavorite
-);
+router.post("/:id/favorite", authenticate, addUsefulInfoFavorite);
 
 // USER, EDITOR, ADMIN — eliminare din favorite
-router.delete(
-  "/:id/favorite",
-  authenticate,
-  removeUsefulInfoFavorite
-);
+router.delete("/:id/favorite", authenticate, removeUsefulInfoFavorite);
 
 // USER, EDITOR, ADMIN — detaliile unei informații
 router.get("/:id", authenticate, getUsefulInfoById);
 
 // EDITOR, ADMIN — creare informație
-router.post(
-  "/",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  createUsefulInfo
-);
+router.post("/", authenticate, authorizeRoles("EDITOR", "ADMIN"), createUsefulInfo);
 
 // EDITOR, ADMIN — modificare informație
-router.patch(
-  "/:id",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  updateUsefulInfo
-);
+router.patch("/:id", authenticate, authorizeRoles("EDITOR", "ADMIN"), updateUsefulInfo);
 
 // ADMIN — ștergere informație
-router.delete(
-  "/:id",
-  authenticate,
-  authorizeRoles("ADMIN"),
-  deleteUsefulInfo
-);
+router.delete("/:id", authenticate, authorizeRoles("ADMIN"), deleteUsefulInfo);
 
 module.exports = router;

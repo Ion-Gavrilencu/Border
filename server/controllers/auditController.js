@@ -19,13 +19,7 @@ const createAuditLog = async ({
       )
       VALUES ($1, $2, $3, $4, $5)
       `,
-      [
-        userId,
-        action,
-        entityType,
-        entityId,
-        description,
-      ]
+      [userId, action, entityType, entityId, description],
     );
   } catch (error) {
     console.error("CREATE AUDIT LOG ERROR:", error);

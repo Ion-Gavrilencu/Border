@@ -1,4 +1,3 @@
-
 const express = require("express");
 
 const {
@@ -27,27 +26,12 @@ router.delete("/:id/favorite", authenticate, removeLegislationFavorite);
 router.get("/:id", authenticate, getLegislationById);
 
 // EDITOR, ADMIN — creare
-router.post(
-  "/",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  createLegislation
-);
+router.post("/", authenticate, authorizeRoles("EDITOR", "ADMIN"), createLegislation);
 
 // EDITOR, ADMIN — modificare
-router.patch(
-  "/:id",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  updateLegislation
-);
+router.patch("/:id", authenticate, authorizeRoles("EDITOR", "ADMIN"), updateLegislation);
 
 // ADMIN — ștergere
-router.delete(
-  "/:id",
-  authenticate,
-  authorizeRoles("ADMIN"),
-  deleteLegislation
-);
+router.delete("/:id", authenticate, authorizeRoles("ADMIN"), deleteLegislation);
 
 module.exports = router;

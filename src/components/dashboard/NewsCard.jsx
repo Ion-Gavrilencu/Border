@@ -15,7 +15,18 @@ const formatDate = (value) => {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ro-RO");
 };
 
-function NewsCard({ article, mainImage, ImageComponent, PrivateImageComponent, canEdit, canDelete, deletingId, onOpen, onEdit, onDelete }) {
+function NewsCard({
+  article,
+  mainImage,
+  ImageComponent,
+  PrivateImageComponent,
+  canEdit,
+  canDelete,
+  deletingId,
+  onOpen,
+  onEdit,
+  onDelete,
+}) {
   const category = categories.find((item) => item.value === article.category);
   const isInternal = article.type === "internal";
   const handleOpen = () => onOpen(article);
@@ -65,26 +76,48 @@ function NewsCard({ article, mainImage, ImageComponent, PrivateImageComponent, c
               {article.content?.slice(0, 160)}
               {article.content?.length > 160 ? "..." : ""}
             </p>
-            <span className="border-news-read">Citește știrea <ArrowRight size={15} /></span>
+            <span className="border-news-read">
+              Citește știrea <ArrowRight size={15} />
+            </span>
           </>
         ) : (
-          <a href={article.url} target="_blank" rel="noopener noreferrer" className="border-news-read">
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-news-read"
+          >
             Citește articolul <ExternalLink size={15} />
           </a>
         )}
         {canEdit && (
           <div className="border-news-article-actions">
-            <button type="button" onClick={() => onEdit(article)}><Pencil size={15} />Editează</button>
+            <button type="button" onClick={() => onEdit(article)}>
+              <Pencil size={15} />
+              Editează
+            </button>
             {canDelete && (
-              <button type="button" className="border-news-delete" disabled={deletingId === article.id} onClick={() => onDelete(article.id)}>
-                <Trash2 size={15} />Șterge
+              <button
+                type="button"
+                className="border-news-delete"
+                disabled={deletingId === article.id}
+                onClick={() => onDelete(article.id)}
+              >
+                <Trash2 size={15} />
+                Șterge
               </button>
             )}
           </div>
         )}
       </div>
       {!isInternal ? (
-        <a href={article.url} target="_blank" rel="noopener noreferrer" className="border-news-open-icon" aria-label={`Deschide ${article.title}`}>
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-news-open-icon"
+          aria-label={`Deschide ${article.title}`}
+        >
           <ArrowUpRight size={18} />
         </a>
       ) : (

@@ -1,4 +1,3 @@
-
 const multer = require("multer");
 
 const allowedMimeTypes = new Set([
@@ -19,11 +18,7 @@ const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, callback) => {
   if (!allowedMimeTypes.has(file.mimetype)) {
-    return callback(
-      new Error(
-        "Format neacceptat. Sunt permise imagini, video, PDF și Word."
-      )
-    );
+    return callback(new Error("Format neacceptat. Sunt permise imagini, video, PDF și Word."));
   }
 
   callback(null, true);

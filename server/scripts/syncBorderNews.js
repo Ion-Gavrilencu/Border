@@ -1,9 +1,6 @@
-
 require("dotenv").config();
 
-const {
-  syncBorderNews,
-} = require("../services/borderNewsSyncService");
+const { syncBorderNews } = require("../services/borderNewsSyncService");
 
 async function main() {
   try {

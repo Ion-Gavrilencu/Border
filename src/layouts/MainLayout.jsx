@@ -19,10 +19,7 @@ import {
   X,
 } from "lucide-react";
 import api from "../services/api";
-import {
-  sendMonitoringHeartbeat,
-  recordMonitoringPageView,
-} from "../services/monitoringService";
+import { sendMonitoringHeartbeat, recordMonitoringPageView } from "../services/monitoringService";
 import NotificationBell from "../components/layout/NotificationBell";
 import SearchDocumentPreview from "../components/SearchDocumentPreview";
 import "./MainLayout.css";
@@ -110,8 +107,7 @@ function MainLayout() {
       }
     };
     document.addEventListener("pointerdown", handleOutsideClick);
-    return () =>
-      document.removeEventListener("pointerdown", handleOutsideClick);
+    return () => document.removeEventListener("pointerdown", handleOutsideClick);
   }, []);
 
   useEffect(() => {
@@ -129,16 +125,12 @@ function MainLayout() {
     setShowSearchResults(true);
     const timer = setTimeout(async () => {
       try {
-        const response = await api.get(
-          `/search?q=${encodeURIComponent(value)}`,
-          {
-            signal: controller.signal,
-          },
-        );
+        const response = await api.get(`/search?q=${encodeURIComponent(value)}`, {
+          signal: controller.signal,
+        });
         setSearchResults(response.data.results || []);
       } catch (error) {
-        if (error.code === "ERR_CANCELED" || error.name === "CanceledError")
-          return;
+        if (error.code === "ERR_CANCELED" || error.name === "CanceledError") return;
         console.error("Eroare la căutare:", error);
         setSearchResults([]);
         setSearchError(true);
@@ -173,10 +165,7 @@ function MainLayout() {
   return (
     <div className="app-layout app-layout-modern">
       <Toaster position="top-right" richColors closeButton duration={4000} />
-      <SearchDocumentPreview
-        item={previewItem}
-        onClose={() => setPreviewItem(null)}
-      />
+      <SearchDocumentPreview item={previewItem} onClose={() => setPreviewItem(null)} />
       {sidebarOpen && (
         <button
           type="button"
@@ -240,10 +229,7 @@ function MainLayout() {
         </nav>
         <div className="sidebar-bottom">
           {user?.role === "ADMIN" && (
-            <NavLink
-              to="/monitorizare-utilizatori"
-              onClick={() => setSidebarOpen(false)}
-            >
+            <NavLink to="/monitorizare-utilizatori" onClick={() => setSidebarOpen(false)}>
               <Activity size={20} />
               <span>Monitorizare utilizatori</span>
             </NavLink>
@@ -254,11 +240,7 @@ function MainLayout() {
               <span>Administrare</span>
             </NavLink>
           )}
-          <button
-            type="button"
-            className="logout-button"
-            onClick={handleLogout}
-          >
+          <button type="button" className="logout-button" onClick={handleLogout}>
             <LogOut size={20} />
             <span>Deconectare</span>
           </button>
@@ -305,13 +287,9 @@ function MainLayout() {
                 {searchLoading ? (
                   <div className="search-message">Se caută...</div>
                 ) : searchError ? (
-                  <div className="search-message">
-                    Căutarea nu este disponibilă momentan.
-                  </div>
+                  <div className="search-message">Căutarea nu este disponibilă momentan.</div>
                 ) : searchResults.length === 0 ? (
-                  <div className="search-message">
-                    Nu au fost găsite rezultate.
-                  </div>
+                  <div className="search-message">Nu au fost găsite rezultate.</div>
                 ) : (
                   searchResults.map((item) => (
                     <button
@@ -367,10 +345,7 @@ function MainLayout() {
 
                         return avatar.startsWith("/")
                           ? `${
-                              new URL(
-                                api.defaults.baseURL || "/api",
-                                window.location.origin,
-                              ).origin
+                              new URL(api.defaults.baseURL || "/api", window.location.origin).origin
                             }${avatar}`
                           : avatar;
                       })()}
@@ -387,9 +362,7 @@ function MainLayout() {
                   )}
                 </div>
                 <div>
-                  <strong>
-                    {user?.fullName || user?.username || "Utilizator"}
-                  </strong>
+                  <strong>{user?.fullName || user?.username || "Utilizator"}</strong>
                   <small>
                     {user?.role === "ADMIN"
                       ? "Administrator"

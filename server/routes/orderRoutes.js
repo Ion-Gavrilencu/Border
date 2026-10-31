@@ -1,4 +1,3 @@
-
 const express = require("express");
 
 const {
@@ -29,27 +28,12 @@ router.delete("/:id/favorite", authenticate, removeOrderFavorite);
 router.get("/:id", authenticate, getOrderById);
 
 // EDITOR, ADMIN — creare ordin
-router.post(
-  "/",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  createOrder
-);
+router.post("/", authenticate, authorizeRoles("EDITOR", "ADMIN"), createOrder);
 
 // EDITOR, ADMIN — modificare ordin
-router.patch(
-  "/:id",
-  authenticate,
-  authorizeRoles("EDITOR", "ADMIN"),
-  updateOrder
-);
+router.patch("/:id", authenticate, authorizeRoles("EDITOR", "ADMIN"), updateOrder);
 
 // ADMIN — ștergere ordin
-router.delete(
-  "/:id",
-  authenticate,
-  authorizeRoles("ADMIN"),
-  deleteOrder
-);
+router.delete("/:id", authenticate, authorizeRoles("ADMIN"), deleteOrder);
 
 module.exports = router;

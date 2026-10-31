@@ -6,9 +6,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      "useAuth trebuie folosit în interiorul AuthProvider.",
-    );
+    throw new Error("useAuth trebuie folosit în interiorul AuthProvider.");
   }
 
   return context;

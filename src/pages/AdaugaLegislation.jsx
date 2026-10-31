@@ -21,8 +21,7 @@ import "./AdaugaLegislation.css";
 const getFileCategory = (file) => {
   if (file.type?.startsWith("image/")) return "image";
   if (file.type?.startsWith("video/")) return "video";
-  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || ""))
-    return "pdf";
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "")) return "pdf";
   if (/\.docx?$/i.test(file.name || "")) return "word";
   return "other";
 };
@@ -67,8 +66,7 @@ function AdaugaLegislation() {
     if (url) {
       try {
         const parsed = new URL(url);
-        if (!["http:", "https:"].includes(parsed.protocol))
-          throw new Error("Protocol invalid");
+        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Protocol invalid");
       } catch {
         setError("Introdu un link HTTP sau HTTPS valid.");
         return;
@@ -122,19 +120,14 @@ function AdaugaLegislation() {
       }
 
       if (failed.length) {
-        toast.warning(
-          `Actul normativ a fost creat, dar nu s-au salvat: ${failed.join(", ")}.`,
-        );
+        toast.warning(`Actul normativ a fost creat, dar nu s-au salvat: ${failed.join(", ")}.`);
       } else {
         toast.success("Actul normativ a fost salvat cu succes.");
       }
       navigate("/legislatie");
     } catch (requestError) {
       console.error("Eroare salvare act normativ:", requestError);
-      setError(
-        requestError.response?.data?.message ||
-          "Actul normativ nu a putut fi salvat.",
-      );
+      setError(requestError.response?.data?.message || "Actul normativ nu a putut fi salvat.");
     } finally {
       setSaving(false);
     }
@@ -145,11 +138,7 @@ function AdaugaLegislation() {
       <main className="adauga-act-page">
         <h1>Acces restricționat</h1>
         <p>Nu ai permisiunea de a adăuga acte normative.</p>
-        <button
-          type="button"
-          className="adauga-act-back"
-          onClick={() => navigate("/legislatie")}
-        >
+        <button type="button" className="adauga-act-back" onClick={() => navigate("/legislatie")}>
           <ArrowLeft size={19} /> Înapoi la listă
         </button>
       </main>
@@ -162,10 +151,7 @@ function AdaugaLegislation() {
         <div className="adauga-act-heading-content">
           <span className="adauga-act-eyebrow">GESTIONARE CONȚINUT</span>
           <h1>Adaugă act normativ</h1>
-          <p>
-            Completează datele actului și atașează documentul sau linkul
-            aferent.
-          </p>
+          <p>Completează datele actului și atașează documentul sau linkul aferent.</p>
         </div>
         <div className="adauga-act-illustration" aria-hidden="true">
           <div className="adauga-act-illustration-halo" />
@@ -200,10 +186,7 @@ function AdaugaLegislation() {
           </div>
         )}
         <div className="adauga-act-panel-grid">
-          <section
-            className="adauga-act-info-panel"
-            aria-labelledby="law-info-heading"
-          >
+          <section className="adauga-act-info-panel" aria-labelledby="law-info-heading">
             <div className="adauga-act-form-header">
               <span className="adauga-act-header-icon">
                 <FilePlus2 size={29} strokeWidth={1.9} />
@@ -243,18 +226,11 @@ function AdaugaLegislation() {
                     aria-label="Data actului normativ"
                   />
                   {!formData.lawDate && (
-                    <span
-                      className="adauga-act-date-placeholder"
-                      aria-hidden="true"
-                    >
+                    <span className="adauga-act-date-placeholder" aria-hidden="true">
                       Selectează data
                     </span>
                   )}
-                  <ChevronDown
-                    className="adauga-act-date-chevron"
-                    size={19}
-                    aria-hidden="true"
-                  />
+                  <ChevronDown className="adauga-act-date-chevron" size={19} aria-hidden="true" />
                 </div>
               </div>
               <div className="adauga-act-field">
@@ -278,18 +254,13 @@ function AdaugaLegislation() {
             </div>
           </section>
 
-          <section
-            className="adauga-act-attachments"
-            aria-labelledby="law-attachments-heading"
-          >
+          <section className="adauga-act-attachments" aria-labelledby="law-attachments-heading">
             <div className="adauga-act-attachments-heading">
               <span className="adauga-act-header-icon">
                 <Paperclip size={29} strokeWidth={2.1} />
               </span>
               <div>
-                <h2 id="law-attachments-heading">
-                  Documente și materiale atașate
-                </h2>
+                <h2 id="law-attachments-heading">Documente și materiale atașate</h2>
                 <p>Adaugă fotografii, PDF, Word, videoclipuri sau un link.</p>
               </div>
               <span
@@ -313,11 +284,7 @@ function AdaugaLegislation() {
         </div>
         <footer className="adauga-act-actions">
           <button type="submit" className="adauga-act-submit" disabled={saving}>
-            {saving ? (
-              <LoaderCircle size={23} className="adauga-act-spin" />
-            ) : (
-              <Save size={23} />
-            )}
+            {saving ? <LoaderCircle size={23} className="adauga-act-spin" /> : <Save size={23} />}
             {saving ? "Se salvează..." : "Salvează actul"}
           </button>
           <button

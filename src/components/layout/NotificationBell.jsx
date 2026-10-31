@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -52,17 +51,11 @@ const getAttachmentIcon = (attachment) => {
     return <LinkIcon size={18} />;
   }
 
-  if (
-    attachment.file_category === "image" ||
-    attachment.mime_type?.startsWith("image/")
-  ) {
+  if (attachment.file_category === "image" || attachment.mime_type?.startsWith("image/")) {
     return <FileImage size={18} />;
   }
 
-  if (
-    attachment.file_category === "pdf" ||
-    attachment.mime_type === "application/pdf"
-  ) {
+  if (attachment.file_category === "pdf" || attachment.mime_type === "application/pdf") {
     return <FileText size={18} />;
   }
 
@@ -85,29 +78,24 @@ function NotificationBell() {
   const [selectedAttachments, setSelectedAttachments] = useState([]);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
 
-  const loadNotifications = useCallback(
-    async ({ silent = false } = {}) => {
-      if (!silent) setLoading(true);
+  const loadNotifications = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
 
-      try {
-        const { data } = await api.get("/notifications");
+    try {
+      const { data } = await api.get("/notifications");
 
-        const items = Array.isArray(data.notifications)
-          ? data.notifications
-          : [];
+      const items = Array.isArray(data.notifications) ? data.notifications : [];
 
-        setNotifications(items);
-        setUnreadCount(Number(data.unreadCount) || 0);
-        setError("");
-      } catch (err) {
-        console.error("GET NOTIFICATIONS ERROR:", err);
-        setError("Notificările nu sunt disponibile momentan.");
-      } finally {
-        if (!silent) setLoading(false);
-      }
-    },
-    []
-  );
+      setNotifications(items);
+      setUnreadCount(Number(data.unreadCount) || 0);
+      setError("");
+    } catch (err) {
+      console.error("GET NOTIFICATIONS ERROR:", err);
+      setError("Notificările nu sunt disponibile momentan.");
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadNotifications();
@@ -128,10 +116,7 @@ function NotificationBell() {
 
     return () => {
       window.clearInterval(interval);
-      document.removeEventListener(
-        "visibilitychange",
-        onVisibilityChange
-      );
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [loadNotifications]);
 
@@ -181,9 +166,7 @@ function NotificationBell() {
     await api.patch(`/notifications/${id}/read`);
 
     setNotifications((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, is_read: true } : item
-      )
+      current.map((item) => (item.id === id ? { ...item, is_read: true } : item)),
     );
 
     setUnreadCount((current) => Math.max(0, current - 1));
@@ -198,8 +181,7 @@ function NotificationBell() {
       try {
         tab.opener = null;
         tab.document.title = "Se încarcă documentul...";
-        tab.document.body.textContent =
-          "Se încarcă documentul. Te rugăm să aștepți...";
+        tab.document.body.textContent = "Se încarcă documentul. Te rugăm să aștepți...";
       } catch (err) {
         console.warn("TAB INITIALIZATION:", err);
       }
@@ -212,8 +194,7 @@ function NotificationBell() {
     if (!tab || tab.closed) return;
 
     try {
-      tab.document.body.textContent =
-        "Documentul nu a putut fi deschis.";
+      tab.document.body.textContent = "Documentul nu a putut fi deschis.";
     } catch {
       tab.close();
     }
@@ -240,10 +221,7 @@ function NotificationBell() {
       throw new Error("Tip de atașament necunoscut.");
     }
 
-    const { data } = await api.get(
-      `/attachments/file/${attachment.id}`,
-      { responseType: "blob" }
-    );
+    const { data } = await api.get(`/attachments/file/${attachment.id}`, { responseType: "blob" });
 
     const blobUrl = URL.createObjectURL(data);
     objectUrlsRef.current.push(blobUrl);
@@ -321,9 +299,7 @@ function NotificationBell() {
       return false;
     }
 
-    const parts = isSafeInternalPath(item.link)
-      ? item.link.split("/").filter(Boolean)
-      : [];
+    const parts = isSafeInternalPath(item.link) ? item.link.split("/").filter(Boolean) : [];
     const entityId = parts[1];
 
     if (parts[0] !== config.basePath.slice(1) || !/^[1-9]\d*$/.test(entityId || "")) {
@@ -352,12 +328,8 @@ function NotificationBell() {
       return false;
     }
 
-    const { data } = await api.get(
-      `/attachments/${config.entityType}/${entityId}`
-    );
-    const attachments = Array.isArray(data.attachments)
-      ? data.attachments
-      : [];
+    const { data } = await api.get(`/attachments/${config.entityType}/${entityId}`);
+    const attachments = Array.isArray(data.attachments) ? data.attachments : [];
 
     if (attachments.length === 0) {
       if (tab && !tab.closed) tab.close();
@@ -439,9 +411,7 @@ function NotificationBell() {
     try {
       await api.patch("/notifications/read-all");
 
-      setNotifications((current) =>
-        current.map((item) => ({ ...item, is_read: true }))
-      );
+      setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
 
       setUnreadCount(0);
       setError("");
@@ -458,11 +428,7 @@ function NotificationBell() {
       <button
         type="button"
         className="icon-button notification-bell-trigger"
-        aria-label={
-          unreadCount > 0
-            ? `Notificări: ${unreadCount} necitite`
-            : "Notificări"
-        }
+        aria-label={unreadCount > 0 ? `Notificări: ${unreadCount} necitite` : "Notificări"}
         aria-expanded={open}
         aria-haspopup="true"
         title="Notificări"
@@ -477,23 +443,14 @@ function NotificationBell() {
         <Bell size={21} />
 
         {unreadCount > 0 && (
-          <span className="notification-bell-count">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+          <span className="notification-bell-count">{unreadCount > 99 ? "99+" : unreadCount}</span>
         )}
       </button>
 
       {open && (
-        <section
-          className="notification-panel"
-          aria-label="Lista notificărilor"
-        >
+        <section className="notification-panel" aria-label="Lista notificărilor">
           <div className="notification-panel-header">
-            <strong>
-              {showAttachmentPicker
-                ? "Alege documentul"
-                : "Notificări"}
-            </strong>
+            <strong>{showAttachmentPicker ? "Alege documentul" : "Notificări"}</strong>
 
             {showAttachmentPicker ? (
               <button
@@ -534,24 +491,18 @@ function NotificationBell() {
                   type="button"
                   className="notification-attachment-item"
                   disabled={busy}
-                  onClick={() =>
-                    handleSelectAttachment(attachment)
-                  }
+                  onClick={() => handleSelectAttachment(attachment)}
                 >
                   {getAttachmentIcon(attachment)}
 
-                  <span className="notification-attachment-name">
-                    {attachment.name}
-                  </span>
+                  <span className="notification-attachment-name">{attachment.name}</span>
 
                   <ExternalLink size={15} />
                 </button>
               ))}
             </div>
           ) : loading ? (
-            <p className="notification-empty">
-              Se încarcă notificările...
-            </p>
+            <p className="notification-empty">Se încarcă notificările...</p>
           ) : notifications.length === 0 ? (
             <div className="notification-empty">
               <Bell size={26} />
@@ -563,33 +514,18 @@ function NotificationBell() {
                 <button
                   type="button"
                   key={item.id}
-                  className={`notification-item ${
-                    item.is_read
-                      ? ""
-                      : "notification-item--unread"
-                  }`}
+                  className={`notification-item ${item.is_read ? "" : "notification-item--unread"}`}
                   onClick={() => handleOpenNotification(item)}
                   disabled={busy}
                 >
-                  <span className="notification-item-title">
-                    {item.title}
-                  </span>
+                  <span className="notification-item-title">{item.title}</span>
 
                   {item.message && (
-                    <span className="notification-item-message">
-                      {item.message}
-                    </span>
+                    <span className="notification-item-message">{item.message}</span>
                   )}
 
-                  <time
-                    className="notification-item-time"
-                    dateTime={item.created_at || undefined}
-                  >
-                    {item.created_at
-                      ? new Date(
-                          item.created_at
-                        ).toLocaleString("ro-RO")
-                      : ""}
+                  <time className="notification-item-time" dateTime={item.created_at || undefined}>
+                    {item.created_at ? new Date(item.created_at).toLocaleString("ro-RO") : ""}
                   </time>
                 </button>
               ))}

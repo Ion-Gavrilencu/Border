@@ -1,10 +1,4 @@
-import {
-  ArrowRight,
-  AlertCircle,
-  Newspaper,
-  Plus,
-  Image as ImageIcon,
-} from "lucide-react";
+import { ArrowRight, AlertCircle, Newspaper, Plus, Image as ImageIcon } from "lucide-react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -35,8 +29,9 @@ const validUrl = (value) => {
 };
 
 // NUMELE FIȘIERULUI
-const getFileName = (attachment) =>
-  attachment.original_name || attachment.name || "Document";
+const validIdNews = (id) => /^[1-9]\d*$/.test(String(id));
+
+const getFileName = (attachment) => attachment.original_name || attachment.name || "Document";
 
 // VERIFICARE FOTOGRAFIE
 const isImageAttachment = (attachment) =>
@@ -162,9 +157,7 @@ function NewsSection() {
 
       const response = await api.get("/news");
 
-      const articles = Array.isArray(response.data?.articles)
-        ? response.data.articles
-        : [];
+      const articles = Array.isArray(response.data?.articles) ? response.data.articles : [];
 
       const validArticles = articles.filter((article) => {
         if (typeof article.title !== "string" || !article.title.trim()) {
@@ -182,9 +175,7 @@ function NewsSection() {
 
       // ÎNCĂRCARE FOTOGRAFII ȘI DOCUMENTE
       const results = await Promise.allSettled(
-        validArticles.map((article) =>
-          api.get(`/attachments/news/${article.id}`),
-        ),
+        validArticles.map((article) => api.get(`/attachments/news/${article.id}`)),
       );
 
       const attachmentsByNews = {};
@@ -193,8 +184,7 @@ function NewsSection() {
         const articleId = validArticles[index].id;
 
         attachmentsByNews[articleId] =
-          result.status === "fulfilled" &&
-          Array.isArray(result.value.data?.attachments)
+          result.status === "fulfilled" && Array.isArray(result.value.data?.attachments)
             ? result.value.data.attachments
             : [];
       });
@@ -203,9 +193,7 @@ function NewsSection() {
     } catch (err) {
       console.error("NEWS ERROR:", err);
 
-      setNewsError(
-        err.response?.data?.message || "Noutățile nu au putut fi încărcate.",
-      );
+      setNewsError(err.response?.data?.message || "Noutățile nu au putut fi încărcate.");
     } finally {
       setLoadingNews(false);
     }
@@ -216,8 +204,7 @@ function NewsSection() {
     try {
       const response = await api.get("/auth/me");
 
-      const user =
-        response.data?.user || response.data?.data?.user || response.data;
+      const user = response.data?.user || response.data?.data?.user || response.data;
 
       setRole(user?.role || "USER");
     } catch (err) {
@@ -294,21 +281,12 @@ function NewsSection() {
     return () => {
       cancelled = true;
     };
-  }, [
-    loadingNews,
-    newsError,
-    news,
-    location.pathname,
-    location.search,
-    loadNewsAttachments,
-  ]);
+  }, [loadingNews, newsError, news, location.pathname, location.search, loadNewsAttachments]);
 
   useEffect(() => {
     if (!highlightedNewsId) return undefined;
     const frame = window.requestAnimationFrame(() => {
-      const element = document.querySelector(
-        `[data-news-deep-link-id="${highlightedNewsId}"]`,
-      );
+      const element = document.querySelector(`[data-news-deep-link-id="${highlightedNewsId}"]`);
       element?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     return () => window.cancelAnimationFrame(frame);
@@ -354,13 +332,15 @@ function NewsSection() {
     }
   };
 
-  // ȘTERGERE ȘTIRE
+  // ȘTERGERE ȘTIRE ȘI ATAȘAMENTE — backendul gestionează fișierele.
   const handleDeleteNews = async (id) => {
-    if (!canDelete || deletingId !== null) {
-      return;
-    }
+    if (!canDelete || deletingId !== null || !validIdNews(id)) return;
 
-    if (!window.confirm("Sigur dorești să ștergi această noutate?")) {
+    if (
+      !window.confirm(
+        "Sigur dorești să ștergi această noutate și toate fișierele atașate? Acțiunea nu poate fi anulată.",
+      )
+    ) {
       return;
     }
 
@@ -369,37 +349,26 @@ function NewsSection() {
       setNewsError("");
       setNewsMessage("");
 
-      const attachments = await loadNewsAttachments(id);
+      // Nu blocăm ștergerea pentru că există atașamente.
+      // Endpointul DELETE /news/:id trebuie să le gestioneze tranzacțional.
+      const response = await api.delete(`/news/${id}`);
 
-      const files = attachments.filter(
-        (item) => item.attachment_type === "file",
-      );
+      setNews((current) => current.filter((article) => String(article.id) !== String(id)));
+      setNewsAttachments((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
 
-      // NU ȘTERGEM ȘTIREA DACĂ ARE FIȘIERE
-      if (files.length > 0) {
-        setNewsError(
-          `Această noutate are ${files.length} fișier(e) atașat(e). ` +
-            "Șterge mai întâi atașamentele din pagina de editare, " +
-            "apoi șterge noutatea.",
-        );
-        return;
-      }
-
-      await api.delete(`/news/${id}`);
-
-      await loadNews();
-
-      if (selectedArticle?.id === id) {
+      if (String(selectedArticle?.id) === String(id)) {
+        setPreviewImage(null);
         setSelectedArticle(null);
       }
 
-      setNewsMessage("Noutatea a fost ștearsă cu succes.");
+      setNewsMessage(response.data?.message || "Noutatea a fost ștearsă cu succes.");
     } catch (err) {
       console.error("DELETE NEWS ERROR:", err);
-
-      setNewsError(
-        err.response?.data?.message || "Noutatea nu a putut fi ștearsă.",
-      );
+      setNewsError(err.response?.data?.message || "Noutatea nu a putut fi ștearsă.");
     } finally {
       setDeletingId(null);
     }
@@ -464,11 +433,7 @@ function NewsSection() {
           <div className="border-news-header-actions">
             {/* ADAUGĂ ȘTIRE */}
             {canEdit && (
-              <button
-                type="button"
-                className="border-news-add"
-                onClick={openAddPage}
-              >
+              <button type="button" className="border-news-add" onClick={openAddPage}>
                 <Plus size={17} />
                 Adaugă știre
               </button>
@@ -498,9 +463,7 @@ function NewsSection() {
           {loadingNews ? (
             <div className="border-news-state">Se încarcă noutățile...</div>
           ) : news.length === 0 ? (
-            <div className="border-news-state">
-              Nu există noutăți disponibile.
-            </div>
+            <div className="border-news-state">Nu există noutăți disponibile.</div>
           ) : (
             displayedNews.map((article) => (
               <div
@@ -540,9 +503,7 @@ function NewsSection() {
             className="border-news-show-all"
             onClick={() => setShowAllNews((current) => !current)}
           >
-            {showAllNews
-              ? "Afișează mai puține"
-              : `Vezi toate noutățile (${news.length})`}
+            {showAllNews ? "Afișează mai puține" : `Vezi toate noutățile (${news.length})`}
 
             <ArrowRight size={17} />
           </button>
@@ -553,11 +514,7 @@ function NewsSection() {
       <NewsModal
         article={selectedArticle}
         attachments={selectedArticleAttachments}
-        loading={
-          selectedArticle
-            ? Boolean(attachmentsLoading[selectedArticle.id])
-            : false
-        }
+        loading={selectedArticle ? Boolean(attachmentsLoading[selectedArticle.id]) : false}
         PrivateImageComponent={PrivateNewsImage}
         onClose={() => {
           setPreviewImage(null);
@@ -573,11 +530,7 @@ function NewsSection() {
         attachments={
           selectedArticle
             ? (newsAttachments[selectedArticle.id] || [])
-                .filter(
-                  (item) =>
-                    item.attachment_type === "file" &&
-                    item.file_category === "image",
-                )
+                .filter((item) => item.attachment_type === "file" && item.file_category === "image")
                 .sort((a, b) => Number(a.id) - Number(b.id))
             : []
         }

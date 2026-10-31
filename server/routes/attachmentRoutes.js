@@ -39,12 +39,7 @@ router.post(
   uploadAttachment,
 );
 
-router.post(
-  "/link",
-  authMiddleware,
-  canManageAttachments,
-  createAttachmentLink,
-);
+router.post("/link", authMiddleware, canManageAttachments, createAttachmentLink);
 
 router.delete(
   "/:id",
