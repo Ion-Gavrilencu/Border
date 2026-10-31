@@ -3,10 +3,8 @@ const {
   touchMonitoringSession,
   logMonitoringEvent,
 } = require("../services/monitoringService");
-
 const ONLINE_INTERVAL = "2 minutes";
 
-// Actualizează numai sesiunea autentificată a dispozitivului curent.
 async function heartbeat(req, res) {
   try {
     const updated = await touchMonitoringSession({
@@ -14,10 +12,8 @@ async function heartbeat(req, res) {
       userId: req.user.id,
       req,
     });
-
-    if (!updated) {
+    if (!updated)
       return res.status(401).json({ message: "Sesiunea nu mai este activă." });
-    }
     return res.json({ ok: true });
   } catch (error) {
     console.error("MONITORING HEARTBEAT ERROR:", error);
@@ -27,65 +23,55 @@ async function heartbeat(req, res) {
   }
 }
 
-// Starea Online = cel puțin o sesiune validă cu heartbeat recent.
-// Detaliile dispozitivului provin din cea mai recentă sesiune a utilizatorului.
 async function getOverview(req, res) {
   try {
     const [users, stats] = await Promise.all([
       pool.query(`
-        SELECT
-          u.id, u.username, u.email, u.full_name, u.role, u.created_at,
+        SELECT u.id, u.username, u.email, u.full_name, u.role, u.created_at,
           CASE WHEN u.avatar_data IS NOT NULL THEN
             '/api/auth/avatar-image/' || u.id || '?v=' ||
             (EXTRACT(EPOCH FROM COALESCE(u.avatar_updated_at, u.created_at)) * 1000)::bigint::text
           ELSE NULL END AS avatar_url,
-          latest.last_seen_at,
-          latest.started_at AS session_started_at,
-          latest.user_agent,
-          EXISTS (
-            SELECT 1 FROM monitoring_sessions active_session
-            WHERE active_session.user_id = u.id
-              AND active_session.logged_out_at IS NULL
-              AND active_session.expires_at > NOW()
-              AND active_session.last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}'
-          ) AS online
+          latest.last_seen_at, latest.started_at AS session_started_at, latest.user_agent,
+          COALESCE(sessions.active_sessions, 0)::int AS active_sessions,
+          COALESCE(sessions.devices, '[]'::json) AS sessions,
+          COALESCE(sessions.active_sessions, 0) > 0 AS online
         FROM users u
         LEFT JOIN LATERAL (
           SELECT s.last_seen_at, s.started_at, s.user_agent
+          FROM monitoring_sessions s WHERE s.user_id = u.id
+          ORDER BY s.last_seen_at DESC, s.id DESC LIMIT 1
+        ) latest ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*)::int AS active_sessions,
+            COALESCE(json_agg(json_build_object(
+              'session_id', s.session_id,
+              'started_at', s.started_at,
+              'last_seen_at', s.last_seen_at,
+              'user_agent', s.user_agent,
+              'online', TRUE
+            ) ORDER BY s.last_seen_at DESC), '[]'::json) AS devices
           FROM monitoring_sessions s
           WHERE s.user_id = u.id
-          ORDER BY s.last_seen_at DESC, s.id DESC
-          LIMIT 1
-        ) latest ON TRUE
+            AND s.logged_out_at IS NULL
+            AND s.expires_at > NOW()
+            AND s.last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}'
+        ) sessions ON TRUE
         ORDER BY u.id ASC
       `),
       pool.query(`
         SELECT
-          (
-            SELECT COUNT(DISTINCT user_id)::int
-            FROM monitoring_sessions
-            WHERE logged_out_at IS NULL
-              AND expires_at > NOW()
-              AND last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}'
-          ) AS online_users,
-          (
-            SELECT COUNT(*)::int FROM monitoring_events
-            WHERE action = 'login'
-              AND created_at >= (DATE_TRUNC('day', NOW() AT TIME ZONE 'Europe/Chisinau') AT TIME ZONE 'Europe/Chisinau')
-          ) AS logins_today,
-          (
-            SELECT COUNT(*)::int FROM monitoring_events
-            WHERE action = 'search'
-              AND created_at >= NOW() - INTERVAL '24 hours'
-          ) AS searches_24h,
-          (
-            SELECT COUNT(*)::int FROM monitoring_events
-            WHERE action = 'download'
-              AND created_at >= NOW() - INTERVAL '24 hours'
-          ) AS downloads_24h
+          (SELECT COUNT(DISTINCT user_id)::int FROM monitoring_sessions
+           WHERE logged_out_at IS NULL AND expires_at > NOW()
+             AND last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}') AS online_users,
+          (SELECT COUNT(*)::int FROM monitoring_events WHERE action = 'login'
+           AND created_at >= (DATE_TRUNC('day', NOW() AT TIME ZONE 'Europe/Chisinau') AT TIME ZONE 'Europe/Chisinau')) AS logins_today,
+          (SELECT COUNT(*)::int FROM monitoring_events WHERE action = 'search'
+           AND created_at >= NOW() - INTERVAL '24 hours') AS searches_24h,
+          (SELECT COUNT(*)::int FROM monitoring_events WHERE action = 'download'
+           AND created_at >= NOW() - INTERVAL '24 hours') AS downloads_24h
       `),
     ]);
-
     return res.json({ users: users.rows, stats: stats.rows[0] });
   } catch (error) {
     console.error("MONITORING OVERVIEW ERROR:", error);
@@ -125,7 +111,6 @@ async function getActivities(req, res) {
         : "";
     const start = typeof req.query.start === "string" ? req.query.start : "";
     const end = typeof req.query.end === "string" ? req.query.end : "";
-
     if (
       (userId !== null && (!Number.isSafeInteger(userId) || userId < 1)) ||
       (start && !validDate(start)) ||
@@ -134,14 +119,12 @@ async function getActivities(req, res) {
     ) {
       return res.status(400).json({ message: "Filtre invalide." });
     }
-
     const clauses = [];
     const values = [];
     const add = (sql, value) => {
       values.push(value);
       clauses.push(sql.replace("?", `$${values.length}`));
     };
-
     if (userId !== null) add("e.user_id = ?", userId);
     if (action && action !== "all") add("e.action = ?", action);
     if (search) add("COALESCE(e.details, '') ILIKE ?", `%${search}%`);
@@ -152,23 +135,19 @@ async function getActivities(req, res) {
         "e.created_at < ((?::date + INTERVAL '1 day') AT TIME ZONE 'Europe/Chisinau')",
         end,
       );
-
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
     const base = `FROM monitoring_events e LEFT JOIN users u ON u.id = e.user_id ${where}`;
-
     const count = await pool.query(
       `SELECT COUNT(*)::int AS total ${base}`,
       values,
     );
     const result = await pool.query(
-      `SELECT e.id, e.user_id, e.action, e.details, e.ip_address,
-              e.user_agent, e.created_at, u.username, u.full_name
-       ${base}
+      `SELECT e.id, e.user_id, e.action, e.details, e.ip_address, e.user_agent,
+              e.created_at, u.username, u.full_name ${base}
        ORDER BY e.created_at DESC, e.id DESC
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, limit, (page - 1) * limit],
     );
-
     return res.json({
       activities: result.rows,
       total: count.rows[0].total,
@@ -194,7 +173,6 @@ async function recordPageView(req, res) {
         .status(400)
         .json({ message: "Pagina accesată este invalidă." });
     }
-
     await logMonitoringEvent({
       userId: req.user.id,
       action: "page_view",

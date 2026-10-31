@@ -20,6 +20,8 @@ import {
   Crown,
   UserRound,
   Check,
+  Info,
+  Bell,
   XCircle,
 } from "lucide-react";
 
@@ -49,6 +51,43 @@ const confirmDialog = (options) =>
     ...options,
   });
 
+// Fotografia din profil este afișată numai în tabelul desktop.
+function AdminDesktopAvatar({ user }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const avatarValue = user.avatar_url || user.avatarURL || "";
+  const apiOrigin = new URL(
+    api.defaults.baseURL || "/api",
+    window.location.origin,
+  ).origin;
+  const avatarUrl =
+    typeof avatarValue === "string" && avatarValue.trim()
+      ? avatarValue.startsWith("http://") || avatarValue.startsWith("https://")
+        ? avatarValue
+        : avatarValue.startsWith("/")
+          ? `${apiOrigin}${avatarValue}`
+          : ""
+      : `${apiOrigin}/api/auth/avatar-image/${encodeURIComponent(user.id)}`;
+  const initial = String(user.full_name || user.username || "U")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+
+  return (
+    <span className="admin-desktop-avatar" aria-hidden="true">
+      {avatarUrl && !imageFailed ? (
+        <img
+          src={avatarUrl}
+          alt=""
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <span>{initial}</span>
+      )}
+    </span>
+  );
+}
+
 function Administrare() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +101,7 @@ function Administrare() {
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [sendEmailNotification, setSendEmailNotification] = useState(true);
   const [newUser, setNewUser] = useState({ ...emptyUser });
 
   const loadUsers = async (showLoader = true) => {
@@ -100,9 +140,11 @@ function Administrare() {
         fullName: newUser.fullName.trim(),
         email: newUser.email.trim(),
         role: newUser.role,
+        sendEmailNotification,
       });
 
       setNewUser({ ...emptyUser });
+      setSendEmailNotification(true);
       setShowCreateForm(false);
 
       toast.success(response.data.message || "Utilizatorul a fost creat.");
@@ -323,128 +365,213 @@ function Administrare() {
         <button
           type="button"
           className="btn btn-primary border-admin-add-button"
-          onClick={() => setShowCreateForm((current) => !current)}
+          onClick={() => setShowCreateForm(true)}
         >
-          {showCreateForm ? <X size={17} /> : <Plus size={17} />}
-          {showCreateForm ? "Anulează" : "Adaugă utilizator"}
+          <Plus size={17} />
+          Adaugă utilizator
         </button>
       </div>
 
-      <AnimatePresence initial={false}>
+      <AnimatePresence>
         {showCreateForm && (
           <motion.div
-            key="create-form"
-            initial={{ opacity: 0, height: 0, y: -8 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -8 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: "hidden" }}
+            className="border-admin-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !creatingUser) {
+                setShowCreateForm(false);
+              }
+            }}
           >
-            <form
-              className="card border-admin-create-form"
-              onSubmit={handleCreateUser}
+            <motion.div
+              className="border-admin-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="admin-create-title"
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="border-admin-form-heading">
-                <UserPlus size={20} />
-                <div>
-                  <h2>Creare utilizator</h2>
-                  <p>Completează datele pentru noul cont.</p>
-                </div>
+              <div className="border-admin-mobile-cancel">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  disabled={creatingUser}
+                >
+                  <X size={23} /> Anulează
+                </button>
               </div>
-
-              <div className="border-admin-form-grid">
-                <label>
-                  Nume și prenume
-                  <input
-                    className="form-input"
-                    type="text"
-                    required
-                    maxLength={150}
-                    value={newUser.fullName}
-                    onChange={(event) =>
-                      setNewUser((current) => ({
-                        ...current,
-                        fullName: event.target.value,
-                      }))
-                    }
-                    placeholder="Nume complet"
-                  />
-                </label>
-
-                <label>
-                  Nume de utilizator
-                  <input
-                    className="form-input"
-                    type="text"
-                    required
-                    maxLength={50}
-                    autoComplete="off"
-                    value={newUser.username}
-                    onChange={(event) =>
-                      setNewUser((current) => ({
-                        ...current,
-                        username: event.target.value,
-                      }))
-                    }
-                    placeholder="Username"
-                  />
-                </label>
-
-                <label>
-                  Adresă de e-mail
-                  <input
-                    className="form-input"
-                    type="email"
-                    required
-                    maxLength={254}
-                    value={newUser.email}
-                    onChange={(event) =>
-                      setNewUser((current) => ({
-                        ...current,
-                        email: event.target.value,
-                      }))
-                    }
-                    placeholder="exemplu@email.com"
-                  />
-                </label>
-
-                <label>
-                  Rol
-                  <select
-                    className="form-select"
-                    value={newUser.role}
-                    onChange={(event) =>
-                      setNewUser((current) => ({
-                        ...current,
-                        role: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="USER">USER</option>
-                    <option value="EDITOR">EDITOR</option>
-                    <option value="ADMIN">ADMIN</option>
-                  </select>
-                </label>
-              </div>
-
               <button
-                type="submit"
-                className="btn btn-primary border-admin-submit"
+                className="border-admin-modal-close"
+                type="button"
+                aria-label="Închide formularul"
+                onClick={() => setShowCreateForm(false)}
                 disabled={creatingUser}
               >
-                {creatingUser ? (
-                  <>
-                    <LoaderCircle size={17} className="border-admin-spin" />
-                    Se creează...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={17} />
-                    Creează utilizator
-                  </>
-                )}
+                <X size={22} />
               </button>
-            </form>
+              <div className="border-admin-modal-hero">
+                <div className="border-admin-hero-icon">
+                  <UserPlus size={31} />
+                </div>
+                <div className="border-admin-hero-text">
+                  <h2 id="admin-create-title">Creare utilizator</h2>
+                  <p>Completează datele pentru noul cont.</p>
+                </div>
+                <div className="border-admin-hero-art" aria-hidden="true">
+                  <UserRound size={66} strokeWidth={1.7} />
+                  <span>
+                    <Plus size={24} />
+                  </span>
+                </div>
+              </div>
+              <form
+                className="border-admin-modal-form"
+                onSubmit={handleCreateUser}
+              >
+                <div className="border-admin-form-fields">
+                  <div className="border-admin-field">
+                    <UserRound size={21} aria-hidden="true" />
+                    <div>
+                      <label htmlFor="admin-new-fullname">
+                        Nume și prenume
+                      </label>
+                      <input
+                        id="admin-new-fullname"
+                        type="text"
+                        required
+                        maxLength={150}
+                        autoComplete="name"
+                        placeholder="Nume complet"
+                        value={newUser.fullName}
+                        onChange={(e) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            fullName: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="border-admin-field">
+                    <UserRound size={21} aria-hidden="true" />
+                    <div>
+                      <label htmlFor="admin-new-username">
+                        Nume de utilizator
+                      </label>
+                      <input
+                        id="admin-new-username"
+                        type="text"
+                        required
+                        maxLength={50}
+                        autoComplete="off"
+                        placeholder="Username"
+                        value={newUser.username}
+                        onChange={(e) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            username: e.target.value,
+                          }))
+                        }
+                      />
+                      <small>
+                        Se vor folosi litere mici, cifre și simbolul _
+                        (underscore).
+                      </small>
+                    </div>
+                  </div>
+                  <div className="border-admin-field">
+                    <Mail size={21} aria-hidden="true" />
+                    <div>
+                      <label htmlFor="admin-new-email">Adresă de e-mail</label>
+                      <input
+                        id="admin-new-email"
+                        type="email"
+                        required
+                        maxLength={254}
+                        autoComplete="email"
+                        placeholder="exemplu@email.com"
+                        value={newUser.email}
+                        onChange={(e) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            email: e.target.value,
+                          }))
+                        }
+                      />
+                      <small>Se va folosi o adresă de e-mail validă.</small>
+                    </div>
+                  </div>
+                  <div className="border-admin-field">
+                    <ShieldCheck size={21} aria-hidden="true" />
+                    <div>
+                      <label htmlFor="admin-new-role">Rol</label>
+                      <select
+                        id="admin-new-role"
+                        value={newUser.role}
+                        onChange={(e) =>
+                          setNewUser((current) => ({
+                            ...current,
+                            role: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="USER">USER</option>
+                        <option value="EDITOR">EDITOR</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                      <div className="border-admin-role-hint">
+                        <Info size={16} />
+                        <span>
+                          Rolul determină drepturile de acces ale utilizatorului
+                          în platformă.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <label className="border-admin-notify">
+                  <Mail size={21} aria-hidden="true" />
+                  <span>
+                    <strong>Trimite notificare pe e-mail</strong>
+                    <small>
+                      Utilizatorul va primi un e-mail cu informații despre cont.
+                    </small>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={sendEmailNotification}
+                    onChange={(e) => setSendEmailNotification(e.target.checked)}
+                  />
+                  <span className="border-admin-switch" aria-hidden="true" />
+                </label>
+                <div className="border-admin-modal-actions">
+                  <button
+                    className="border-admin-cancel-btn"
+                    type="button"
+                    disabled={creatingUser}
+                    onClick={() => setShowCreateForm(false)}
+                  >
+                    <X size={18} /> Anulează
+                  </button>
+                  <button
+                    className="border-admin-create-btn"
+                    type="submit"
+                    disabled={creatingUser}
+                  >
+                    {creatingUser ? (
+                      <LoaderCircle size={19} className="border-admin-spin" />
+                    ) : (
+                      <UserPlus size={19} />
+                    )}
+                    {creatingUser ? "Se creează..." : "Creează utilizator"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -574,7 +701,12 @@ function Administrare() {
                       </td>
 
                       <td data-label="Utilizator">
-                        <span className="admin-username">{user.username}</span>
+                        <span className="admin-desktop-identity">
+                          <AdminDesktopAvatar key={user.id} user={user} />
+                          <span className="admin-username">
+                            {user.username}
+                          </span>
+                        </span>
                       </td>
 
                       <td data-label="Nume complet">{user.full_name || "—"}</td>

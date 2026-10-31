@@ -62,10 +62,10 @@ const getInfoFormat = (item) => {
 
   if (value.includes("zip")) return "ZIP";
 
-  if (value.includes("image") || /\.(jpg|jpeg|png|webp)$/.test(value))
+  if (value.includes("image") || /\.(jpg|jpeg|png|webp)$/i.test(value))
     return "IMG";
 
-  if (value.includes("video") || /\.(mp4|webm)$/.test(value)) return "VIDEO";
+  if (value.includes("video") || /\.(mp4|webm)$/i.test(value)) return "VIDEO";
 
   if (item.url) return "LINK";
 
@@ -189,7 +189,9 @@ function InformatiiUtile() {
   const location = useLocation();
 
   const navigationHandledRef = useRef(null);
+
   const deepLinkId = new URLSearchParams(location.search).get("open");
+
   const [highlightedInfoId, setHighlightedInfoId] = useState(null);
 
   const [targetInfoId, setTargetInfoId] = useState(null);
@@ -352,6 +354,7 @@ function InformatiiUtile() {
     setSort("recent");
 
     setTargetInfoId(String(requestedId));
+
     setHighlightedInfoId(String(requestedId));
   }, [loading, informatii, location.key, location.state, deepLinkId]);
 
@@ -832,11 +835,105 @@ function InformatiiUtile() {
         </div>
 
         <div className="informatii-hero-art" aria-hidden="true">
-          <div className="info-art-back" />
-
-          <FileText size={100} strokeWidth={1.2} />
-
-          <span>i</span>
+          <svg
+            className="informatii-art-svg"
+            viewBox="0 0 320 240"
+            xmlns="http://www.w3.org/2000/svg"
+            focusable="false"
+          >
+            <defs>
+              <radialGradient id="infoHeroGlow">
+                <stop offset="0" stopColor="#c1ddff" stopOpacity=".95" />
+                <stop offset=".62" stopColor="#deefff" stopOpacity=".7" />
+                <stop offset="1" stopColor="#eaf5ff" stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="infoHeroPaper" x1="0" y1="0" x2="1" y2="1">
+                <stop stopColor="#fff" />
+                <stop offset="1" stopColor="#f8fbff" />
+              </linearGradient>
+              <linearGradient id="infoHeroBlue" x1="0" y1="0" x2="1" y2="1">
+                <stop stopColor="#2d9bff" />
+                <stop offset="1" stopColor="#0063ec" />
+              </linearGradient>
+              <filter
+                id="infoHeroShadow"
+                x="-45%"
+                y="-45%"
+                width="190%"
+                height="200%"
+              >
+                <feDropShadow
+                  dx="0"
+                  dy="10"
+                  stdDeviation="12"
+                  floodColor="#72a8e7"
+                  floodOpacity=".27"
+                />
+              </filter>
+            </defs>
+            <ellipse
+              cx="168"
+              cy="122"
+              rx="151"
+              ry="112"
+              fill="url(#infoHeroGlow)"
+            />
+            <g
+              transform="translate(82 54) rotate(-19 68 84)"
+              filter="url(#infoHeroShadow)"
+            >
+              <rect
+                x="0"
+                y="0"
+                width="134"
+                height="170"
+                rx="12"
+                fill="url(#infoHeroPaper)"
+              />
+              <path
+                d="M22 48H102 M22 69H108 M22 90H95 M22 111H103"
+                stroke="#c3defd"
+                strokeWidth="9"
+                strokeLinecap="round"
+              />
+            </g>
+            <g
+              transform="translate(126 22) rotate(10 74 94)"
+              filter="url(#infoHeroShadow)"
+            >
+              <path
+                d="M12 0H105L148 43V176Q148 188 136 188H12Q0 188 0 176V12Q0 0 12 0Z"
+                fill="url(#infoHeroPaper)"
+              />
+              <path
+                d="M105 0V31Q105 43 117 43H148"
+                fill="#eff7ff"
+                stroke="#e5f1ff"
+                strokeWidth="2"
+              />
+              <path
+                d="M27 57H79 M27 83H116 M27 109H108 M27 135H83 M27 158H65"
+                stroke="#a9d0ff"
+                strokeWidth="9"
+                strokeLinecap="round"
+              />
+            </g>
+            <g filter="url(#infoHeroShadow)">
+              <circle cx="246" cy="171" r="43" fill="url(#infoHeroBlue)" />
+              <text
+                x="246"
+                y="200"
+                fontFamily="Georgia, serif"
+                fontStyle="italic"
+                fontWeight="bold"
+                fontSize="62"
+                textAnchor="middle"
+                fill="white"
+              >
+                i
+              </text>
+            </g>
+          </svg>
         </div>
       </header>
 
@@ -1051,7 +1148,9 @@ function InformatiiUtile() {
                           String(item.id) === highlightedInfoId
                             ? {
                                 outline: "3px solid #2b70d7",
+
                                 outlineOffset: "-3px",
+
                                 backgroundColor: "#eef5ff",
                               }
                             : undefined
