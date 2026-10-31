@@ -3,11 +3,10 @@
 const { del } = require("@vercel/blob");
 const pool = require("../config/database");
 
-// Only execute this service from a trusted scheduled/admin job.
-// Never expose it as an unauthenticated HTTP endpoint.
-// Explicitly opt in on production: BLOB_CLEANUP_ENABLED=true.
+// Validarea căilor fișierelor din Vercel Blob
 const VALID_BLOB_PATH =
   /^attachments\/(telegrame|ordine|legislatie|informatii_utile|news)\/([1-9]\d*)\/[^/\\?#]+$/;
+
 const RETRY_AFTER_MINUTES = 15;
 
 function getSafeLimit(limit) {
