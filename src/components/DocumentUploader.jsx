@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import imageCompression from "browser-image-compression";
 import {
   CloudUpload,
   FileText,
@@ -13,6 +14,9 @@ import {
 } from "lucide-react";
 import "./DocumentUploader.css";
 
+const MAX_INPUT_SIZE = 100 * 1024 * 1024;
+const MAX_UPLOAD_SIZE = 4 * 1024 * 1024;
+const TARGET_IMAGE_SIZE_MB = 1;
 const ACCEPTED = {
   "application/pdf": [".pdf"],
   "application/msword": [".doc"],
@@ -34,6 +38,37 @@ const formatSize = (bytes = 0) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+async function prepareFile(file) {
+  if (!isImage(file)) {
+    if (file.size > MAX_UPLOAD_SIZE) {
+      throw new Error(
+        `${file.name}: fișierul depășește 4 MB. Limita este necesară pentru încărcarea actuală pe Vercel.`,
+      );
+    }
+    return file;
+  }
+
+  if (file.size <= TARGET_IMAGE_SIZE_MB * 1024 * 1024) return file;
+
+  const compressed = await imageCompression(file, {
+    maxSizeMB: TARGET_IMAGE_SIZE_MB,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    initialQuality: 0.85,
+    preserveExif: false,
+  });
+
+  if (compressed.size > MAX_UPLOAD_SIZE) {
+    throw new Error(`${file.name}: fotografia rămâne prea mare după comprimare.`);
+  }
+
+  // Menținem un obiect File, necesar pentru FormData și previzualizare.
+  return new File([compressed], file.name, {
+    type: compressed.type || file.type,
+    lastModified: file.lastModified,
+  });
+}
+
 function PreviewFile({ file, onRemove, disabled }) {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewFailed, setPreviewFailed] = useState(false);
@@ -47,10 +82,7 @@ function PreviewFile({ file, onRemove, disabled }) {
 
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-    };
+    return () => URL.revokeObjectURL(url);
   }, [file]);
 
   return (
@@ -94,38 +126,67 @@ export default function DocumentUploader({
   allowMixed = false,
   variant = "default",
 }) {
+  const [processing, setProcessing] = useState(false);
+  const busyRef = useRef(false);
+  const filesRef = useRef(files);
+  filesRef.current = files;
+
   const onDrop = useCallback(
-    (acceptedFiles, rejectedFiles) => {
-      if (disabled) return;
+    async (acceptedFiles, rejectedFiles) => {
+      if (disabled || busyRef.current) return;
       if (rejectedFiles.length) {
         onError?.(
           "Unul sau mai multe fișiere au un format neacceptat ori depășesc limita de 100 MB.",
         );
       }
       if (!acceptedFiles.length) return;
-      if (allowMixed) {
-        onFilesChange((files || []).concat(acceptedFiles));
-        if (!rejectedFiles.length) onError?.("");
-        return;
-      }
-      const allImages = acceptedFiles.every(isImage);
-      if (!allImages && acceptedFiles.length > 1) {
+
+      if (!allowMixed && !acceptedFiles.every(isImage) && acceptedFiles.length > 1) {
         onError?.("Poți adăuga mai multe fotografii sau un singur document.");
         return;
       }
-      onFilesChange(acceptedFiles);
-      onLinkChange?.("");
-      if (!rejectedFiles.length) onError?.("");
+
+      busyRef.current = true;
+      setProcessing(true);
+      try {
+        const results = await Promise.allSettled(acceptedFiles.map(prepareFile));
+        const prepared = results
+          .filter((result) => result.status === "fulfilled")
+          .map((result) => result.value);
+        const errors = results
+          .filter((result) => result.status === "rejected")
+          .map((result) => result.reason?.message || "Fișierul nu a putut fi pregătit.");
+
+        if (prepared.length) {
+          const existing = filesRef.current || [];
+          if (allowMixed) {
+            onFilesChange(existing.concat(prepared));
+          } else {
+            const next = existing.concat(prepared);
+            if (next.length > 1 && !next.every(isImage)) {
+              onError?.("Poți adăuga mai multe fotografii sau un singur document.");
+              return;
+            }
+            onFilesChange(prepared);
+            onLinkChange?.("");
+          }
+        }
+        if (errors.length) onError?.(errors.join(" "));
+        else if (!rejectedFiles.length) onError?.("");
+      } finally {
+        busyRef.current = false;
+        setProcessing(false);
+      }
     },
-    [disabled, allowMixed, files, onFilesChange, onLinkChange, onError],
+    [disabled, allowMixed, onFilesChange, onLinkChange, onError],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: allowMixed ? { ...ACCEPTED, ...VIDEO_ACCEPTED } : ACCEPTED,
-    maxSize: 100 * 1024 * 1024,
+    maxSize: MAX_INPUT_SIZE,
     multiple: true,
-    disabled,
+    disabled: disabled || processing,
     noClick: true,
     noKeyboard: true,
   });
@@ -137,11 +198,22 @@ export default function DocumentUploader({
         <div className="du-upload-icon">
           <CloudUpload size={isTelegram ? 54 : 28} strokeWidth={1.8} />
         </div>
-        <strong>{isDragActive ? "Eliberează fișierele aici" : "Trage fișierele aici"}</strong>
+        <strong>
+          {processing
+            ? "Se comprimă fotografiile..."
+            : isDragActive
+              ? "Eliberează fișierele aici"
+              : "Trage fișierele aici"}
+        </strong>
         <p>Sau selectează-le de pe calculator</p>
-        <button type="button" className="du-select-button" onClick={open} disabled={disabled}>
+        <button
+          type="button"
+          className="du-select-button"
+          onClick={open}
+          disabled={disabled || processing}
+        >
           <Upload size={19} />
-          Alege fișiere
+          {processing ? "Se pregătesc..." : "Alege fișiere"}
         </button>
         <div className="du-formats">
           {isTelegram ? (
@@ -182,7 +254,7 @@ export default function DocumentUploader({
           {allowMixed
             ? "Poți selecta mai multe fișiere și adăuga un link."
             : "Mai multe fotografii sau un singur document."}{" "}
-          Max. 100 MB/fișier.
+          Fotografii comprimate automat; alte fișiere max. 4 MB.
         </small>
       </div>
       {files.length > 0 && (
@@ -199,7 +271,7 @@ export default function DocumentUploader({
               <PreviewFile
                 key={`${file.name}-${file.lastModified}-${index}`}
                 file={file}
-                disabled={disabled}
+                disabled={disabled || processing}
                 onRemove={() => onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))}
               />
             ))}
@@ -218,7 +290,7 @@ export default function DocumentUploader({
           placeholder="https://exemplu.md/document"
           aria-label="Link extern"
           value={linkUrl}
-          disabled={disabled}
+          disabled={disabled || processing}
           onChange={(event) => {
             const value = event.target.value;
             onLinkChange?.(value);
