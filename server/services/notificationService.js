@@ -150,7 +150,7 @@ const notifyUsers = async ({ actorId, title, message, type, link }) => {
     typeof link !== "string" ||
     !link.startsWith("/") ||
     link.startsWith("//") ||
-    /[\r\&#x6E;**\\\\**]/.test(link)
+    /[\r\n\\]/.test(link)
   ) {
     throw new Error("Date invalide pentru notificare.");
   }
@@ -210,6 +210,8 @@ const notifyUsers = async ({ actorId, title, message, type, link }) => {
   // notificările interne rămân funcționale.
 
   if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASSWORD || !SMTP_FROM) {
+    console.warn("NOTIFICATION EMAIL: SMTP incomplet; trimiterea e-mailurilor a fost omisă.");
+
     return result.rowCount;
   }
 
@@ -239,6 +241,10 @@ const notifyUsers = async ({ actorId, title, message, type, link }) => {
     );
 
     if (recipients.rows.length === 0) {
+      console.info(
+        "NOTIFICATION EMAIL: Nu există destinatari activi cu notificările e-mail activate (autorul este exclus).",
+      );
+
       return result.rowCount;
     }
 
@@ -321,6 +327,19 @@ const notifyUsers = async ({ actorId, title, message, type, link }) => {
     );
 
     const failed = outcomes.filter((outcome) => outcome.status === "rejected").length;
+
+    for (const outcome of outcomes) {
+      if (outcome.status === "rejected") {
+        console.error(
+          "NOTIFICATION EMAIL SEND ERROR:",
+          outcome.reason?.message || String(outcome.reason),
+        );
+      }
+    }
+
+    console.info(
+      `NOTIFICATION EMAIL: ${outcomes.length - failed}/${outcomes.length} trimiteri acceptate de serverul SMTP.`,
+    );
 
     if (failed > 0) {
       console.error(`NOTIFICATION EMAIL: ${failed} trimiteri eșuate din ${outcomes.length}.`);
