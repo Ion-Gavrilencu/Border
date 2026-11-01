@@ -31,13 +31,12 @@ import api from "../services/api";
 import { useAuth } from "../context/authStore";
 
 import TelegramGallery from "../components/TelegramGallery";
-
+import Swal from "sweetalert2";
 import "./Legislatie.css";
 
 const PAGE_SIZES = [8, 12, 24];
 
-const getDate = (item) =>
-  item.law_date || item.created_at || item.createdAt || "";
+const getDate = (item) => item.law_date || item.created_at || item.createdAt || "";
 
 const getTimestamp = (item) => {
   const time = new Date(getDate(item)).getTime();
@@ -68,15 +67,12 @@ const getTags = (item) => {
 };
 
 const isArchived = (item) =>
-  item.is_archived === true ||
-  item.archived === true ||
-  item.status === "archived";
+  item.is_archived === true || item.archived === true || item.status === "archived";
 
 const getAttachmentCount = (item) => {
   if (Array.isArray(item.attachments)) return item.attachments.length;
 
-  const count =
-    item.attachments_count ?? item.attachment_count ?? item.files_count;
+  const count = item.attachments_count ?? item.attachment_count ?? item.files_count;
 
   return Number.isFinite(Number(count)) && count !== undefined && count !== null
     ? Number(count)
@@ -97,15 +93,9 @@ const getLegislationDisplayTitle = (item) => {
   // Eliminăm numărul existent pentru a evita dublarea.
   const escapedNumber = number.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  const numberPattern = new RegExp(
-    `\\s*(?:nr\\.?\\s*)?${escapedNumber}(?!\\d)`,
-    "i",
-  );
+  const numberPattern = new RegExp(`\\s*(?:nr\\.?\\s*)?${escapedNumber}(?!\\d)`, "i");
 
-  const cleanTitle = title
-    .replace(numberPattern, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const cleanTitle = title.replace(numberPattern, "").replace(/\s+/g, " ").trim();
 
   // Identificăm tipul actului legislativ.
   const prefix = cleanTitle.match(
@@ -174,9 +164,7 @@ function Legislatie() {
 
   const [favorites, setFavorites] = useState(() => {
     try {
-      const stored = JSON.parse(
-        localStorage.getItem("legislatie-favorites") || "[]",
-      );
+      const stored = JSON.parse(localStorage.getItem("legislatie-favorites") || "[]");
 
       return Array.isArray(stored) ? stored.map(String) : [];
     } catch {
@@ -198,10 +186,7 @@ function Legislatie() {
         if (active) setLegislatie(response.data.legislatie || []);
       } catch (err) {
         if (active)
-          setError(
-            err.response?.data?.message ||
-              "Nu s-au putut încărca actele normative.",
-          );
+          setError(err.response?.data?.message || "Nu s-au putut încărca actele normative.");
       } finally {
         if (active) setLoading(false);
       }
@@ -228,114 +213,106 @@ function Legislatie() {
     }
   };
 
-  
-const handleOpenLegislation = async (legislation) => {
-  try {
-    setError("");
+  const handleOpenLegislation = async (legislation) => {
+    try {
+      setError("");
 
-    const response = await api.get(
-      `/attachments/legislatie/${legislation.id}`
-    );
+      const response = await api.get(`/attachments/legislatie/${legislation.id}`);
 
-    const attachments = response.data?.attachments || [];
+      const attachments = response.data?.attachments || [];
 
-    const images = attachments.filter(
-      (item) =>
-        item.attachment_type !== "link" &&
-        (item.file_category === "image" ||
-          item.mime_type?.startsWith("image/"))
-    );
-
-    const pdf = attachments.find(
-      (item) =>
-        item.attachment_type !== "link" &&
-        (item.file_category === "pdf" ||
-          item.mime_type === "application/pdf" ||
-          /\.pdf$/i.test(
-            item.original_name || item.file_name || item.name || ""
-          ))
-    );
-
-    // Fotografiile se deschid întotdeauna în galerie.
-    if (images.length > 0 && !pdf) {
-      setGalleryLegislation(legislation);
-      return;
-    }
-
-    const attachment = pdf || attachments[0];
-
-    if (!attachment) {
-      window.alert(
-        "Acest act normativ nu are documente sau linkuri atașate."
+      const images = attachments.filter(
+        (item) =>
+          item.attachment_type !== "link" &&
+          (item.file_category === "image" || item.mime_type?.startsWith("image/")),
       );
-      return;
-    }
 
-    if (attachment.attachment_type === "link") {
-      const url = attachment.url;
+      const pdf = attachments.find(
+        (item) =>
+          item.attachment_type !== "link" &&
+          (item.file_category === "pdf" ||
+            item.mime_type === "application/pdf" ||
+            /\.pdf$/i.test(item.original_name || item.file_name || item.name || "")),
+      );
 
-      if (!/^https?:\/\//i.test(url || "")) {
-        throw new Error("Link invalid");
+      // Fotografiile se deschid întotdeauna în galerie.
+      if (images.length > 0 && !pdf) {
+        setGalleryLegislation(legislation);
+        return;
       }
 
-      window.open(url, "_blank", "noopener,noreferrer");
-      return;
+      const attachment = pdf || attachments[0];
+
+      if (!attachment) {
+        window.alert("Acest act normativ nu are documente sau linkuri atașate.");
+        return;
+      }
+
+      if (attachment.attachment_type === "link") {
+        const url = attachment.url;
+
+        if (!/^https?:\/\//i.test(url || "")) {
+          throw new Error("Link invalid");
+        }
+
+        window.open(url, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      // Deschiderea documentelor non-imagine.
+      const fileResponse = await api.get(`/attachments/file/${attachment.id}`, {
+        responseType: "blob",
+      });
+
+      const blobUrl = URL.createObjectURL(fileResponse.data);
+      const newTab = window.open(blobUrl, "_blank");
+
+      if (!newTab) {
+        URL.revokeObjectURL(blobUrl);
+        throw new Error("Browserul a blocat deschiderea documentului.");
+      }
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (err) {
+      console.error("Eroare deschidere act normativ:", err);
+      setError("Nu s-a putut deschide documentul sau linkul actului normativ.");
     }
-
-    // Deschiderea documentelor non-imagine.
-    const fileResponse = await api.get(
-      `/attachments/file/${attachment.id}`,
-      { responseType: "blob" }
-    );
-
-    const blobUrl = URL.createObjectURL(fileResponse.data);
-    const newTab = window.open(blobUrl, "_blank");
-
-    if (!newTab) {
-      URL.revokeObjectURL(blobUrl);
-      throw new Error("Browserul a blocat deschiderea documentului.");
-    }
-
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-  } catch (err) {
-    console.error("Eroare deschidere act normativ:", err);
-    setError(
-      "Nu s-a putut deschide documentul sau linkul actului normativ."
-    );
-  }
-};
-
+  };
 
   const handleDeleteLegislation = async (item) => {
     if (!canDelete || deletingId !== null) return;
 
-    if (
-      !window.confirm(
-        `Sigur dorești să ștergi actul normativ "${item.title}"?\n\nAceastă acțiune nu poate fi anulată.`,
-      )
-    )
-      return;
+    const result = await Swal.fire({
+      title: "Ștergi actul normativ?",
+      text: `„${item.title}” va fi șters definitiv.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Da, șterge",
+      cancelButtonText: "Anulează",
+      confirmButtonColor: "#c43b47",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
 
     setDeletingId(item.id);
-
     setError("");
 
     try {
       await api.delete(`/legislatie/${item.id}`);
 
-      setLegislatie((current) =>
-        current.filter((entry) => entry.id !== item.id),
-      );
+      setLegislatie((current) => current.filter((entry) => entry.id !== item.id));
 
-      if (galleryLegislation?.id === item.id) setGalleryLegislation(null);
+      if (galleryLegislation?.id === item.id) {
+        setGalleryLegislation(null);
+      }
 
       setMenuId(null);
     } catch (err) {
       console.error("Eroare ștergere act normativ:", err);
 
-      setError(
-        err.response?.data?.message || "Actul normativ nu a putut fi șters.",
-      );
+      setError(err.response?.data?.message || "Actul normativ nu a putut fi șters.");
     } finally {
       setDeletingId(null);
     }
@@ -368,8 +345,7 @@ const handleOpenLegislation = async (legislation) => {
 
       if (archived) return false;
 
-      if (tab === "favorites" && !favorites.includes(String(item.id)))
-        return false;
+      if (tab === "favorites" && !favorites.includes(String(item.id))) return false;
 
       if (tab === "recent" && !recentIds.has(String(item.id))) return false;
 
@@ -388,11 +364,9 @@ const handleOpenLegislation = async (legislation) => {
     return [...items].sort((a, b) => {
       if (sort === "oldest") return getTimestamp(a) - getTimestamp(b);
 
-      if (sort === "az")
-        return String(a.title || "").localeCompare(String(b.title || ""), "ro");
+      if (sort === "az") return String(a.title || "").localeCompare(String(b.title || ""), "ro");
 
-      if (sort === "za")
-        return String(b.title || "").localeCompare(String(a.title || ""), "ro");
+      if (sort === "za") return String(b.title || "").localeCompare(String(a.title || ""), "ro");
 
       return getTimestamp(b) - getTimestamp(a);
     });
@@ -427,9 +401,7 @@ const handleOpenLegislation = async (legislation) => {
       return;
     }
 
-    const index = visible.findIndex(
-      (item) => String(item.id) === pendingTarget,
-    );
+    const index = visible.findIndex((item) => String(item.id) === pendingTarget);
 
     if (index < 0) return;
 
@@ -442,11 +414,8 @@ const handleOpenLegislation = async (legislation) => {
     }
 
     const frame = requestAnimationFrame(() => {
-      const card = Array.from(
-        document.querySelectorAll("[data-legislatie-id]"),
-      ).find(
-        (element) =>
-          element.getAttribute("data-legislatie-id") === pendingTarget,
+      const card = Array.from(document.querySelectorAll("[data-legislatie-id]")).find(
+        (element) => element.getAttribute("data-legislatie-id") === pendingTarget,
       );
 
       if (!card) return;
@@ -588,8 +557,7 @@ const handleOpenLegislation = async (legislation) => {
             <span>
               {
                 legislatie.filter(
-                  (item) =>
-                    !isArchived(item) && favorites.includes(String(item.id)),
+                  (item) => !isArchived(item) && favorites.includes(String(item.id)),
                 ).length
               }
             </span>
@@ -615,10 +583,7 @@ const handleOpenLegislation = async (legislation) => {
       </div>
 
       {filtersOpen && (
-        <section
-          className="legislatie-filter-panel"
-          aria-label="Filtre acte normative"
-        >
+        <section className="legislatie-filter-panel" aria-label="Filtre acte normative">
           <label htmlFor="legislatie-type">Tip act normativ</label>
 
           <select
@@ -651,8 +616,7 @@ const handleOpenLegislation = async (legislation) => {
 
       <div className="legislatie-toolbar">
         <strong>
-          {visible.length}{" "}
-          {visible.length === 1 ? "act normativ" : "acte normative"}
+          {visible.length} {visible.length === 1 ? "act normativ" : "acte normative"}
         </strong>
 
         <div className="legislatie-toolbar-controls">
@@ -705,9 +669,7 @@ const handleOpenLegislation = async (legislation) => {
       </div>
 
       {loading ? (
-        <div className="legislation-loading">
-          Se încarcă actele normative...
-        </div>
+        <div className="legislation-loading">Se încarcă actele normative...</div>
       ) : pageItems.length === 0 ? (
         <div className="legislation-empty">
           {legislatie.length === 0
@@ -715,9 +677,7 @@ const handleOpenLegislation = async (legislation) => {
             : "Nu există acte normative pentru filtrele selectate."}
         </div>
       ) : (
-        <div
-          className={`legislatie-cards ${view === "grid" ? "grid-view" : ""}`}
-        >
+        <div className={`legislatie-cards ${view === "grid" ? "grid-view" : ""}`}>
           {pageItems.map((item, index) => {
             const tags = getTags(item);
 
@@ -787,15 +747,9 @@ const handleOpenLegislation = async (legislation) => {
                   <button
                     className={`legislatie-star ${favorite ? "is-favorite" : ""}`}
                     title={
-                      favorite
-                        ? "Elimină de la importante (local)"
-                        : "Marchează important (local)"
+                      favorite ? "Elimină de la importante (local)" : "Marchează important (local)"
                     }
-                    aria-label={
-                      favorite
-                        ? "Elimină de la importante"
-                        : "Marchează important"
-                    }
+                    aria-label={favorite ? "Elimină de la importante" : "Marchează important"}
                     onClick={() => toggleFavorite(item.id)}
                   >
                     <Star size={23} fill={favorite ? "currentColor" : "none"} />
@@ -806,9 +760,7 @@ const handleOpenLegislation = async (legislation) => {
                       title="Mai multe opțiuni"
                       aria-label="Mai multe opțiuni"
                       aria-expanded={menuId === item.id}
-                      onClick={() =>
-                        setMenuId(menuId === item.id ? null : item.id)
-                      }
+                      onClick={() => setMenuId(menuId === item.id ? null : item.id)}
                     >
                       <MoreVertical size={22} />
                     </button>
@@ -826,20 +778,13 @@ const handleOpenLegislation = async (legislation) => {
                         </button>
 
                         {canEdit && (
-                          <button
-                            onClick={() =>
-                              navigate(`/legislatie/${item.id}/edit`)
-                            }
-                          >
+                          <button onClick={() => navigate(`/legislatie/${item.id}/edit`)}>
                             <Pencil size={16} /> Editează
                           </button>
                         )}
 
                         {canDelete && (
-                          <button
-                            className="danger"
-                            onClick={() => handleDeleteLegislation(item)}
-                          >
+                          <button className="danger" onClick={() => handleDeleteLegislation(item)}>
                             <Trash2 size={16} /> Șterge
                           </button>
                         )}
@@ -876,8 +821,7 @@ const handleOpenLegislation = async (legislation) => {
                         disabled={deletingId !== null}
                         onClick={() => handleDeleteLegislation(item)}
                       >
-                        <Trash2 size={18} />{" "}
-                        {deletingId === item.id ? "Se șterge..." : "Șterge"}
+                        <Trash2 size={18} /> {deletingId === item.id ? "Se șterge..." : "Șterge"}
                       </button>
                     )}
                   </div>
@@ -892,8 +836,7 @@ const handleOpenLegislation = async (legislation) => {
         <footer className="legislatie-pagination">
           <div className="legislatie-pagination-info">
             Afișate {(currentPage - 1) * pageSize + 1} –{" "}
-            {Math.min(currentPage * pageSize, visible.length)} din{" "}
-            {visible.length} acte normative
+            {Math.min(currentPage * pageSize, visible.length)} din {visible.length} acte normative
           </div>
 
           <div className="legislatie-page-buttons">
@@ -917,17 +860,12 @@ const handleOpenLegislation = async (legislation) => {
 
               .filter(
                 (p) =>
-                  totalPages <= 5 ||
-                  Math.abs(p - currentPage) <= 1 ||
-                  p === 1 ||
-                  p === totalPages,
+                  totalPages <= 5 || Math.abs(p - currentPage) <= 1 || p === 1 || p === totalPages,
               )
 
               .map((p, i, array) => (
                 <span key={p} className="legislatie-page-entry">
-                  {i > 0 && p - array[i - 1] > 1 && (
-                    <span className="legislatie-ellipsis">…</span>
-                  )}
+                  {i > 0 && p - array[i - 1] > 1 && <span className="legislatie-ellipsis">…</span>}
 
                   <button
                     aria-current={p === currentPage ? "page" : undefined}

@@ -55,9 +55,7 @@ function Telegrame() {
   const emailTelegramId = new URLSearchParams(location.search).get("open");
   const targetTelegramId =
     emailTelegramId ||
-    (location.state?.openDocumentType === "telegrama"
-      ? location.state?.openDocumentId
-      : null);
+    (location.state?.openDocumentType === "telegrama" ? location.state?.openDocumentId : null);
   const [highlightedId, setHighlightedId] = useState(null);
   const pendingScrollId = useRef(null);
   const { user } = useAuth();
@@ -84,14 +82,11 @@ function Telegrame() {
     else setLoading(true);
     try {
       const response = await api.get("/telegrame");
-      setTelegrame(
-        Array.isArray(response.data?.telegrame) ? response.data.telegrame : [],
-      );
+      setTelegrame(Array.isArray(response.data?.telegrame) ? response.data.telegrame : []);
       setError("");
     } catch (err) {
       console.error("Eroare încărcare telegrame:", err);
-      const message =
-        err.response?.data?.message || "Telegramele nu au putut fi încărcate.";
+      const message = err.response?.data?.message || "Telegramele nu au putut fi încărcate.";
       setError(message);
       if (silent) toast.error(message);
     } finally {
@@ -109,14 +104,10 @@ function Telegrame() {
     const normalized = query.trim().toLocaleLowerCase("ro-RO");
     return telegrame
       .filter((telegram) => {
-        if ((onlyFavorites || tab === "important") && !telegram.is_favorite)
-          return false;
+        if ((onlyFavorites || tab === "important") && !telegram.is_favorite) return false;
         if (tab === "recent") {
-          const timestamp = dateValue(
-            telegram.telegram_date || telegram.created_at,
-          );
-          if (!timestamp || timestamp < Date.now() - 30 * 86400000)
-            return false;
+          const timestamp = dateValue(telegram.telegram_date || telegram.created_at);
+          if (!timestamp || timestamp < Date.now() - 30 * 86400000) return false;
         }
         if (!normalized) return true;
         return [
@@ -133,29 +124,18 @@ function Telegrame() {
       .sort((a, b) => {
         if (sort === "date-asc")
           return (
-            dateValue(a.telegram_date) - dateValue(b.telegram_date) ||
-            Number(a.id) - Number(b.id)
+            dateValue(a.telegram_date) - dateValue(b.telegram_date) || Number(a.id) - Number(b.id)
           );
         if (sort === "title-asc")
-          return String(a.title ?? "").localeCompare(
-            String(b.title ?? ""),
-            "ro",
-          );
+          return String(a.title ?? "").localeCompare(String(b.title ?? ""), "ro");
         if (sort === "title-desc")
-          return String(b.title ?? "").localeCompare(
-            String(a.title ?? ""),
-            "ro",
-          );
+          return String(b.title ?? "").localeCompare(String(a.title ?? ""), "ro");
         return (
-          dateValue(b.telegram_date) - dateValue(a.telegram_date) ||
-          Number(b.id) - Number(a.id)
+          dateValue(b.telegram_date) - dateValue(a.telegram_date) || Number(b.id) - Number(a.id)
         );
       });
   }, [telegrame, query, onlyFavorites, sort, tab]);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredTelegrams.length / pageSize),
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredTelegrams.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const visibleTelegrams = filteredTelegrams.slice(
     (currentPage - 1) * pageSize,
@@ -167,8 +147,7 @@ function Telegrame() {
     const index = [...telegrame]
       .sort(
         (a, b) =>
-          dateValue(b.telegram_date) - dateValue(a.telegram_date) ||
-          Number(b.id) - Number(a.id),
+          dateValue(b.telegram_date) - dateValue(a.telegram_date) || Number(b.id) - Number(a.id),
       )
       .findIndex((item) => String(item.id) === String(targetTelegramId));
     if (index === -1) {
@@ -192,9 +171,9 @@ function Telegrame() {
     if (!targetId || loading) return;
     if (!visibleTelegrams.some((item) => String(item.id) === targetId)) return;
     const frame = requestAnimationFrame(() => {
-      const element = Array.from(
-        document.querySelectorAll("[data-telegram-id]"),
-      ).find((node) => node.dataset.telegramId === targetId);
+      const element = Array.from(document.querySelectorAll("[data-telegram-id]")).find(
+        (node) => node.dataset.telegramId === targetId,
+      );
       if (!element) return;
       element.scrollIntoView({ behavior: "smooth", block: "center" });
       pendingScrollId.current = null;
@@ -202,23 +181,15 @@ function Telegrame() {
     });
     return () => cancelAnimationFrame(frame);
   }, [visibleTelegrams, loading, navigate, location.pathname]);
-  const favoritesCount = telegrame.filter(
-    (telegram) => telegram.is_favorite,
-  ).length;
+  const favoritesCount = telegrame.filter((telegram) => telegram.is_favorite).length;
   const recentCount = telegrame.filter((telegram) => {
     const timestamp = dateValue(telegram.telegram_date || telegram.created_at);
     return timestamp && timestamp >= Date.now() - 30 * 86400000;
   }).length;
-  const firstItem = filteredTelegrams.length
-    ? (currentPage - 1) * pageSize + 1
-    : 0;
+  const firstItem = filteredTelegrams.length ? (currentPage - 1) * pageSize + 1 : 0;
   const lastItem = Math.min(currentPage * pageSize, filteredTelegrams.length);
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
-    (p) =>
-      totalPages <= 7 ||
-      p === 1 ||
-      p === totalPages ||
-      Math.abs(p - currentPage) <= 1,
+    (p) => totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1,
   );
   const handleOpenTelegram = async (telegram) => {
     // Deschidem fila imediat după clic pentru a evita blocarea popup-ului.
@@ -232,19 +203,16 @@ function Telegrame() {
       const images = attachments.filter(
         (item) =>
           item.attachment_type !== "link" &&
-          (item.file_category === "image" ||
-            item.mime_type?.startsWith("image/")),
+          (item.file_category === "image" || item.mime_type?.startsWith("image/")),
       );
       const pdf = attachments.find(
         (item) =>
           item.attachment_type !== "link" &&
           (item.file_category === "pdf" ||
             item.mime_type === "application/pdf" ||
-            /\.pdf$/i.test(
-              item.original_name || item.file_name || item.name || "",
-            )),
+            /\.pdf$/i.test(item.original_name || item.file_name || item.name || "")),
       );
-      if (!pdf && images.length > 1) {
+      if (!pdf && images.length >= 1) {
         newTab?.close();
         setGalleryTelegram(telegram);
         return;
@@ -274,14 +242,11 @@ function Telegrame() {
     if (favoriteBusyId !== null) return;
     setFavoriteBusyId(telegram.id);
     try {
-      if (telegram.is_favorite)
-        await api.delete(`/telegrame/${telegram.id}/favorite`);
+      if (telegram.is_favorite) await api.delete(`/telegrame/${telegram.id}/favorite`);
       else await api.post(`/telegrame/${telegram.id}/favorite`);
       setTelegrame((items) =>
         items.map((item) =>
-          item.id === telegram.id
-            ? { ...item, is_favorite: !telegram.is_favorite }
-            : item,
+          item.id === telegram.id ? { ...item, is_favorite: !telegram.is_favorite } : item,
         ),
       );
       toast.success(
@@ -291,10 +256,7 @@ function Telegrame() {
       );
     } catch (err) {
       console.error("Eroare favorite:", err);
-      toast.error(
-        err.response?.data?.message ||
-          "Nu s-a putut actualiza lista de favorite.",
-      );
+      toast.error(err.response?.data?.message || "Nu s-a putut actualiza lista de favorite.");
     } finally {
       setFavoriteBusyId(null);
     }
@@ -322,8 +284,7 @@ function Telegrame() {
       toast.success("Telegrama a fost ștearsă.");
     } catch (err) {
       console.error("Eroare ștergere telegramă:", err);
-      const message =
-        err.response?.data?.message || "Telegrama nu a putut fi ștearsă.";
+      const message = err.response?.data?.message || "Telegrama nu a putut fi ștearsă.";
       setError(message);
       toast.error(message);
     } finally {
@@ -337,9 +298,7 @@ function Telegrame() {
       onClick={() => handleFavorite(telegram)}
       disabled={favoriteBusyId !== null}
       aria-pressed={Boolean(telegram.is_favorite)}
-      aria-label={
-        telegram.is_favorite ? "Elimină din favorite" : "Adaugă la favorite"
-      }
+      aria-label={telegram.is_favorite ? "Elimină din favorite" : "Adaugă la favorite"}
     >
       {favoriteBusyId === telegram.id ? (
         <LoaderCircle size={22} className="telegrame-spin" />
@@ -406,18 +365,15 @@ function Telegrame() {
           </button>
           <div className="telegrame-document-meta">
             <span>
-              <Folder size={17} />{" "}
-              <span className="telegrame-meta-muted">Categorie:</span>{" "}
+              <Folder size={17} /> <span className="telegrame-meta-muted">Categorie:</span>{" "}
               <strong>Telegrame interne</strong>
             </span>
             <span>
-              <CalendarDays size={17} />{" "}
-              <span className="telegrame-meta-muted">Data:</span>{" "}
+              <CalendarDays size={17} /> <span className="telegrame-meta-muted">Data:</span>{" "}
               {formatDate(telegram.telegram_date)}
             </span>
             <span className="telegrame-author">
-              <Tag size={17} />{" "}
-              <span className="telegrame-meta-muted">Adăugat de:</span>{" "}
+              <Tag size={17} /> <span className="telegrame-meta-muted">Adăugat de:</span>{" "}
               {telegram.created_by_name || telegram.created_by_username || "—"}
             </span>
           </div>
@@ -430,9 +386,7 @@ function Telegrame() {
               type="button"
               aria-label="Mai multe opțiuni"
               aria-expanded={menuId === telegram.id}
-              onClick={() =>
-                setMenuId(menuId === telegram.id ? null : telegram.id)
-              }
+              onClick={() => setMenuId(menuId === telegram.id ? null : telegram.id)}
             >
               <MoreVertical size={23} />
             </button>
@@ -482,9 +436,7 @@ function Telegrame() {
         >
           <Paperclip size={20} />
           {Number(telegram.attachments_count) || 0}{" "}
-          {(Number(telegram.attachments_count) || 0) === 1
-            ? "fișier atașat"
-            : "fișiere atașate"}
+          {(Number(telegram.attachments_count) || 0) === 1 ? "fișier atașat" : "fișiere atașate"}
         </button>
         {management(telegram)}
       </div>
@@ -537,10 +489,7 @@ function Telegrame() {
           </button>
         </div>
       )}
-      <section
-        className="telegrame-register"
-        aria-label="Registrul telegramelor"
-      >
+      <section className="telegrame-register" aria-label="Registrul telegramelor">
         <div className="telegrame-tabs">
           <button
             className={tab === "all" ? "is-active" : ""}
@@ -592,11 +541,7 @@ function Telegrame() {
                 aria-label="Caută telegrame"
               />
               {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery("")}
-                  aria-label="Șterge căutarea"
-                >
+                <button type="button" onClick={() => setQuery("")} aria-label="Șterge căutarea">
                   <X size={17} />
                 </button>
               )}
@@ -607,18 +552,13 @@ function Telegrame() {
               disabled={loading || refreshing}
               onClick={() => fetchTelegrame({ silent: true })}
             >
-              <RefreshCw
-                size={18}
-                className={refreshing ? "telegrame-spin" : ""}
-              />{" "}
-              Actualizează
+              <RefreshCw size={18} className={refreshing ? "telegrame-spin" : ""} /> Actualizează
             </button>
           </div>
         )}
         <div className="telegrame-list-toolbar">
           <h2>
-            {filteredTelegrams.length}{" "}
-            {filteredTelegrams.length === 1 ? "telegramă" : "telegrame"}
+            {filteredTelegrams.length} {filteredTelegrams.length === 1 ? "telegramă" : "telegrame"}
           </h2>
           <div className="telegrame-list-controls">
             <span className="telegrame-sort-label">Sortare:</span>
@@ -635,11 +575,7 @@ function Telegrame() {
                 <option value="title-desc">Titlu (Z–A)</option>
               </select>
             </label>
-            <div
-              className="telegrame-view-switch"
-              role="group"
-              aria-label="Mod de afișare"
-            >
+            <div className="telegrame-view-switch" role="group" aria-label="Mod de afișare">
               <button
                 type="button"
                 className={view === "list" ? "is-active" : ""}
@@ -663,16 +599,13 @@ function Telegrame() {
         </div>
         {loading ? (
           <div className="telegrame-loading">
-            <LoaderCircle className="telegrame-spin" size={24} /> Se încarcă
-            telegramele...
+            <LoaderCircle className="telegrame-spin" size={24} /> Se încarcă telegramele...
           </div>
         ) : visibleTelegrams.length === 0 ? (
           <div className="telegrame-empty">
             <FileText size={36} />
             <strong>
-              {error
-                ? "Nu s-au putut încărca telegramele."
-                : "Nu am găsit telegrame."}
+              {error ? "Nu s-au putut încărca telegramele." : "Nu am găsit telegrame."}
             </strong>
             <span>
               {error
@@ -681,17 +614,14 @@ function Telegrame() {
             </span>
           </div>
         ) : (
-          <div
-            className={`telegrame-documents ${view === "grid" ? "is-grid" : ""}`}
-          >
+          <div className={`telegrame-documents ${view === "grid" ? "is-grid" : ""}`}>
             {visibleTelegrams.map(renderCard)}
           </div>
         )}
         {!loading && filteredTelegrams.length > 0 && (
           <footer className="telegrame-pagination">
             <span className="telegrame-page-status">
-              Afișate {firstItem} – {lastItem} din {filteredTelegrams.length}{" "}
-              telegrame
+              Afișate {firstItem} – {lastItem} din {filteredTelegrams.length} telegrame
             </span>
             <div className="telegrame-page-buttons">
               <button
@@ -712,9 +642,7 @@ function Telegrame() {
               </button>
               {pages.map((p, i) => (
                 <span className="telegrame-page-item" key={p}>
-                  {i > 0 && p - pages[i - 1] > 1 && (
-                    <span className="telegrame-ellipsis">…</span>
-                  )}
+                  {i > 0 && p - pages[i - 1] > 1 && <span className="telegrame-ellipsis">…</span>}
                   <button
                     type="button"
                     className={p === currentPage ? "is-active" : ""}
@@ -744,10 +672,7 @@ function Telegrame() {
             </div>
             <label className="telegrame-page-size">
               Elemente pe pagină:
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-              >
+              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                 <option value={8}>8</option>
                 <option value={12}>12</option>
                 <option value={24}>24</option>
