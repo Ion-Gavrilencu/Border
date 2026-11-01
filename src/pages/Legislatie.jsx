@@ -228,77 +228,83 @@ function Legislatie() {
     }
   };
 
-  const handleOpenLegislation = async (legislation) => {
-    const newTab = window.open("about:blank", "_blank");
+  
+const handleOpenLegislation = async (legislation) => {
+  try {
+    setError("");
 
-    if (newTab) newTab.opener = null;
+    const response = await api.get(
+      `/attachments/legislatie/${legislation.id}`
+    );
 
-    try {
-      setError("");
+    const attachments = response.data?.attachments || [];
 
-      const response = await api.get(
-        `/attachments/legislatie/${legislation.id}`,
-      );
+    const images = attachments.filter(
+      (item) =>
+        item.attachment_type !== "link" &&
+        (item.file_category === "image" ||
+          item.mime_type?.startsWith("image/"))
+    );
 
-      const attachments = response.data.attachments || [];
+    const pdf = attachments.find(
+      (item) =>
+        item.attachment_type !== "link" &&
+        (item.file_category === "pdf" ||
+          item.mime_type === "application/pdf" ||
+          /\.pdf$/i.test(
+            item.original_name || item.file_name || item.name || ""
+          ))
+    );
 
-      const images = attachments.filter(
-        (item) =>
-          item.attachment_type !== "link" &&
-          (item.file_category === "image" ||
-            item.mime_type?.startsWith("image/")),
-      );
-
-      const pdf = attachments.find(
-        (item) =>
-          item.attachment_type !== "link" &&
-          (item.file_category === "pdf" ||
-            item.mime_type === "application/pdf" ||
-            /\.pdf$/i.test(
-              item.original_name || item.file_name || item.name || "",
-            )),
-      );
-
-      if (!pdf && images.length > 1) {
-        newTab?.close();
-
-        setGalleryLegislation(legislation);
-
-        return;
-      }
-
-      const attachment = pdf || attachments[0];
-
-      if (!attachment) {
-        newTab?.close();
-
-        window.alert(
-          "Acest act normativ nu are documente sau linkuri atașate.",
-        );
-
-        return;
-      }
-
-      let url;
-
-      if (attachment.attachment_type === "link") {
-        url = attachment.url;
-
-        if (!/^https?:\/\//i.test(url || "")) throw new Error("Link invalid");
-      } else {
-        url = `${api.defaults.baseURL}/attachments/file/${attachment.id}`;
-      }
-
-      if (newTab && !newTab.closed) newTab.location.replace(url);
-      else window.open(url, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      newTab?.close();
-
-      console.error("Eroare deschidere act normativ:", err);
-
-      setError("Nu s-a putut deschide documentul sau linkul actului normativ.");
+    // Fotografiile se deschid întotdeauna în galerie.
+    if (images.length > 0 && !pdf) {
+      setGalleryLegislation(legislation);
+      return;
     }
-  };
+
+    const attachment = pdf || attachments[0];
+
+    if (!attachment) {
+      window.alert(
+        "Acest act normativ nu are documente sau linkuri atașate."
+      );
+      return;
+    }
+
+    if (attachment.attachment_type === "link") {
+      const url = attachment.url;
+
+      if (!/^https?:\/\//i.test(url || "")) {
+        throw new Error("Link invalid");
+      }
+
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // Deschiderea documentelor non-imagine.
+    const fileResponse = await api.get(
+      `/attachments/file/${attachment.id}`,
+      { responseType: "blob" }
+    );
+
+    const blobUrl = URL.createObjectURL(fileResponse.data);
+    const newTab = window.open(blobUrl, "_blank");
+
+    if (!newTab) {
+      URL.revokeObjectURL(blobUrl);
+      throw new Error("Browserul a blocat deschiderea documentului.");
+    }
+
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  } catch (err) {
+    console.error("Eroare deschidere act normativ:", err);
+    setError(
+      "Nu s-a putut deschide documentul sau linkul actului normativ."
+    );
+  }
+};
+
 
   const handleDeleteLegislation = async (item) => {
     if (!canDelete || deletingId !== null) return;

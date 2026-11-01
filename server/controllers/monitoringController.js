@@ -84,6 +84,82 @@ function validDate(value) {
   );
 }
 
+// Reconstruim denumirile pentru evenimentele vechi, fără să modificăm
+// istoricul stocat în baza de date. Căutările sunt grupate pe pagină.
+const DOCUMENT_TYPES = {
+  telegrame: { label: "Telegramă", number: "number" },
+  ordine: { label: "Ordin intern", number: "number" },
+  legislatie: { label: "Act normativ", number: "law_number" },
+  informatii_utile: { label: "Informație utilă" },
+  news: { label: "Noutate" },
+};
+
+function formatDocumentTitle(row) {
+  const config = DOCUMENT_TYPES[row.entity_type];
+  if (!config) return null;
+  const title = String(row.document_title || "").trim();
+  if (!title) return null;
+  const number = String(row.document_number || "").trim();
+  const numberAlreadyPresent =
+    number &&
+    new RegExp(
+      `(?:^|[^0-9])${number.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^0-9]|$)`,
+      "i",
+    ).test(title);
+  const numberText = number && !numberAlreadyPresent ? ` nr. ${number}` : "";
+  return `${config.label}${numberText}: ${title}`;
+}
+
+async function enrichLegacyAttachmentEvents(activities) {
+  const legacyPattern = /^(Vizualizare|Descărcare) atașament #([1-9]\d*): /;
+  const ids = [
+    ...new Set(
+      activities.flatMap((item) => {
+        if (!["view", "download"].includes(item.action)) return [];
+        const match = legacyPattern.exec(String(item.details || ""));
+        return match ? [match[2]] : [];
+      }),
+    ),
+  ];
+  if (!ids.length) return activities;
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT a.id::text AS attachment_id, a.entity_type,
+        COALESCE(t.title, o.title, l.title, i.title, n.title) AS document_title,
+        CASE a.entity_type
+          WHEN 'telegrame' THEN t.number
+          WHEN 'ordine' THEN o.number
+          WHEN 'legislatie' THEN l.law_number
+          ELSE NULL
+        END AS document_number
+      FROM attachments a
+      LEFT JOIN telegrame t ON a.entity_type = 'telegrame' AND t.id = a.entity_id
+      LEFT JOIN ordine o ON a.entity_type = 'ordine' AND o.id = a.entity_id
+      LEFT JOIN legislatie l ON a.entity_type = 'legislatie' AND l.id = a.entity_id
+      LEFT JOIN informatii_utile i ON a.entity_type = 'informatii_utile' AND i.id = a.entity_id
+      LEFT JOIN news n ON a.entity_type = 'news' AND n.id = a.entity_id
+      WHERE a.id::text = ANY($1::text[])
+    `,
+      [ids],
+    );
+    const titles = new Map(result.rows.map((row) => [row.attachment_id, formatDocumentTitle(row)]));
+    return activities.map((item) => {
+      if (!["view", "download"].includes(item.action)) return item;
+      const match = legacyPattern.exec(String(item.details || ""));
+      if (!match) return item;
+      const documentTitle = titles.get(match[2]);
+      if (!documentTitle) return item;
+      return { ...item, details: `${match[1]} document: ${documentTitle}` };
+    });
+  } catch (error) {
+    // Jurnalul trebuie să rămână accesibil chiar dacă rezolvarea titlurilor eșuează.
+    console.error("MONITORING LEGACY DOCUMENT TITLES ERROR:", error);
+    return activities;
+  }
+}
+
 async function getActivities(req, res) {
   try {
     const page = Math.max(1, Math.min(100000, Number.parseInt(req.query.page, 10) || 1));
@@ -124,8 +200,9 @@ async function getActivities(req, res) {
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, limit, (page - 1) * limit],
     );
+    const activities = await enrichLegacyAttachmentEvents(result.rows);
     return res.json({
-      activities: result.rows,
+      activities,
       total: count.rows[0].total,
       page,
       limit,

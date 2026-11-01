@@ -279,7 +279,7 @@
 
   gap: 16px;
 
-  align-items: stretch;
+  align-items: start;
 }
 
 .dashboard-card {
@@ -594,290 +594,73 @@
   cursor: pointer;
 }
 
-@media (max-width: 1100px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 850px) {
-  .dashboard {
-    padding: 18px 18px 30px;
-  }
-
-  .border-hero {
-    height: 200px;
-  }
-
-  .border-hero-content {
-    padding: 18px 20px;
-  }
-
-  .border-hero-description {
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 600px) {
-  .dashboard {
-    padding: 14px 12px 24px;
-  }
-
-  .border-hero {
-    height: auto;
-
-    aspect-ratio: 2 / 1;
-
-    border-radius: 11px;
-  }
-
-  .border-hero-content {
-    padding: 12px;
-  }
-
-  .border-hero-description {
-    font-size: 11px;
-  }
-
-  .border-hero-description span {
-    padding: 0 3px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-
-    gap: 12px;
-  }
-
-  .stat-card {
-    min-height: 92px;
-
-    padding: 14px;
-  }
-
-  .stat-icon {
-    flex-basis: 52px;
-
-    width: 52px;
-
-    height: 52px;
-  }
-
-  .stat-content strong {
-    font-size: 27px;
-  }
-
-  .dashboard-grid {
-    gap: 14px;
-  }
-
-  .card-header {
-    padding: 15px;
-  }
-
-  .card-header h2 {
-    font-size: 16px;
-  }
-
-  .information-item {
-    padding: 13px 15px;
-  }
-
-  .information-item:hover {
-    padding-left: 15px;
-  }
-
-  .dashboard-error {
-    flex-wrap: wrap;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .refresh-spin {
-    animation: none;
-  }
-}
-
-/* ========================================
-   BORDER - DASHBOARD MODERN
-======================================== */
-
-.dashboard-modern {
-  --dashboard-accent: #1769bd;
-}
-
-/* Banner */
-
-.dashboard-modern .border-hero {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 12px 32px rgba(6, 29, 65, 0.12);
-}
-
-.dashboard-modern .border-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(90deg, rgba(3, 19, 43, 0.25), transparent 55%);
-  pointer-events: none;
-}
-
-/* Carduri statistici */
-
-.dashboard-modern .stat-card {
-  border-radius: 16px;
-  box-shadow: 0 5px 20px rgba(15, 40, 75, 0.055);
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
-}
-
-.dashboard-modern .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(15, 40, 75, 0.12);
-}
-
-.dashboard-modern .stat-icon {
-  border-radius: 15px;
-}
-
-.dashboard-modern .stat-content strong {
-  letter-spacing: -0.7px;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Panouri */
-
+/* Consolidated responsive dashboard rules */
 .dashboard-panel-motion {
   display: flex;
   min-width: 0;
-  height: 100%;
+  height: auto;
+  align-self: start;
 }
-
 .dashboard-panel-motion > * {
   width: 100%;
   min-width: 0;
 }
-
 .dashboard-modern .dashboard-card {
   border-radius: 16px;
-  box-shadow: 0 8px 28px rgba(14, 41, 78, 0.06);
-  transition:
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
 }
-
-.dashboard-modern .dashboard-card:hover {
-  border-color: #d4e4f5;
-  box-shadow: 0 12px 34px rgba(14, 41, 78, 0.09);
-}
-
-/* Titluri */
-
-.dashboard-modern .card-header h2 {
-  letter-spacing: -0.35px;
-}
-
-/* Buton reîmprospătare */
-
 .dashboard-modern .dashboard-refresh-button {
-  border-radius: 10px;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  display: none;
 }
-
-.dashboard-modern .dashboard-refresh-button:hover:not(:disabled) {
-  background: #e8f3ff;
-  color: #0758a8;
-}
-
-/* Informații recente */
-
-.dashboard-modern .information-item {
-  transition:
-    background-color 0.2s ease,
-    padding-left 0.2s ease;
-}
-
-.dashboard-modern .information-item:hover {
-  background: #f4f9ff;
-}
-
-/* Mesaj eroare */
-
-.dashboard-modern .dashboard-error {
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-
-.dashboard-modern .dashboard-error button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-}
-
-/* Responsive */
-
-@media (max-width: 1100px) {
-  .dashboard-modern .dashboard-grid {
+@media (max-width: 1599px) {
+  .dashboard-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-
-@media (max-width: 600px) {
-  .dashboard-modern .border-hero {
-    border-radius: 12px;
-  }
-
-  .dashboard-modern .stat-card {
-    border-radius: 13px;
-  }
-
-  .dashboard-modern .dashboard-card {
-    border-radius: 13px;
-  }
-
-  .dashboard-modern .dashboard-error button {
-    margin-left: 0;
+  .dashboard-panel-motion {
+    height: auto;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .dashboard-modern .stat-card,
-  .dashboard-modern .dashboard-card,
-  .dashboard-modern .information-item {
-    transition: none;
+@media (max-width: 1399px) {
+  .dashboard {
+    padding: 16px 18px 32px;
   }
-
-  .dashboard-modern .stat-card:hover {
-    transform: none;
+  .border-hero {
+    height: clamp(200px, 24vw, 320px);
+  }
+  .border-hero-content {
+    padding: 18px 20px;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .stat-card {
+    min-height: 100px;
   }
 }
-
-/* ============================================================
-   MOBILE DASHBOARD — desktop styles above remain unchanged
-   ============================================================ */
+@media (max-width: 850px) {
+  .dashboard {
+    padding: 16px 16px 30px;
+  }
+  .border-hero {
+    height: auto;
+    aspect-ratio: 3 / 1;
+  }
+  .border-hero::before {
+    background-size: cover;
+    background-position: center;
+  }
+  .border-hero-description {
+    font-size: 13px;
+  }
+}
 @media (max-width: 640px) {
   .dashboard.dashboard-modern {
     padding: 14px 12px 30px;
   }
   .dashboard-modern .border-hero {
-    height: auto;
     aspect-ratio: 1.95 / 1;
     margin-bottom: 15px;
     border-radius: 16px;
-  }
-  .dashboard-modern .border-hero::before {
-    background-size: cover;
-    background-position: center;
   }
   .dashboard-modern .border-hero-content {
     padding: 12px 13px;
@@ -923,7 +706,6 @@
     grid-column: 1;
     grid-row: 2;
     gap: 5px;
-    min-width: 0;
   }
   .dashboard-modern .stat-content strong {
     order: -1;
@@ -950,13 +732,11 @@
     opacity: 1;
   }
   .dashboard-modern .dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
   .dashboard-modern .dashboard-card,
   .dashboard-modern .border-news-card {
     border-radius: 17px;
-    box-shadow: 0 5px 20px rgba(15, 40, 75, 0.045);
   }
   .dashboard-modern .card-header {
     padding: 16px 15px;
@@ -989,30 +769,9 @@
     overflow: hidden;
     font-size: 12px;
   }
-  .dashboard-modern .information-arrow {
-    width: 16px;
-  }
   .dashboard-modern .border-news-show-all {
     min-height: 43px;
     border-radius: 11px;
-  }
-  /* Keep the existing navbar/search logic; adjust only its mobile layout. */
-  .app-layout:has(.dashboard-modern) .topbar {
-    gap: 7px;
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-  .app-layout:has(.dashboard-modern) .topbar-right {
-    gap: 4px;
-  }
-  .app-layout:has(.dashboard-modern) .mobile-menu-button {
-    flex-shrink: 0;
-  }
-  .app-layout:has(.dashboard-modern) .user-info {
-    padding-left: 5px;
-  }
-  .app-layout:has(.dashboard-modern) .user-avatar {
-    flex-shrink: 0;
   }
 }
 @media (max-width: 360px) {
@@ -1033,8 +792,51 @@
     font-size: 10px;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .refresh-spin {
+    animation: none;
+  }
+  .dashboard-modern .stat-card,
+  .dashboard-modern .dashboard-card,
+  .dashboard-modern .information-item {
+    transition: none;
+  }
+  .dashboard-modern .stat-card:hover {
+    transform: none;
+  }
+}
 
-/* Ascunde butoanele de actualizare manuală din cele două panouri Dashboard. */
-.dashboard-modern .dashboard-refresh-button {
-  display: none;
+/* Desktop: ambele panouri au exact aceeași înălțime. */
+@media (min-width: 1600px) {
+  .dashboard-modern .dashboard-grid {
+    align-items: stretch;
+  }
+
+  .dashboard-modern .dashboard-grid > .dashboard-panel-motion {
+    display: flex;
+    align-self: stretch;
+    height: auto;
+    min-width: 0;
+  }
+
+  .dashboard-modern .dashboard-grid > .dashboard-panel-motion > .dashboard-card {
+    width: 100%;
+    height: 100%;
+  }
+
+  .dashboard-modern .dashboard-grid > .dashboard-panel-motion:first-child .information-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .dashboard-modern
+    .dashboard-grid
+    > .dashboard-panel-motion:first-child
+    .information-list
+    > .information-item {
+    flex: 1 1 0;
+    min-height: 90px;
+  }
 }

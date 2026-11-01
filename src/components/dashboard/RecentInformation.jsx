@@ -1,5 +1,5 @@
 import { Megaphone, FileText, Scale, Info, ArrowRight } from "lucide-react";
-
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const recentTypes = {
@@ -29,16 +29,24 @@ const recentTypes = {
   },
 };
 
+const MAX_RECENT_ITEMS = 4;
+
 const formatDate = (value) => {
   if (!value) return "";
-
   const date = new Date(value);
-
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ro-RO");
 };
 
 function RecentInformation({ recent = [], loadingStats }) {
   const navigate = useNavigate();
+  const [showAll, setShowAll] = useState(false);
+
+  const visibleRecent = useMemo(() => {
+    if (!Array.isArray(recent)) return [];
+    return recent.filter((item) => item && item.id != null && recentTypes[item.type]);
+  }, [recent]);
+
+  const displayedRecent = showAll ? visibleRecent : visibleRecent.slice(0, MAX_RECENT_ITEMS);
 
   const openInformation = (item, config) => {
     navigate(config.path, {
@@ -61,14 +69,11 @@ function RecentInformation({ recent = [], loadingStats }) {
       <div className="information-list">
         {loadingStats ? (
           <p className="dashboard-empty">Se încarcă informațiile...</p>
-        ) : recent.length === 0 ? (
+        ) : visibleRecent.length === 0 ? (
           <p className="dashboard-empty">Nu există documente recente.</p>
         ) : (
-          recent.map((item) => {
+          displayedRecent.map((item) => {
             const config = recentTypes[item.type];
-
-            if (!config) return null;
-
             const Icon = config.icon;
 
             return (
@@ -95,14 +100,17 @@ function RecentInformation({ recent = [], loadingStats }) {
         )}
       </div>
 
-      <button
-        type="button"
-        className="border-news-show-all"
-        onClick={() => navigate("/informatii-utile")}
-      >
-        Vezi toate informațiile
-        <ArrowRight size={17} />
-      </button>
+      {visibleRecent.length > MAX_RECENT_ITEMS && (
+        <button
+          type="button"
+          className="border-news-show-all"
+          aria-expanded={showAll}
+          onClick={() => setShowAll((current) => !current)}
+        >
+          {showAll ? "Afișează mai puține" : `Vezi toate informațiile (${visibleRecent.length})`}
+          <ArrowRight size={17} />
+        </button>
+      )}
     </section>
   );
 }

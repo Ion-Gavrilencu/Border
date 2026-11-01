@@ -7,7 +7,7 @@ import api from "../../services/api";
 
 import NewsCard from "./NewsCard";
 import NewsModal from "./NewsModal";
-import ImageLightbox from "./ImageLightbox";
+import TelegramGallery from "../TelegramGallery";
 import PrivateNewsImage from "./PrivateNewsImage";
 
 import "./NewsSection.css";
@@ -113,6 +113,7 @@ function NewsSection() {
   // MODAL ȘI FOTOGRAFII
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   // ATAȘAMENTE
   const [newsAttachments, setNewsAttachments] = useState({});
@@ -294,7 +295,7 @@ function NewsSection() {
 
   // ÎNCHIDERE MODAL CU ESCAPE
   useEffect(() => {
-    if (!selectedArticle || previewImage) return;
+    if (!selectedArticle || galleryOpen) return;
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -307,7 +308,7 @@ function NewsSection() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedArticle, previewImage]);
+  }, [selectedArticle, galleryOpen]);
 
   // ADAUGĂ ȘTIRE — PAGINĂ SEPARATĂ
   const openAddPage = () => {
@@ -362,6 +363,7 @@ function NewsSection() {
 
       if (String(selectedArticle?.id) === String(id)) {
         setPreviewImage(null);
+        setGalleryOpen(false);
         setSelectedArticle(null);
       }
 
@@ -518,26 +520,29 @@ function NewsSection() {
         PrivateImageComponent={PrivateNewsImage}
         onClose={() => {
           setPreviewImage(null);
+          setGalleryOpen(false);
           setSelectedArticle(null);
         }}
-        onPreviewImage={setPreviewImage}
+        onPreviewImage={(attachment) => {
+          setPreviewImage(attachment);
+          setGalleryOpen(Boolean(attachment));
+        }}
         onDownloadAttachment={handleDownloadAttachment}
       />
 
-      {/* PREVIZUALIZARE FOTOGRAFIE */}
-      <ImageLightbox
-        attachment={previewImage}
-        attachments={
-          selectedArticle
-            ? (newsAttachments[selectedArticle.id] || [])
-                .filter((item) => item.attachment_type === "file" && item.file_category === "image")
-                .sort((a, b) => Number(a.id) - Number(b.id))
-            : []
-        }
-        PrivateImageComponent={PrivateNewsImage}
-        onChange={setPreviewImage}
-        onClose={() => setPreviewImage(null)}
-      />
+      {/* GALERIE FOTOGRAFII */}
+      {galleryOpen && selectedArticle && (
+        <TelegramGallery
+          entityType="news"
+          entityId={selectedArticle.id}
+          title={selectedArticle.title}
+          initialAttachmentId={previewImage?.id}
+          onClose={() => {
+            setGalleryOpen(false);
+            setPreviewImage(null);
+          }}
+        />
+      )}
     </>
   );
 }

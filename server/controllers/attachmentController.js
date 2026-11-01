@@ -3,14 +3,20 @@ const path = require("path");
 const crypto = require("crypto");
 
 const { Readable } = require("stream");
+
 const fs = require("node:fs/promises");
+
 const { createReadStream } = require("node:fs");
 
 const { put, get, del } = require("@vercel/blob");
+
 const {
   isLocalStorage,
+
   saveLocalFile,
+
   resolveLocalPath,
+
   removeLocalFile,
 } = require("../services/attachmentStorage");
 
@@ -125,12 +131,52 @@ const rollbackTransaction = async (client) => {
 
 // =====================================================
 
+// Denumirea documentului asociat, folosită exclusiv pentru jurnalizare.
+const DOCUMENT_TYPES = {
+  telegrame: { table: "telegrame", label: "Telegramă", number: "number" },
+  ordine: { table: "ordine", label: "Ordin intern", number: "number" },
+  legislatie: { table: "legislatie", label: "Act normativ", number: "law_number" },
+  informatii_utile: { table: "informatii_utile", label: "Informație utilă" },
+  news: { table: "news", label: "Știre" },
+};
+
+async function getMonitoringDocumentDetails(attachment) {
+  const config = DOCUMENT_TYPES[attachment.entity_type];
+  if (!config || !validEntityId(attachment.entity_id)) {
+    return `Document ${attachment.entity_type} #${attachment.entity_id}`;
+  }
+
+  try {
+    const columns = config.number ? `title, ${config.number} AS document_number` : "title";
+    const result = await pool.query(`SELECT ${columns} FROM ${config.table} WHERE id = $1`, [
+      attachment.entity_id,
+    ]);
+    const document = result.rows[0];
+    if (!document) return `${config.label} #${attachment.entity_id} (document indisponibil)`;
+
+    const title = String(document.title || "").trim();
+    const number = String(document.document_number || "").trim();
+    const numberIncluded =
+      number &&
+      new RegExp(
+        `(?:^|[^0-9])${number.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^0-9]|$)`,
+        "i",
+      ).test(title);
+    const numberText = number && !numberIncluded ? ` nr. ${number}` : "";
+    return `${config.label}${numberText}: ${title || `#${attachment.entity_id}`}`;
+  } catch (error) {
+    console.error("MONITORING DOCUMENT TITLE ERROR:", error);
+    return `${config.label} #${attachment.entity_id} (titlu indisponibil)`;
+  }
+}
+
 const uploadAttachment = async (req, res) => {
   let client = null;
 
   let transactionStarted = false;
 
   let uploadedBlobPath = null;
+
   let uploadedLocalPath = null;
 
   try {
@@ -199,7 +245,11 @@ const uploadAttachment = async (req, res) => {
     const entityResult = await client.query(
       `SELECT id FROM ${tableName}
 
+
+
        WHERE id = $1
+
+
 
        FOR UPDATE`,
 
@@ -220,11 +270,19 @@ const uploadAttachment = async (req, res) => {
       const countResult = await client.query(
         `SELECT COUNT(*)::integer AS total
 
+
+
          FROM attachments
+
+
 
          WHERE entity_type = 'news'
 
+
+
            AND entity_id = $1
+
+
 
            AND attachment_type = 'file'`,
 
@@ -257,51 +315,89 @@ const uploadAttachment = async (req, res) => {
     ].join("/");
 
     let storedPath;
+
     if (isLocalStorage()) {
       storedPath = await saveLocalFile(blobPath, req.file.buffer);
+
       uploadedLocalPath = storedPath;
     } else {
       const blob = await put(blobPath, req.file.buffer, {
         access: "private",
+
         contentType: req.file.mimetype || "application/octet-stream",
+
         addRandomSuffix: false,
       });
+
       uploadedBlobPath = blob.pathname;
+
       storedPath = `blob:${blob.pathname}`;
     }
 
     const result = await client.query(
       `INSERT INTO attachments (
 
+
+
         entity_type,
+
+
 
         entity_id,
 
+
+
         attachment_type,
+
+
 
         file_category,
 
+
+
         name,
+
+
 
         original_name,
 
+
+
         file_path,
+
+
 
         mime_type,
 
+
+
         file_size,
+
+
 
         uploaded_by
 
+
+
       )
+
+
 
       VALUES (
 
+
+
         $1, $2, 'file', $3, $4,
+
+
 
         $5, $6, $7, $8, $9
 
+
+
       )
+
+
 
       RETURNING *`,
 
@@ -331,6 +427,7 @@ const uploadAttachment = async (req, res) => {
     transactionStarted = false;
 
     uploadedBlobPath = null;
+
     uploadedLocalPath = null;
 
     return res.status(201).json({
@@ -405,7 +502,7 @@ const createAttachmentLink = async (req, res) => {
 
     if (!validUrl) {
       return res.status(400).json({
-        message: "Linkul trebuie să înceapă cu http\\:// sau https\\://.",
+        message: "Linkul trebuie să înceapă cu http\\\\:// sau https\\\\://.",
       });
     }
 
@@ -436,21 +533,39 @@ const createAttachmentLink = async (req, res) => {
     const result = await client.query(
       `INSERT INTO attachments (
 
+
+
         entity_type,
+
+
 
         entity_id,
 
+
+
         attachment_type,
+
+
 
         name,
 
+
+
         url,
+
+
 
         uploaded_by
 
+
+
       )
 
+
+
       VALUES ($1, $2, 'link', $3, $4, $5)
+
+
 
       RETURNING *`,
 
@@ -498,21 +613,39 @@ const getAttachments = async (req, res) => {
     const result = await pool.query(
       `SELECT
 
+
+
         a.*,
+
+
 
         u.username AS uploaded_by_username,
 
+
+
         u.full_name AS uploaded_by_name
+
+
 
       FROM attachments a
 
+
+
       LEFT JOIN users u
+
+
 
         ON u.id = a.uploaded_by
 
+
+
       WHERE a.entity_type = $1
 
+
+
         AND a.entity_id = $2
+
+
 
       ORDER BY a.created_at DESC, a.id DESC`,
 
@@ -564,46 +697,66 @@ const getAttachmentFile = async (req, res) => {
     }
 
     const blobPath = getBlobPath(attachment);
+
     const localPath = resolveLocalPath(attachment.file_path);
+
     let fileStream;
 
     if (localPath) {
       if (!isLocalStorage())
         return res.status(410).json({ message: "Fișierul local nu este disponibil în producție." });
+
       try {
         await fs.access(localPath);
+
         fileStream = createReadStream(localPath);
       } catch (error) {
         if (error.code === "ENOENT") {
           return res.status(404).json({ message: "Fișierul local nu mai există." });
         }
+
         throw error;
       }
     } else if (blobPath) {
       let blob;
+
       try {
         blob = await get(blobPath, { access: "private" });
       } catch (error) {
         console.error("VERCEL BLOB GET ERROR:", error);
+
         const status = getBlobErrorStatus(error);
+
         if (status === 404)
           return res.status(404).json({ message: "Fișierul nu mai există în Vercel Blob." });
+
         if (status === 403)
           return res
+
             .status(502)
+
             .json({ message: "Serverul nu poate accesa fișierul privat din Vercel Blob." });
+
         return res
+
           .status(502)
+
           .json({ message: "Serviciul de stocare nu este disponibil momentan." });
       }
+
       if (!blob?.stream)
         return res.status(404).json({ message: "Fișierul nu există în sistemul de stocare." });
+
       fileStream = Readable.fromWeb(blob.stream);
     } else {
       return res
+
         .status(410)
+
         .json({ message: "Fișierul aparține unui sistem de stocare necunoscut." });
     }
+
+    const monitoringDocumentDetails = await getMonitoringDocumentDetails(attachment);
 
     const filename = getSafeFilename(attachment.original_name || attachment.name);
 
@@ -636,7 +789,7 @@ const getAttachmentFile = async (req, res) => {
 
           action: isDownload ? "download" : "view",
 
-          details: `${isDownload ? "Descărcare" : "Vizualizare"} atașament #${attachment.id}: ${filename} (${attachment.entity_type} #${attachment.entity_id})`,
+          details: monitoringDocumentDetails,
 
           req,
         });
@@ -755,21 +908,29 @@ const deleteAttachment = async (req, res) => {
     }
 
     const blobPath = getBlobPath(attachment);
+
     const localPath = resolveLocalPath(attachment.file_path);
 
     if (attachment.attachment_type === "file" && localPath) {
       if (!isLocalStorage()) {
         await client.query("ROLLBACK");
+
         transactionStarted = false;
+
         return res.status(409).json({ message: "Fișierul local nu poate fi șters din producție." });
       }
+
       const sharedLocal = await client.query(
         "SELECT id FROM attachments WHERE file_path = $1 AND id <> $2 LIMIT 1",
+
         [attachment.file_path, attachment.id],
       );
+
       if (sharedLocal.rowCount) {
         await client.query("ROLLBACK");
+
         transactionStarted = false;
+
         return res.status(409).json({ message: "Fișierul local este referit de alt atașament." });
       }
     } else if (attachment.attachment_type === "file") {
@@ -819,11 +980,19 @@ const deleteAttachment = async (req, res) => {
       const queued = await client.query(
         `INSERT INTO blob_cleanup_queue
 
+
+
           (blob_path, source_entity_type, source_entity_id, source_attachment_id, reason)
+
+
 
          VALUES ($1, $2, $3, $4, 'attachment_deleted')
 
+
+
          ON CONFLICT (blob_path) DO NOTHING
+
+
 
          RETURNING id`,
 
@@ -853,8 +1022,10 @@ const deleteAttachment = async (req, res) => {
         await removeLocalFile(attachment.file_path);
       } catch (cleanupError) {
         console.error("LOCAL FILE DELETE ERROR:", cleanupError);
+
         return res.status(200).json({
           message: "Atașamentul a fost eliminat, dar fișierul local necesită curățare manuală.",
+
           warning: true,
         });
       }

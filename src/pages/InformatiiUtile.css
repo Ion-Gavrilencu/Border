@@ -653,7 +653,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1350px) {
   .informatii-page.informatii-modern {
     padding: 18px 14px 35px;
   }
@@ -1252,4 +1252,141 @@
   .informatii-viewer-download span {
     display: none;
   }
+}
+
+/* Ajustări responsive finale — fără modificarea designului sau logicii */
+.informatii-page.informatii-modern {
+  min-width: 0;
+  width: 100%;
+}
+.informatii-modern .informatii-toolbar > * {
+  min-width: 0;
+}
+.informatii-modern .info-filter-trigger {
+  max-width: 100%;
+}
+.informatii-modern .info-filter-copy {
+  min-width: 0;
+}
+.informatii-modern .informatii-table-scroll {
+  max-width: 100%;
+}
+.informatii-modern .informatii-table td {
+  vertical-align: middle;
+}
+.informatii-modern .info-table-actions {
+  white-space: nowrap;
+}
+@media (min-width: 1351px) {
+  .informatii-modern .informatii-toolbar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .informatii-modern .informatii-desktop-layout {
+    display: block;
+  }
+  .informatii-modern .informatii-mobile-list {
+    display: none;
+  }
+  .informatii-modern .informatii-data {
+    background: #fff;
+    border: 1px solid #d9e9fb;
+    overflow: hidden;
+  }
+  .informatii-modern .informatii-table {
+    min-width: 1120px;
+  }
+}
+@media (min-width: 701px) and (max-width: 1350px) {
+  .informatii-modern .informatii-toolbar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .informatii-modern .info-filter-trigger {
+    min-height: 66px;
+  }
+  .informatii-modern .informatii-desktop-layout {
+    display: none;
+  }
+  .informatii-modern .informatii-mobile-list {
+    display: grid;
+  }
+  .informatii-modern .informatii-data {
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .informatii-modern .informatii-card {
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+  .informatii-modern .informatii-card-content {
+    min-width: 0;
+  }
+}
+@media (min-width: 701px) and (max-width: 980px) {
+  .informatii-modern .informatii-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .informatii-modern .informatii-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .informatii-modern .informatii-hero {
+    overflow: visible;
+  }
+  .informatii-modern .informatii-hero-copy {
+    min-width: 0;
+  }
+  .informatii-modern .informatii-card-content {
+    min-width: 0;
+  }
+  .informatii-modern .informatii-card-footer {
+    min-width: 0;
+  }
+  .informatii-modern .informatii-actions {
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .informatii-modern .info-filter-menu {
+    min-width: 100%;
+  }
+}
+@media (max-width: 420px) {
+  .informatii-modern .informatii-hero-art {
+    width: 150px;
+    height: 115px;
+    top: 8px;
+    right: 0;
+  }
+  .informatii-modern .informatii-description {
+    max-width: 65%;
+  }
+  .informatii-modern .info-filter-trigger {
+    padding: 7px 6px;
+    gap: 5px;
+  }
+  .informatii-modern .info-filter-icon {
+    width: 30px;
+    height: 35px;
+  }
+  .informatii-modern .info-filter-copy strong {
+    font-size: 11px;
+  }
+  .informatii-modern .informatii-card {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+  .informatii-modern .informatii-card-icon {
+    width: 46px;
+    height: 52px;
+  }
+  .informatii-modern .informatii-card-content {
+    padding-right: 30px;
+  }
+}
+
+/* Ascunde exclusiv coloana Fișiere din tabelul desktop; atașamentele rămân accesibile din document. */
+.informatii-modern .informatii-table th:nth-child(9),
+.informatii-modern .informatii-table td:nth-child(9) {
+  display: none;
 }

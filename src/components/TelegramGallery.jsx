@@ -104,7 +104,7 @@ function TelegramGallery({
       resetView();
       try {
         if (
-          !["telegrame", "ordine", "legislatie", "informatii_utile"].includes(entityType) ||
+          !["telegrame", "ordine", "legislatie", "informatii_utile", "news"].includes(entityType) ||
           !documentId
         ) {
           throw new Error("Tipul documentului sau ID-ul este invalid.");
