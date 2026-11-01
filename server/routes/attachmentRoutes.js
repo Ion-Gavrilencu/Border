@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const upload = require("../middleware/uploadMiddleware");
+const validateAttachmentFile = require("../middleware/validateAttachmentFile");
 
 const {
   uploadAttachment,
@@ -36,6 +37,7 @@ router.post(
   authMiddleware,
   canManageAttachments,
   upload.single("file"),
+  validateAttachmentFile,
   uploadAttachment,
 );
 

@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const helmet = require("helmet");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -50,6 +51,26 @@ if (process.env.FRONTEND_URL) {
 const isAllowedOrigin = (origin) => typeof origin === "string" && allowedOrigins.has(origin);
 
 app.disable("x-powered-by");
+
+// Antete de securitate pentru API. CSP este configurată separat pe frontend,
+// deoarece acest backend livrează JSON și fișiere, nu pagini HTML.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
+    strictTransportSecurity:
+      process.env.NODE_ENV === "production"
+        ? { maxAge: 15552000, includeSubDomains: false }
+        : false,
+  }),
+);
+
+// Evită stocarea în cache a răspunsurilor API care pot conține date private.
+app.use("/api", (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 app.use(
   cors({
