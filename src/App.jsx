@@ -23,7 +23,9 @@ import AdaugaInformatiiUtile from "./pages/AdaugaInformatiiUtile";
 import EditInformatiiUtile from "./pages/EditInformatiiUtile";
 import AdaugaStire from "./pages/AdaugaStire";
 import EditStire from "./pages/EditStire";
-
+import TestareProfesionala from "./pages/TestareProfesionala";
+import EditorTestProfesional from "./pages/EditorTestProfesional";
+import SustinereTestProfesional from "./pages/SustinereTestProfesional";
 function App() {
   return (
     <AuthProvider>
@@ -42,32 +44,20 @@ function App() {
               <Route path="/ordine/adauga" element={<AdaugaOrdin />} />
               <Route path="/ordine/:id/edit" element={<EditOrder />} />
               <Route path="/legislatie" element={<Legislatie />} />
-              <Route
-                path="/legislatie/adauga"
-                element={<AdaugaLegislation />}
-              />
-              <Route
-                path="/legislatie/:id/edit"
-                element={<EditLegislation />}
-              />
+              <Route path="/legislatie/adauga" element={<AdaugaLegislation />} />
+              <Route path="/legislatie/:id/edit" element={<EditLegislation />} />
               <Route path="/informatii-utile" element={<InformatiiUtile />} />
-              <Route
-                path="/informatii-utile/adauga"
-                element={<AdaugaInformatiiUtile />}
-              />
-              <Route
-                path="/informatii-utile/:id/edit"
-                element={<EditInformatiiUtile />}
-              />
+              <Route path="/informatii-utile/adauga" element={<AdaugaInformatiiUtile />} />
+              <Route path="/informatii-utile/:id/edit" element={<EditInformatiiUtile />} />
               <Route path="/stiri/adauga" element={<AdaugaStire />} />
               <Route path="/stiri/:id/edit" element={<EditStire />} />
               <Route path="/profil" element={<Profile />} />
+              <Route path="/testare" element={<TestareProfesionala />} />
+              <Route path="/testare/incercari/:attemptId" element={<SustinereTestProfesional />} />
+              <Route path="/testare/:testId/editare" element={<EditorTestProfesional />} />
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<Administrare />} />
-                <Route
-                  path="/monitorizare-utilizatori"
-                  element={<MonitorizareUtilizatori />}
-                />
+                <Route path="/monitorizare-utilizatori" element={<MonitorizareUtilizatori />} />
               </Route>
             </Route>
           </Route>

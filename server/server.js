@@ -23,7 +23,7 @@ const newsFileRoutes = require("./routes/newsFileRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const monitoringRoutes = require("./routes/monitoringRoutes");
 const cronRoutes = require("./routes/cronRoutes");
-
+const professionalTestingRoutes = require("./routes/professionalTestingRoutes");
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 
@@ -143,6 +143,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/news-files", newsFileRoutes);
 app.use("/api/monitoring", monitoringRoutes);
 app.use("/api/cron", cronRoutes);
+app.use("/api/testare", professionalTestingRoutes);
 
 // Returnează JSON pentru erori de parsare și încărcări prea mari.
 app.use((error, req, res, next) => {

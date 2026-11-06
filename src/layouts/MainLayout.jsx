@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Toaster, toast } from "sonner";
 import {
   LayoutDashboard,
+  GraduationCap,
   Megaphone,
   FileText,
   Scale,
@@ -225,6 +226,10 @@ function MainLayout() {
           <NavLink to="/informatii-utile" onClick={() => setSidebarOpen(false)}>
             <Info size={20} />
             <span>Informații utile</span>
+          </NavLink>
+          <NavLink to="/testare" onClick={() => setSidebarOpen(false)}>
+            <GraduationCap size={20} />
+            <span>Testare profesională</span>
           </NavLink>
         </nav>
         <div className="sidebar-bottom">
