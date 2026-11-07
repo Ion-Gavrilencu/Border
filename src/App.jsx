@@ -26,6 +26,7 @@ import EditStire from "./pages/EditStire";
 import TestareProfesionala from "./pages/TestareProfesionala";
 import EditorTestProfesional from "./pages/EditorTestProfesional";
 import SustinereTestProfesional from "./pages/SustinereTestProfesional";
+import NotFound from "./pages/NotFound";
 function App() {
   return (
     <AuthProvider>
@@ -59,13 +60,12 @@ function App() {
                 <Route path="/admin" element={<Administrare />} />
                 <Route path="/monitorizare-utilizatori" element={<MonitorizareUtilizatori />} />
               </Route>
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
 }
-
 export default App;
