@@ -240,7 +240,7 @@ function MainLayout() {
         <nav className="sidebar-menu">
           <NavLink to="/dashboard" onClick={() => setSidebarOpen(false)}>
             <LayoutDashboard size={20} />
-            <span>Dashboard</span>
+            <span>Pagina principală</span>
           </NavLink>
           <NavLink to="/telegrame" onClick={() => setSidebarOpen(false)}>
             <Megaphone size={20} />

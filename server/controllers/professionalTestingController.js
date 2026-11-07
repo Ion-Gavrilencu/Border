@@ -820,6 +820,47 @@ const myResults = asyncRoute(async (req, res) => {
   );
   res.json({ results: r.rows });
 });
+const listVersionAssignments = asyncRoute(async (req, res) => {
+  const id = integer(req.params.versionId);
+  if (!id) return fail(res, 400, "ID invalid.");
+  const v = await versionAccess(pool, id);
+  if (!v || v.archived_at) return fail(res, 404, "Versiune inexistentă.");
+  if (!canManage(req, v)) return fail(res, 403, "Acces interzis.");
+  // Se expandează destinatarii USER, GROUP și ALL; nu se dezvăluie răspunsuri.
+  const r = await pool.query(
+    `
+    SELECT a.id AS assignment_id, u.id AS user_id, u.full_name, u.username,
+           a.target_type, a.assigned_at AS assigned_at,
+           CASE WHEN a.target_type = 'USER' THEN 'Atribuire individuală'
+                WHEN a.target_type = 'GROUP' THEN 'Atribuire prin grup'
+                ELSE 'Atribuire generală' END AS target_label,
+           CASE WHEN last_attempt.submitted_at IS NOT NULL THEN 'FINISHED'
+                WHEN last_attempt.id IS NOT NULL THEN 'IN_PROGRESS'
+                ELSE 'NOT_STARTED' END AS progress_status
+    FROM professional_test_assignments a
+    JOIN users u ON u.is_active = true AND (
+      (a.target_type = 'USER' AND u.id = a.user_id)
+      OR (a.target_type = 'ALL')
+      OR (a.target_type = 'GROUP' AND EXISTS (
+        SELECT 1 FROM professional_test_group_members gm
+        WHERE gm.group_id = a.group_id AND gm.user_id = u.id
+      ))
+    )
+    LEFT JOIN LATERAL (
+      SELECT at.id, at.submitted_at
+      FROM professional_test_attempts at
+      WHERE at.version_id = a.version_id AND at.user_id_snapshot = u.id
+      ORDER BY at.started_at DESC, at.id DESC LIMIT 1
+    ) last_attempt ON true
+    WHERE a.version_id = $1 AND a.revoked_at IS NULL
+    ORDER BY a.id DESC, u.full_name, u.id
+    LIMIT 2000
+  `,
+    [id],
+  );
+  return res.json({ assignments: r.rows });
+});
+
 const managerResults = asyncRoute(async (req, res) => {
   const id = integer(req.params.versionId);
   if (!id) return fail(res, 400, "ID invalid.");
@@ -943,6 +984,7 @@ module.exports = {
   myResults,
   attemptReview,
   managerResults,
+  listVersionAssignments,
   createGroup,
   addGroupMember,
 };

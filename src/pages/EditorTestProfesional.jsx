@@ -27,6 +27,10 @@ import {
   BarChart3,
   CheckCircle,
   XCircle,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
@@ -44,6 +48,7 @@ import {
   getEligibleTestUsers,
   assignTestVersion,
   getManagedTestResults,
+  getVersionAssignments,
 } from "../services/professionalTestingService";
 import "./EditorTestProfesional.css";
 import ImportTestQuestions from "../components/ImportTestQuestions";
@@ -87,8 +92,13 @@ export default function EditorTestProfesional() {
   const [settings, setSettings] = useState(initialSettings);
   const [users, setUsers] = useState([]);
   const [results, setResults] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyFilter, setHistoryFilter] = useState("ALL");
+  const [assignmentError, setAssignmentError] = useState("");
   const [target, setTarget] = useState("USER");
-  const [userId, setUserId] = useState("");
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [assignmentSearch, setAssignmentSearch] = useState("");
   const [question, setQuestion] = useState(blankQuestion);
   const [editingId, setEditingId] = useState(null);
   const [settingsReady, setSettingsReady] = useState(false);
@@ -96,6 +106,7 @@ export default function EditorTestProfesional() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [questionSearch, setQuestionSearch] = useState("");
+  const [expandedQuestionIds, setExpandedQuestionIds] = useState([]);
   const [resultSearch, setResultSearch] = useState("");
   const [resultFilter, setResultFilter] = useState("ALL");
   const canManage = user?.role === "ADMIN" || user?.role === "EDITOR";
@@ -164,15 +175,23 @@ export default function EditorTestProfesional() {
         );
       }
       if (found.status === "PUBLISHED") {
-        const [u, r] = await Promise.all([
+        const [u, r, a] = await Promise.all([
           getEligibleTestUsers(),
           getManagedTestResults(found.version_id),
+          getVersionAssignments(found.version_id).catch((err) => ({
+            error: msg(err),
+            assignments: [],
+          })),
         ]);
         setUsers(u.users || []);
         setResults(r.results || []);
+        setAssignments(a.assignments || []);
+        setAssignmentError(a.error || "");
       } else {
         setUsers([]);
         setResults([]);
+        setAssignments([]);
+        setAssignmentError("");
       }
     } catch (e) {
       setError(msg(e));
@@ -340,8 +359,44 @@ export default function EditorTestProfesional() {
     if (confirmed) await run(() => createNextTestVersion(test.id), "Versiune nouă creată.");
   };
 
+  const toggleAssignedUser = (id) => {
+    const value = String(id);
+    setSelectedUserIds((current) =>
+      current.includes(value) ? current.filter((x) => x !== value) : [...current, value],
+    );
+  };
+
+  const visibleEligibleUsers = users.filter((u) =>
+    `${u.full_name || ""} ${u.username || ""}`
+      .toLocaleLowerCase("ro")
+      .includes(assignmentSearch.trim().toLocaleLowerCase("ro")),
+  );
+
+  const reloadAssignments = async () => {
+    try {
+      const data = await getVersionAssignments(versionId);
+      setAssignments(data.assignments || []);
+      setAssignmentError("");
+    } catch (err) {
+      setAssignmentError(msg(err));
+    }
+  };
+  const filteredAssignments = assignments.filter((a) => {
+    const term = historySearch.trim().toLocaleLowerCase("ro");
+    const matches = `${a.full_name || ""} ${a.username || ""} ${a.target_label || ""}`
+      .toLocaleLowerCase("ro")
+      .includes(term);
+    return matches && (historyFilter === "ALL" || a.progress_status === historyFilter);
+  });
+  const assignmentStats = {
+    total: assignments.length,
+    pending: assignments.filter((a) => a.progress_status === "NOT_STARTED").length,
+    started: assignments.filter((a) => a.progress_status === "IN_PROGRESS").length,
+    finished: assignments.filter((a) => a.progress_status === "FINISHED").length,
+  };
   const doAssign = async (e) => {
     e.preventDefault();
+    if (busy) return;
     if (target === "ALL") {
       const confirmed = await confirmAction({
         title: "Atribui testul tuturor?",
@@ -349,18 +404,57 @@ export default function EditorTestProfesional() {
         confirmButtonText: "Atribuie tuturor",
       });
       if (!confirmed) return;
+      const ok = await run(
+        () => assignTestVersion(versionId, { target_type: "ALL" }),
+        "Testul a fost atribuit.",
+        false,
+      );
+      if (ok) await reloadAssignments();
+      return;
     }
-    await run(
-      () =>
-        assignTestVersion(
-          versionId,
-          target === "ALL"
-            ? { target_type: "ALL" }
-            : { target_type: "USER", user_id: Number(userId) },
+    const validIds = [...new Set(selectedUserIds)]
+      .map(Number)
+      .filter((id) => Number.isSafeInteger(id) && id > 0 && users.some((u) => Number(u.id) === id));
+    if (!validIds.length) {
+      toast.error("Selectează cel puțin un utilizator.");
+      return;
+    }
+    const confirmed = await confirmAction({
+      title: `Atribui testul pentru ${validIds.length} utilizatori?`,
+      text: "Fiecare utilizator selectat va primi individual această versiune a testului.",
+      confirmButtonText: "Confirmă atribuirea",
+    });
+    if (!confirmed) return;
+    setBusy(true);
+    const succeeded = [];
+    const alreadyAssigned = [];
+    const failed = [];
+    try {
+      // Endpointul existent acceptă un singur user_id per cerere.
+      // Cererile sunt secvențiale pentru a evita suprasolicitarea serviciului.
+      for (const id of validIds) {
+        try {
+          await assignTestVersion(versionId, { target_type: "USER", user_id: id });
+          succeeded.push(id);
+        } catch (err) {
+          if (err?.response?.status === 409) alreadyAssigned.push(id);
+          else failed.push({ id, message: msg(err) });
+        }
+      }
+      if (succeeded.length) toast.success(`Test atribuit pentru ${succeeded.length} utilizatori.`);
+      if (alreadyAssigned.length)
+        toast.info(`${alreadyAssigned.length} utilizatori aveau deja atribuirea.`);
+      if (failed.length)
+        toast.error(`Atribuirea a eșuat pentru ${failed.length} utilizatori. Poți reîncerca.`);
+      if (succeeded.length || alreadyAssigned.length) await reloadAssignments();
+      setSelectedUserIds((current) =>
+        current.filter(
+          (id) => !succeeded.includes(Number(id)) && !alreadyAssigned.includes(Number(id)),
         ),
-      "Testul a fost atribuit.",
-      false,
-    );
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!canManage)
@@ -594,20 +688,59 @@ export default function EditorTestProfesional() {
                         <p>Verifică variantele și punctajul fiecărei întrebări</p>
                       </div>
                     </div>
-                    <div className="pte-toolbar">
-                      <label className="pte-search">
-                        <Search size={17} aria-hidden="true" />
+                    <div className="pte-toolbar pte-questions-toolbar">
+                      <div className="pte-search" role="search">
+                        <Search size={18} aria-hidden="true" />
                         <input
                           type="search"
                           placeholder="Caută întrebări sau variante..."
-                          aria-label="Caută întrebări"
+                          aria-label="Caută întrebări sau variante"
                           value={questionSearch}
                           onChange={(e) => setQuestionSearch(e.target.value)}
                         />
-                      </label>
+                        {questionSearch && (
+                          <button
+                            type="button"
+                            className="pte-search-clear"
+                            aria-label="Șterge căutarea"
+                            onClick={() => setQuestionSearch("")}
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
                       <span className="pte-count">
                         {filteredQuestions.length} din {questions.length} întrebări
                       </span>
+                      {filteredQuestions.length > 0 && (
+                        <button
+                          type="button"
+                          className="pte-expand-all"
+                          onClick={() => {
+                            const allVisibleExpanded = filteredQuestions.every((q) =>
+                              expandedQuestionIds.includes(String(q.id)),
+                            );
+                            setExpandedQuestionIds((current) =>
+                              allVisibleExpanded
+                                ? current.filter(
+                                    (id) => !filteredQuestions.some((q) => String(q.id) === id),
+                                  )
+                                : [
+                                    ...new Set([
+                                      ...current,
+                                      ...filteredQuestions.map((q) => String(q.id)),
+                                    ]),
+                                  ],
+                            );
+                          }}
+                        >
+                          {filteredQuestions.every((q) =>
+                            expandedQuestionIds.includes(String(q.id)),
+                          )
+                            ? "Restrânge toate"
+                            : "Extinde toate"}
+                        </button>
+                      )}
                     </div>
                     {!filteredQuestions.length ? (
                       <div className="pte-empty-state">
@@ -622,58 +755,102 @@ export default function EditorTestProfesional() {
                         </span>
                       </div>
                     ) : (
-                      filteredQuestions.map((q) => (
-                        <article className="pte-question" key={q.id}>
-                          <div className="pte-qtitle">
-                            <strong>
-                              {questions.indexOf(q) + 1}. {q.question_text}
-                            </strong>
-                            <span>{q.points} pct.</span>
-                          </div>
-                          <p className="pte-note">
-                            {q.question_type === "MULTIPLE_CHOICE"
+                      <div className="pte-questions-list">
+                        {filteredQuestions.map((q) => {
+                          const isExpanded =
+                            expandedQuestionIds.includes(String(q.id)) || editingId === q.id;
+                          const number = questions.indexOf(q) + 1;
+                          const typeLabel =
+                            q.question_type === "MULTIPLE_CHOICE"
                               ? "Răspuns multiplu"
                               : q.question_type === "TRUE_FALSE"
-                                ? "Adevărat/Fals"
-                                : "Răspuns unic"}
-                          </p>
-                          <div className="pte-option-list">
-                            {(q.options || []).map((o) => (
-                              <div
-                                key={o.id}
-                                className={o.is_correct ? "pte-option pte-correct" : "pte-option"}
-                              >
-                                {o.is_correct ? "✓ " : "○ "}
-                                {o.option_text}
-                              </div>
-                            ))}
-                          </div>
-                          {q.legal_reference && (
-                            <p className="pte-note">Temei: {q.legal_reference}</p>
-                          )}
-                          {q.explanation && <p className="pte-note">Explicație: {q.explanation}</p>}
-                          {draft && (
-                            <div className="pte-q-actions">
+                                ? "Adevărat / Fals"
+                                : "Răspuns unic";
+                          return (
+                            <article
+                              className={`pte-question${isExpanded ? " is-expanded" : ""}`}
+                              key={q.id}
+                            >
                               <button
                                 type="button"
-                                className="pte-btn pte-btn-light"
-                                disabled={busy}
-                                onClick={() => beginEdit(q)}
+                                className="pte-question-toggle"
+                                aria-expanded={isExpanded}
+                                aria-controls={`pte-question-details-${q.id}`}
+                                onClick={() =>
+                                  setExpandedQuestionIds((current) =>
+                                    current.includes(String(q.id))
+                                      ? current.filter((id) => id !== String(q.id))
+                                      : [...current, String(q.id)],
+                                  )
+                                }
                               >
-                                <Pencil size={15} /> Editează
+                                <span className="pte-question-number">{number}</span>
+                                <span className="pte-question-title-group">
+                                  <strong>{q.question_text}</strong>
+                                  <small>
+                                    {typeLabel} · {(q.options || []).length} variante
+                                  </small>
+                                </span>
+                                <span className="pte-question-points">{q.points} pct.</span>
+                                {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                               </button>
-                              <button
-                                type="button"
-                                className="pte-btn pte-btn-light"
-                                disabled={busy}
-                                onClick={() => removeQuestion(q)}
-                              >
-                                <Trash2 size={15} /> Șterge
-                              </button>
-                            </div>
-                          )}
-                        </article>
-                      ))
+                              {isExpanded && (
+                                <div
+                                  className="pte-question-details"
+                                  id={`pte-question-details-${q.id}`}
+                                >
+                                  <div className="pte-option-list">
+                                    {(q.options || []).map((o, i) => (
+                                      <div
+                                        key={o.id ?? i}
+                                        className={`pte-option${o.is_correct ? " pte-correct" : ""}`}
+                                      >
+                                        {o.is_correct ? (
+                                          <CheckCircle2 size={17} aria-label="Răspuns corect" />
+                                        ) : (
+                                          <Circle size={16} aria-hidden="true" />
+                                        )}
+                                        <span>{o.option_text}</span>
+                                        {o.is_correct && <small>Corect</small>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {q.legal_reference && (
+                                    <p className="pte-question-meta">
+                                      <strong>Temei:</strong> {q.legal_reference}
+                                    </p>
+                                  )}
+                                  {q.explanation && (
+                                    <p className="pte-question-meta">
+                                      <strong>Explicație:</strong> {q.explanation}
+                                    </p>
+                                  )}
+                                  {draft && (
+                                    <div className="pte-q-actions">
+                                      <button
+                                        type="button"
+                                        className="pte-btn pte-btn-light"
+                                        disabled={busy}
+                                        onClick={() => beginEdit(q)}
+                                      >
+                                        <Pencil size={15} /> Editează
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="pte-btn pte-btn-light pte-btn-danger"
+                                        disabled={busy}
+                                        onClick={() => removeQuestion(q)}
+                                      >
+                                        <Trash2 size={15} /> Șterge
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </article>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                   {draft && (
@@ -820,58 +997,153 @@ export default function EditorTestProfesional() {
                   </div>
                   <div>
                     <h2>Atribuie testul</h2>
-                    <p>Selectează persoanele care vor susține evaluarea</p>
+                    <p>Gestionează destinatarii evaluării profesionale</p>
                   </div>
                 </div>
                 {draft ? (
                   <p className="pte-note">Publică versiunea înainte de atribuire.</p>
                 ) : (
                   <div className="pte-assign-layout">
-                    <form className="pte-form pte-narrow pte-assign-form" onSubmit={doAssign}>
-                      <label>
+                    <form className="pte-form pte-assign-form" onSubmit={doAssign}>
+                      <div className="pte-assign-metrics" aria-label="Situația destinatarilor">
+                        <div className="pte-assign-metric">
+                          <span>
+                            <Users size={16} /> Utilizatori eligibili
+                          </span>
+                          <strong>{users.length}</strong>
+                        </div>
+                        <div className="pte-assign-metric">
+                          <span>
+                            <CheckCircle2 size={16} /> Selectați
+                          </span>
+                          <strong>
+                            {target === "ALL" ? users.length : selectedUserIds.length}
+                          </strong>
+                        </div>
+                      </div>
+                      <label className="pte-assign-target">
                         Destinatari
-                        <select value={target} onChange={(e) => setTarget(e.target.value)}>
-                          <option value="USER">Un utilizator</option>
+                        <select
+                          value={target}
+                          onChange={(e) => setTarget(e.target.value)}
+                          disabled={busy}
+                        >
+                          <option value="USER">Utilizatori selectați</option>
                           <option value="ALL">Toți utilizatorii eligibili</option>
                         </select>
                       </label>
                       {target === "USER" && (
-                        <label>
-                          Utilizator
-                          <select
-                            required
-                            value={userId}
-                            onChange={(e) => setUserId(e.target.value)}
+                        <div className="pte-multi-users">
+                          <label htmlFor="pte-user-search">Caută utilizatori</label>
+                          <div className="pte-user-search-wrap">
+                            <Search size={18} aria-hidden="true" />
+                            <input
+                              id="pte-user-search"
+                              type="search"
+                              value={assignmentSearch}
+                              onChange={(e) => setAssignmentSearch(e.target.value)}
+                              placeholder="Caută după nume sau utilizator..."
+                              disabled={busy}
+                            />
+                          </div>
+                          <div className="pte-user-selection-actions">
+                            <span>
+                              {selectedUserIds.length} din {users.length} selectați
+                            </span>
+                            <button
+                              type="button"
+                              disabled={busy || !visibleEligibleUsers.length}
+                              onClick={() =>
+                                setSelectedUserIds((current) => [
+                                  ...new Set([
+                                    ...current,
+                                    ...visibleEligibleUsers.map((u) => String(u.id)),
+                                  ]),
+                                ])
+                              }
+                            >
+                              Selectează {assignmentSearch ? "rezultatele" : "toți"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy || !selectedUserIds.length}
+                              onClick={() => setSelectedUserIds([])}
+                            >
+                              Deselectează
+                            </button>
+                          </div>
+                          <div
+                            className="pte-user-checklist"
+                            role="group"
+                            aria-label="Utilizatori eligibili"
                           >
-                            <option value="">Selectează utilizatorul</option>
-                            {users.map((u) => (
-                              <option key={u.id} value={u.id}>
-                                {u.full_name || u.username} ({u.username})
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                            {visibleEligibleUsers.length ? (
+                              visibleEligibleUsers.map((u) => {
+                                const checked = selectedUserIds.includes(String(u.id));
+                                const name = u.full_name || u.username || "Utilizator";
+                                return (
+                                  <label
+                                    className={`pte-user-choice${checked ? " is-selected" : ""}`}
+                                    key={u.id}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      disabled={busy}
+                                      onChange={() => toggleAssignedUser(u.id)}
+                                    />
+                                    <span className="pte-user-avatar" aria-hidden="true">
+                                      {name.trim().charAt(0).toLocaleUpperCase("ro")}
+                                    </span>
+                                    <span className="pte-user-identity">
+                                      <strong>{name}</strong>
+                                      <small>@{u.username}</small>
+                                    </span>
+                                    <span className="pte-user-check-icon" aria-hidden="true">
+                                      <CheckCircle2 size={19} />
+                                    </span>
+                                  </label>
+                                );
+                              })
+                            ) : (
+                              <p className="pte-note">Nu au fost găsiți utilizatori.</p>
+                            )}
+                          </div>
+                        </div>
                       )}
-                      <button
-                        className="pte-btn pte-btn-primary"
-                        type="submit"
-                        disabled={busy || (target === "USER" && !userId)}
-                      >
-                        <Send size={16} /> Atribuie
-                      </button>
-                      <p className="pte-note">
-                        Atribuirea grupurilor va fi adăugată după integrarea gestionării grupurilor.
+                      <div className="pte-assign-footer">
+                        <span>
+                          {target === "ALL"
+                            ? `Atribuire pentru ${users.length} utilizatori eligibili`
+                            : `${selectedUserIds.length} persoane pregătite pentru atribuire`}
+                        </span>
+                        <button
+                          className="pte-btn pte-btn-primary"
+                          type="submit"
+                          disabled={busy || (target === "USER" && !selectedUserIds.length)}
+                        >
+                          <Send size={16} />{" "}
+                          {busy
+                            ? "Se atribuie..."
+                            : target === "ALL"
+                              ? "Atribuie tuturor"
+                              : `Atribuie (${selectedUserIds.length})`}
+                        </button>
+                      </div>
+                      <p className="pte-note pte-assign-note">
+                        Atribuirea grupurilor va fi disponibilă după integrarea gestionării
+                        grupurilor.
                       </p>
                     </form>
                     <aside className="pte-assign-aside">
                       <div className="pte-aside-icon">
-                        <UserRound size={23} />
+                        <UserRound size={22} />
                       </div>
                       <h3>Distribuirea evaluării</h3>
                       <p>
                         {target === "ALL"
                           ? "Testul va fi distribuit tuturor utilizatorilor eligibili."
-                          : "Selectează un utilizator din listă pentru a-i atribui această versiune."}
+                          : `Ai selectat ${selectedUserIds.length} utilizatori pentru această versiune.`}
                       </p>
                       <div className="pte-aside-divider" />
                       <div className="pte-aside-detail">
@@ -888,6 +1160,121 @@ export default function EditorTestProfesional() {
                       </div>
                     </aside>
                   </div>
+                )}
+                {!draft && (
+                  <section className="pte-history" aria-label="Istoricul atribuirilor">
+                    <div className="pte-history-heading">
+                      <div>
+                        <h3>
+                          <ClipboardList size={19} /> Istoricul atribuirilor
+                        </h3>
+                        <p>Destinatarii și progresul lor pentru versiunea curentă</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="pte-btn pte-btn-light"
+                        onClick={reloadAssignments}
+                        disabled={busy}
+                      >
+                        <RefreshCw size={16} /> Actualizează istoricul
+                      </button>
+                    </div>
+                    {assignmentError && (
+                      <div className="pte-error" role="alert">
+                        {assignmentError}
+                      </div>
+                    )}
+                    <div className="pte-history-stats">
+                      <div>
+                        <span>Atribuiri către persoane</span>
+                        <strong>{assignmentStats.total}</strong>
+                      </div>
+                      <div>
+                        <span>Neîncepute</span>
+                        <strong>{assignmentStats.pending}</strong>
+                      </div>
+                      <div>
+                        <span>În desfășurare</span>
+                        <strong>{assignmentStats.started}</strong>
+                      </div>
+                      <div>
+                        <span>Finalizate</span>
+                        <strong>{assignmentStats.finished}</strong>
+                      </div>
+                    </div>
+                    <div className="pte-history-toolbar">
+                      <div className="pte-user-search-wrap">
+                        <Search size={18} aria-hidden="true" />
+                        <input
+                          type="search"
+                          aria-label="Caută în istoricul atribuirilor"
+                          placeholder="Caută după nume sau utilizator..."
+                          value={historySearch}
+                          onChange={(e) => setHistorySearch(e.target.value)}
+                        />
+                      </div>
+                      <select
+                        aria-label="Filtrează starea atribuirii"
+                        value={historyFilter}
+                        onChange={(e) => setHistoryFilter(e.target.value)}
+                      >
+                        <option value="ALL">Toate stările</option>
+                        <option value="NOT_STARTED">Neîncepute</option>
+                        <option value="IN_PROGRESS">În desfășurare</option>
+                        <option value="FINISHED">Finalizate</option>
+                      </select>
+                    </div>
+                    {filteredAssignments.length ? (
+                      <div className="pte-history-list">
+                        {filteredAssignments.map((a) => (
+                          <article
+                            className="pte-history-item"
+                            key={`${a.assignment_id}-${a.user_id}`}
+                          >
+                            <div className="pte-history-person">
+                              <span className="pte-user-avatar" aria-hidden="true">
+                                {(a.full_name || a.username || "?")
+                                  .charAt(0)
+                                  .toLocaleUpperCase("ro")}
+                              </span>
+                              <div>
+                                <strong>{a.full_name || a.username || "Utilizator"}</strong>
+                                <small>
+                                  {a.username ? `@${a.username} · ` : ""}
+                                  {a.target_label}
+                                </small>
+                              </div>
+                            </div>
+                            <span
+                              className={`pte-history-status pte-history-${a.progress_status.toLowerCase()}`}
+                            >
+                              {a.progress_status === "FINISHED"
+                                ? "Finalizat"
+                                : a.progress_status === "IN_PROGRESS"
+                                  ? "În desfășurare"
+                                  : "Neînceput"}
+                            </span>
+                            <div className="pte-history-date">
+                              {a.assigned_at
+                                ? new Date(a.assigned_at).toLocaleString("ro-RO")
+                                : "Data indisponibilă"}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="pte-note">
+                        {assignments.length
+                          ? "Nu există rezultate pentru filtrele selectate."
+                          : "Nu există atribuiri pentru această versiune."}
+                      </p>
+                    )}
+                    <p className="pte-note">
+                      Atribuirile generale și cele pe grup sunt afișate pentru membrii eligibili în
+                      prezent. O persoană poate apărea de mai multe ori dacă a primit atribuiri
+                      distincte.
+                    </p>
+                  </section>
                 )}
               </div>
             )}

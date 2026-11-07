@@ -19,6 +19,8 @@ export const getEligibleTestUsers = async () =>
   (await api.get("/testare/utilizatori-eligibili")).data;
 export const assignTestVersion = async (id, payload) =>
   (await api.post(`/testare/versiuni/${id}/atribuiri`, payload)).data;
+export const getVersionAssignments = async (id) =>
+  (await api.get(`/testare/versiuni/${id}/atribuiri`)).data;
 export const getManagedTestResults = async (id) =>
   (await api.get(`/testare/versiuni/${id}/rezultate`)).data;
 export const getTestVersion = async (id) => (await api.get(`/testare/versiuni/${id}`)).data;
@@ -39,7 +41,7 @@ export const deleteProfessionalTest = async (testId) =>
 export const getProfessionalAttemptReview = async (attemptId) =>
   (await api.get(`/testare/incercari/${attemptId}/rezultat`)).data;
 
-// Import: backendul returnează o previzualizare; nimic nu se salvează înainte de confirmare.
+// Importul este confirmat separat; previzualizarea nu salvează întrebări.
 export const previewTestQuestionsImport = async (versionId, file) => {
   const data = new FormData();
   data.append("file", file);

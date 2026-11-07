@@ -18,12 +18,13 @@ const upload = multer({
     cb(null, true);
   },
 });
+
 const uploadOne = (req, res, next) =>
   upload.single("file")(req, res, (err) => {
     if (!err) return next();
-    return res
-      .status(err.code === "LIMIT_FILE_SIZE" ? 413 : err.status || 400)
-      .json({ message: err.code === "LIMIT_FILE_SIZE" ? "Fișierul depășește 5 MB." : err.message });
+    return res.status(err.code === "LIMIT_FILE_SIZE" ? 413 : err.status || 400).json({
+      message: err.code === "LIMIT_FILE_SIZE" ? "Fișierul depășește 5 MB." : err.message,
+    });
   });
 
 router.use(authenticate);
@@ -36,6 +37,7 @@ router.put("/incercari/:attemptId/raspuns", c.saveAnswer);
 router.post("/incercari/:attemptId/finalizare", c.submit);
 router.post("/versiuni/:versionId/incepe", c.startAttempt);
 router.delete("/teste/:testId", authorizeRoles("ADMIN"), c.deleteTest);
+
 router.use(authorizeRoles("ADMIN", "EDITOR"));
 router.get("/utilizatori-eligibili", c.eligibleUsers);
 router.get("/teste", c.listTests);
@@ -55,7 +57,9 @@ router.put("/versiuni/:versionId/intrebari/:questionId", c.editQuestion);
 router.delete("/versiuni/:versionId/intrebari/:questionId", c.deleteQuestion);
 router.post("/versiuni/:versionId/publicare", c.publish);
 router.post("/versiuni/:versionId/atribuiri", c.assign);
+router.get("/versiuni/:versionId/atribuiri", c.listVersionAssignments);
 router.get("/versiuni/:versionId/rezultate", c.managerResults);
 router.post("/grupuri", c.createGroup);
 router.post("/grupuri/:groupId/membri", c.addGroupMember);
+
 module.exports = router;
