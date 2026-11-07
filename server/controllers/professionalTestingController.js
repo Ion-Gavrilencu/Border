@@ -861,6 +861,59 @@ const listVersionAssignments = asyncRoute(async (req, res) => {
   return res.json({ assignments: r.rows });
 });
 
+// Revizuire managerială: numai ADMIN sau editorul care a creat testul.
+// Nu permite consultarea răspunsurilor unei încercări încă active.
+const managerAttemptReview = asyncRoute(async (req, res) => {
+  const id = integer(req.params.attemptId);
+  if (!id) return fail(res, 400, "ID invalid.");
+  const result = await pool.query(
+    `SELECT a.*, t.title, t.created_by, t.archived_at
+     FROM professional_test_attempts a
+     JOIN professional_test_versions v ON v.id=a.version_id
+     JOIN professional_tests t ON t.id=v.test_id
+     WHERE a.id=$1`,
+    [id],
+  );
+  const a = result.rows[0];
+  if (!a || a.archived_at) return fail(res, 404, "Lucrarea nu există.");
+  if (!canManage(req, a)) return fail(res, 403, "Nu ai permisiunea de a consulta această lucrare.");
+  if (a.status === "IN_PROGRESS") return fail(res, 409, "Lucrarea este încă în desfășurare.");
+  const questions = await questionList(pool, a.version_id, true);
+  const saved = await pool.query(
+    `SELECT question_id, selected_option_ids, is_correct, awarded_points
+     FROM professional_test_attempt_answers WHERE attempt_id=$1`,
+    [id],
+  );
+  const answers = new Map(saved.rows.map((row) => [String(row.question_id), row]));
+  res.json({
+    attempt: {
+      id: a.id,
+      version_id: a.version_id,
+      attempt_number: a.attempt_number,
+      user_name_snapshot: a.user_name_snapshot,
+      status: a.status,
+      started_at: a.started_at,
+      submitted_at: a.submitted_at,
+      percentage: a.percentage,
+      grade: a.grade,
+      passed: a.passed,
+      earned_points: a.earned_points,
+      total_points: a.total_points,
+      title: a.title,
+    },
+    questions: questions.map((q) => {
+      const answer = answers.get(String(q.id));
+      return {
+        ...q,
+        selected_option_ids: (answer?.selected_option_ids || []).map(String),
+        answered: Boolean(answer?.selected_option_ids?.length),
+        is_correct: answer?.is_correct ?? null,
+        awarded_points: Number(answer?.awarded_points || 0),
+      };
+    }),
+  });
+});
+
 const managerResults = asyncRoute(async (req, res) => {
   const id = integer(req.params.versionId);
   if (!id) return fail(res, 400, "ID invalid.");
@@ -984,6 +1037,7 @@ module.exports = {
   myResults,
   attemptReview,
   managerResults,
+  managerAttemptReview,
   listVersionAssignments,
   createGroup,
   addGroupMember,

@@ -1,27 +1,21 @@
 const express = require("express");
-
 const authenticate = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
-
 const {
   heartbeat,
   getOverview,
   getActivities,
   recordPageView,
+  getRetentionSettings,
+  updateRetentionSettings,
 } = require("../controllers/monitoringController");
-
 const router = express.Router();
-
 router.use(authenticate);
-
-// Toți utilizatorii autentificați
 router.post("/heartbeat", heartbeat);
 router.post("/page-view", recordPageView);
-
-// Doar administratorul poate consulta monitorizarea
 router.use(authorizeRoles("ADMIN"));
-
 router.get("/overview", getOverview);
 router.get("/activities", getActivities);
-
+router.get("/retention", getRetentionSettings);
+router.put("/retention", express.json(), updateRetentionSettings);
 module.exports = router;

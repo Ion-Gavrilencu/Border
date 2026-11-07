@@ -5,10 +5,10 @@ import MonitoringStats from "../components/monitoring/MonitoringStats";
 import MonitoringUserList from "../components/monitoring/MonitoringUserList";
 import MonitoringUserProfile from "../components/monitoring/MonitoringUserProfile";
 import MonitoringActivity from "../components/monitoring/MonitoringActivity";
+import MonitoringRetention from "../components/monitoring/MonitoringRetention";
 import "./MonitorizareUtilizatori.css";
 
 const errorMessage = (error, fallback) => error?.response?.data?.message || fallback;
-
 export default function MonitorizareUtilizatori() {
   const [overview, setOverview] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -26,32 +26,31 @@ export default function MonitorizareUtilizatori() {
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [activityError, setActivityError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-
   const loadOverview = useCallback(async () => {
     try {
       const data = await getMonitoringOverview();
       setOverview(data);
-      setSelectedId((previous) => previous !== null && data.users?.some((u) => String(u.id) === String(previous)) ? previous : data.users?.[0]?.id ?? null);
+      setSelectedId((previous) =>
+        previous !== null && data.users?.some((u) => String(u.id) === String(previous))
+          ? previous
+          : (data.users?.[0]?.id ?? null),
+      );
     } catch (error) {
       toast.error(errorMessage(error, "Nu s-au putut încărca utilizatorii."));
     } finally {
       setLoadingOverview(false);
     }
   }, []);
-
   useEffect(() => {
     loadOverview();
     const timer = window.setInterval(loadOverview, 15000);
     return () => window.clearInterval(timer);
   }, [loadOverview]);
-
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(activitySearch.trim()), 350);
     return () => window.clearTimeout(timer);
   }, [activitySearch]);
-
   useEffect(() => setPage(1), [selectedId, action, debouncedSearch, start, end]);
-
   useEffect(() => {
     if (selectedId === null) {
       setActivities([]);
@@ -61,7 +60,15 @@ export default function MonitorizareUtilizatori() {
     let active = true;
     setLoadingActivities(true);
     setActivityError("");
-    getMonitoringActivities({ userId: selectedId, action, search: debouncedSearch, start: start || undefined, end: end || undefined, page, limit: 8 })
+    getMonitoringActivities({
+      userId: selectedId,
+      action,
+      search: debouncedSearch,
+      start: start || undefined,
+      end: end || undefined,
+      page,
+      limit: 8,
+    })
       .then((data) => {
         if (!active) return;
         setActivities(data.activities || []);
@@ -73,38 +80,81 @@ export default function MonitorizareUtilizatori() {
         setActivities([]);
         setTotal(0);
       })
-      .finally(() => { if (active) setLoadingActivities(false); });
-    return () => { active = false; };
+      .finally(() => {
+        if (active) setLoadingActivities(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [selectedId, action, debouncedSearch, start, end, page, refreshKey]);
-
   const users = overview?.users || [];
   const selected = users.find((user) => String(user.id) === String(selectedId));
-  const filteredUsers = useMemo(() => users.filter((user) => {
-    const term = userSearch.trim().toLocaleLowerCase("ro-RO");
-    const matches = [user.full_name, user.username, user.email].some((value) => String(value || "").toLocaleLowerCase("ro-RO").includes(term));
-    return matches && (status === "all" || (status === "online" ? user.online : !user.online));
-  }), [users, userSearch, status]);
-
+  const filteredUsers = useMemo(
+    () =>
+      users.filter((user) => {
+        const term = userSearch.trim().toLocaleLowerCase("ro-RO");
+        const matches = [user.full_name, user.username, user.email].some((value) =>
+          String(value || "")
+            .toLocaleLowerCase("ro-RO")
+            .includes(term),
+        );
+        return matches && (status === "all" || (status === "online" ? user.online : !user.online));
+      }),
+    [users, userSearch, status],
+  );
   const refresh = () => {
     loadOverview();
     setRefreshKey((value) => value + 1);
   };
-
   return (
     <div className="mon-page">
       <header className="mon-heading">
         <span className="mon-eyebrow">ADMINISTRARE</span>
         <h1>Monitorizare utilizatori</h1>
-        <p>Urmărește activitatea utilizatorilor în platformă: conectări, căutări, accesări pagini, vizualizări și descărcări.</p>
+        <p>
+          Urmărește activitatea utilizatorilor în platformă: conectări, căutări, accesări pagini,
+          vizualizări și descărcări.
+        </p>
       </header>
-      <MonitoringStats stats={overview?.stats} totalUsers={users.length} loading={loadingOverview} />
+      <MonitoringStats
+        stats={overview?.stats}
+        totalUsers={users.length}
+        loading={loadingOverview}
+      />
       <div className="mon-columns">
-        <MonitoringUserList users={users} filteredUsers={filteredUsers} selectedId={selectedId} onSelect={setSelectedId} search={userSearch} onSearchChange={setUserSearch} status={status} onStatusChange={setStatus} loading={loadingOverview} />
+        <MonitoringUserList
+          users={users}
+          filteredUsers={filteredUsers}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          search={userSearch}
+          onSearchChange={setUserSearch}
+          status={status}
+          onStatusChange={setStatus}
+          loading={loadingOverview}
+        />
         <div className="mon-right">
           <MonitoringUserProfile user={selected} />
-          <MonitoringActivity activities={activities} total={total} page={page} onPageChange={setPage} action={action} onActionChange={setAction} search={activitySearch} onSearchChange={setActivitySearch} start={start} onStartChange={setStart} end={end} onEndChange={setEnd} loading={loadingActivities} error={activityError} onRefresh={refresh} />
+          <MonitoringActivity
+            activities={activities}
+            total={total}
+            page={page}
+            onPageChange={setPage}
+            action={action}
+            onActionChange={setAction}
+            search={activitySearch}
+            onSearchChange={setActivitySearch}
+            start={start}
+            onStartChange={setStart}
+            end={end}
+            onEndChange={setEnd}
+            loading={loadingActivities}
+            error={activityError}
+            onRefresh={refresh}
+          />
         </div>
       </div>
+      <MonitoringRetention />
     </div>
   );
 }

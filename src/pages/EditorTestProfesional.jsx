@@ -27,10 +27,11 @@ import {
   BarChart3,
   CheckCircle,
   XCircle,
+  Eye,
+  X,
   ChevronDown,
   ChevronUp,
   Circle,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
@@ -49,6 +50,7 @@ import {
   assignTestVersion,
   getManagedTestResults,
   getVersionAssignments,
+  getManagedAttemptReview,
 } from "../services/professionalTestingService";
 import "./EditorTestProfesional.css";
 import ImportTestQuestions from "../components/ImportTestQuestions";
@@ -109,6 +111,8 @@ export default function EditorTestProfesional() {
   const [expandedQuestionIds, setExpandedQuestionIds] = useState([]);
   const [resultSearch, setResultSearch] = useState("");
   const [resultFilter, setResultFilter] = useState("ALL");
+  const [review, setReview] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const canManage = user?.role === "ADMIN" || user?.role === "EDITOR";
   const draft = test?.status === "DRAFT";
   const versionId = test?.version_id;
@@ -128,6 +132,31 @@ export default function EditorTestProfesional() {
       (resultFilter === "PENDING" && r.passed == null);
     return matchName && matchStatus;
   });
+
+  const statusRo = (status) =>
+    ({
+      IN_PROGRESS: "În desfășurare",
+      SUBMITTED: "Finalizat",
+      EXPIRED: "Timp expirat",
+      CANCELLED: "Anulat",
+      CANCELED: "Anulat",
+      ABANDONED: "Abandonat",
+    })[status] || "Stare necunoscută";
+  const openReview = async (attempt) => {
+    if (attempt.status === "IN_PROGRESS") {
+      toast.info("Lucrarea poate fi consultată după încheierea încercării.");
+      return;
+    }
+    setReviewLoading(true);
+    try {
+      const data = await getManagedAttemptReview(attempt.id);
+      setReview(data);
+    } catch (err) {
+      toast.error(msg(err));
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1279,22 +1308,18 @@ export default function EditorTestProfesional() {
               </div>
             )}
             {tab === "results" && (
-              <div className="pte-panel pte-pad">
+              <div className="pte-panel pte-pad pte-results-modern">
                 <div className="pte-section-heading">
                   <div className="pte-section-icon">
                     <Trophy size={22} />
                   </div>
                   <div>
                     <h2>Rezultatele versiunii</h2>
-                    <p>Monitorizează încercările și performanța participanților</p>
+                    <p>Monitorizează evaluările și consultă lucrările încheiate</p>
                   </div>
                 </div>
                 {draft ? (
                   <p className="pte-note">Versiunea nu este încă publicată.</p>
-                ) : !results.length ? (
-                  <p className="pte-note">
-                    Nu există rezultate sau încercări pentru această versiune.
-                  </p>
                 ) : (
                   <>
                     <div className="pte-results-overview">
@@ -1314,15 +1339,21 @@ export default function EditorTestProfesional() {
                       </div>
                       <div>
                         <span>
-                          <BarChart3 size={17} /> Finalizate
+                          <BarChart3 size={17} /> Încheiate
                         </span>
-                        <strong>{results.filter((r) => r.status === "SUBMITTED").length}</strong>
-                        <small>Teste transmise</small>
+                        <strong>
+                          {
+                            results.filter(
+                              (r) => r.status === "SUBMITTED" || r.status === "EXPIRED",
+                            ).length
+                          }
+                        </strong>
+                        <small>Finalizate sau expirate</small>
                       </div>
                     </div>
-                    <div className="pte-toolbar pte-results-toolbar">
-                      <label className="pte-search">
-                        <Search size={17} aria-hidden="true" />
+                    <div className="pte-results-controls">
+                      <label className="pte-results-search">
+                        <Search size={18} aria-hidden="true" />
                         <input
                           type="search"
                           placeholder="Caută participant..."
@@ -1331,8 +1362,8 @@ export default function EditorTestProfesional() {
                           onChange={(e) => setResultSearch(e.target.value)}
                         />
                       </label>
-                      <label className="pte-filter">
-                        <Filter size={16} aria-hidden="true" />
+                      <label className="pte-results-select">
+                        <Filter size={17} aria-hidden="true" />
                         <select
                           aria-label="Filtrează rezultatele"
                           value={resultFilter}
@@ -1346,58 +1377,159 @@ export default function EditorTestProfesional() {
                       </label>
                       <span className="pte-count">{filteredResults.length} rezultate</span>
                     </div>
-                    <div className="pte-table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Utilizator</th>
-                            <th>Încercare</th>
-                            <th>Stare</th>
-                            <th>Procent</th>
-                            <th>Notă</th>
-                            <th>Promovat</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredResults.map((r) => (
-                            <tr key={r.id}>
-                              <td>{r.user_name_snapshot}</td>
-                              <td>{r.attempt_number}</td>
-                              <td>
+                    {!filteredResults.length ? (
+                      <div className="pte-results-empty">
+                        Nu există rezultate pentru filtrele selectate.
+                      </div>
+                    ) : (
+                      <div className="pte-results-list">
+                        {filteredResults.map((r) => (
+                          <div className="pte-result-item" key={r.id}>
+                            <div className="pte-result-person">
+                              <div className="pte-result-avatar">
+                                <UserRound size={20} />
+                              </div>
+                              <div>
+                                <strong>{r.user_name_snapshot || "Participant"}</strong>
+                                <small>Încercarea nr. {r.attempt_number}</small>
+                              </div>
+                            </div>
+                            <div className="pte-result-metrics">
+                              <div>
+                                <small>Stare</small>
                                 <span
-                                  className={
-                                    r.status === "SUBMITTED"
-                                      ? "pte-status pte-status-done"
-                                      : "pte-status pte-status-pending"
-                                  }
+                                  className={`pte-status ${r.status === "SUBMITTED" ? "pte-status-done" : "pte-status-pending"}`}
                                 >
-                                  {r.status === "SUBMITTED" ? "Finalizat" : r.status}
+                                  {statusRo(r.status)}
                                 </span>
-                              </td>
-                              <td>{r.percentage == null ? "—" : `${r.percentage}%`}</td>
-                              <td>{r.grade ?? "—"}</td>
-                              <td>
+                              </div>
+                              <div>
+                                <small>Procent</small>
+                                <strong>
+                                  {r.percentage == null
+                                    ? "—"
+                                    : `${Number(r.percentage).toFixed(2)}%`}
+                                </strong>
+                              </div>
+                              <div>
+                                <small>Notă</small>
+                                <strong>
+                                  {r.grade == null ? "—" : Number(r.grade).toFixed(2)}
+                                </strong>
+                              </div>
+                              <div>
+                                <small>Rezultat</small>
                                 {r.passed == null ? (
                                   "—"
                                 ) : (
                                   <span
-                                    className={
-                                      r.passed
-                                        ? "pte-status pte-status-done"
-                                        : "pte-status pte-status-failed"
-                                    }
+                                    className={`pte-status ${r.passed ? "pte-status-done" : "pte-status-failed"}`}
                                   >
-                                    {r.passed ? <CheckCircle size={13} /> : <XCircle size={13} />}{" "}
                                     {r.passed ? "Promovat" : "Nepromovat"}
                                   </span>
                                 )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="pte-btn pte-btn-light pte-result-review-btn"
+                              disabled={reviewLoading || r.status === "IN_PROGRESS"}
+                              onClick={() => openReview(r)}
+                            >
+                              <Eye size={16} /> Vezi lucrarea
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </>
+                )}
+                {review && (
+                  <div
+                    className="pte-review-backdrop"
+                    onClick={() => setReview(null)}
+                    role="presentation"
+                  >
+                    <section
+                      className="pte-review-dialog"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="Lucrarea participantului"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <header className="pte-review-header">
+                        <div>
+                          <h3>Lucrarea participantului</h3>
+                          <p>
+                            {review.attempt?.user_name_snapshot || "Participant"} · Încercarea nr.{" "}
+                            {review.attempt?.attempt_number} · {statusRo(review.attempt?.status)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="Închide lucrarea"
+                          onClick={() => setReview(null)}
+                        >
+                          <X size={20} />
+                        </button>
+                      </header>
+                      <div className="pte-review-body">
+                        <div className="pte-review-summary">
+                          <span>
+                            Procent: <strong>{review.attempt?.percentage ?? "—"}%</strong>
+                          </span>
+                          <span>
+                            Notă: <strong>{review.attempt?.grade ?? "—"}</strong>
+                          </span>
+                          <span>
+                            Rezultat:{" "}
+                            <strong>
+                              {review.attempt?.passed == null
+                                ? "Neevaluat"
+                                : review.attempt.passed
+                                  ? "Promovat"
+                                  : "Nepromovat"}
+                            </strong>
+                          </span>
+                        </div>
+                        {(review.questions || []).map((q, i) => (
+                          <article className="pte-review-question" key={q.id}>
+                            <h4>
+                              {i + 1}. {q.question_text}
+                            </h4>
+                            <div className="pte-review-options">
+                              {(q.options || []).map((o) => {
+                                const selected = (q.selected_option_ids || [])
+                                  .map(String)
+                                  .includes(String(o.id));
+                                return (
+                                  <div
+                                    key={o.id}
+                                    className={`pte-review-option ${o.is_correct ? "is-correct" : ""} ${selected ? "is-selected" : ""}`}
+                                  >
+                                    <span>{o.option_text}</span>
+                                    <small>
+                                      {o.is_correct ? "Răspuns corect" : ""}
+                                      {selected ? `${o.is_correct ? " · " : ""}Selectat` : ""}
+                                    </small>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="pte-review-points">
+                              Punctaj: {q.awarded_points ?? 0} / {q.points}
+                            </p>
+                            {q.explanation && (
+                              <p className="pte-note">Explicație: {q.explanation}</p>
+                            )}
+                            {q.legal_reference && (
+                              <p className="pte-note">Temei: {q.legal_reference}</p>
+                            )}
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
                 )}
               </div>
             )}

@@ -7,14 +7,10 @@
       "destination": "/api"
     }
   ],
+ 
   "crons": [
-    {
-      "path": "/api/cron/sync-border-news",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup-blobs",
-      "schedule": "0 3 * * *"
-    }
+    { "path": "/api/cron/sync-border-news", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/cleanup-blobs", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/cleanup-monitoring", "schedule": "0 4 * * *" }
   ]
 }
