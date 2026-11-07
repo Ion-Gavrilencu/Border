@@ -108,6 +108,7 @@ function NewsSection() {
 
   // LISTĂ
   const [showAllNews, setShowAllNews] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("toate");
   const [deletingId, setDeletingId] = useState(null);
 
   // MODAL ȘI FOTOGRAFII
@@ -256,6 +257,7 @@ function NewsSection() {
         deepLinkHandledRef.current = key;
         setShowAllNews(true);
         setHighlightedNewsId(requestedId);
+        setActiveCategory("toate");
 
         // Știrile proprii se deschid în modalul deja existent.
         // Știrile externe rămân evidențiate în listă; un clic deschide sursa.
@@ -394,8 +396,21 @@ function NewsSection() {
     }
   };
 
-  // ȘTIRI AFIȘATE
-  const displayedNews = showAllNews ? news : news.slice(0, 2);
+  // Categoriile corespund exact valorilor validate în newsController.js.
+  const categories = [
+    { value: "toate", label: "Toate" },
+    { value: "documente", label: "Documente falsificate" },
+    { value: "transport", label: "Control transport" },
+    { value: "contrabanda", label: "Contrabandă" },
+    { value: "migratie", label: "Migrație ilegală" },
+    { value: "altele", label: "Alte noutăți" },
+  ];
+
+  const filteredNews =
+    activeCategory === "toate"
+      ? news
+      : news.filter((article) => article.category === activeCategory);
+  const displayedNews = showAllNews ? filteredNews : filteredNews.slice(0, 2);
 
   // ATAȘAMENTE ARTICOL SELECTAT
   const selectedArticleAttachments = selectedArticle
@@ -460,12 +475,43 @@ function NewsSection() {
           </div>
         )}
 
+        {/* FILTRE CATEGORII */}
+        <div
+          className="border-news-categories"
+          role="group"
+          aria-label="Filtrează noutățile după categorie"
+        >
+          {categories.map((category) => (
+            <button
+              key={category.value}
+              type="button"
+              className={`border-news-filter-button ${activeCategory === category.value ? "is-active" : ""}`}
+              aria-pressed={activeCategory === category.value}
+              onClick={() => {
+                setActiveCategory(category.value);
+                setShowAllNews(false);
+              }}
+            >
+              {category.label}
+              <span className="border-news-filter-count">
+                {category.value === "toate"
+                  ? news.length
+                  : news.filter((article) => article.category === category.value).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* LISTA ȘTIRILOR */}
         <div className="border-news-list">
           {loadingNews ? (
             <div className="border-news-state">Se încarcă noutățile...</div>
-          ) : news.length === 0 ? (
-            <div className="border-news-state">Nu există noutăți disponibile.</div>
+          ) : filteredNews.length === 0 ? (
+            <div className="border-news-state">
+              {news.length === 0
+                ? "Nu există noutăți disponibile."
+                : "Nu există noutăți în categoria selectată."}
+            </div>
           ) : (
             displayedNews.map((article) => (
               <div
@@ -499,13 +545,13 @@ function NewsSection() {
         </div>
 
         {/* VEZI TOATE */}
-        {news.length > 2 && (
+        {filteredNews.length > 2 && (
           <button
             type="button"
             className="border-news-show-all"
             onClick={() => setShowAllNews((current) => !current)}
           >
-            {showAllNews ? "Afișează mai puține" : `Vezi toate noutățile (${news.length})`}
+            {showAllNews ? "Afișează mai puține" : `Vezi toate noutățile (${filteredNews.length})`}
 
             <ArrowRight size={17} />
           </button>

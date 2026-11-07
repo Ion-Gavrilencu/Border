@@ -1,17 +1,26 @@
 /* ==========================================
+
    BORDER — NEWS SECTION / DASHBOARD
+
 ========================================== */
 
 /* CARD PRINCIPAL */
 
 .border-news-card {
   display: flex;
+
   flex-direction: column;
+
   min-width: 0;
+
   overflow: hidden;
+
   border: 1px solid #e0e9f4;
+
   border-radius: 16px;
+
   background: #ffffff;
+
   box-shadow: 0 8px 28px rgba(18, 58, 97, 0.055);
 }
 
@@ -19,77 +28,111 @@
 
 .border-news-header {
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
   gap: 18px;
+
   padding: 22px 24px;
+
   border-bottom: 1px solid #e7eef7;
 }
 
 .border-news-heading {
   display: flex;
+
   align-items: flex-start;
+
   gap: 11px;
+
   min-width: 0;
 }
 
 .border-news-heading > svg {
   flex-shrink: 0;
+
   margin-top: 3px;
+
   color: #1675d1;
 }
 
 .border-news-heading h2,
 .border-news-heading h3 {
   margin: 0;
+
   color: #102b4b;
+
   font-size: 19px;
+
   font-weight: 800;
+
   line-height: 1.4;
 }
 
 .border-news-heading p {
   margin: 5px 0 0;
+
   color: #8194aa;
+
   font-size: 12px;
+
   line-height: 1.5;
 }
 
 .border-news-header-actions {
   display: flex;
+
   align-items: center;
+
   gap: 12px;
+
   flex-shrink: 0;
 }
 
 /* ==========================================
+
    BUTON ADAUGĂ ȘTIRE
+
    Culoare identică pe toate dimensiunile
+
 ========================================== */
 
 .border-news-add,
 .dashboard-modern .border-news-add {
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
+
   gap: 8px;
 
   min-height: 40px;
+
   padding: 10px 16px;
 
   border: 1px solid #0874ed;
+
   border-radius: 9px;
 
   background: #0874ed;
+
   color: #ffffff;
 
   font: inherit;
+
   font-size: 12px;
+
   font-weight: 800;
+
   line-height: 1.2;
+
   white-space: nowrap;
 
   cursor: pointer;
+
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
@@ -98,23 +141,30 @@
 .border-news-add:hover:not(:disabled),
 .dashboard-modern .border-news-add:hover:not(:disabled) {
   background: #0564d5;
+
   border-color: #0564d5;
+
   color: #ffffff;
 }
 
 .border-news-add:disabled {
   opacity: 0.6;
+
   cursor: not-allowed;
 }
 
 .border-news-add:focus-visible {
   outline: 2px solid #0874ed;
+
   outline-offset: 3px;
 }
 
 /* ==========================================
+
    ASCUNDEM BUTONUL REFRESH
+
    PE TOATE DIMENSIUNILE
+
 ========================================== */
 
 .border-news-refresh,
@@ -128,18 +178,27 @@
 
 .border-news-list {
   display: flex;
+
   flex-direction: column;
+
   min-width: 0;
 }
 
 .border-news-article {
   display: flex;
+
   align-items: flex-start;
+
   gap: 18px;
+
   min-width: 0;
+
   padding: 22px 24px;
+
   border-bottom: 1px solid #e8eef6;
+
   background: #ffffff;
+
   transition: background-color 0.2s ease;
 }
 
@@ -159,37 +218,57 @@
 
 .border-news-image {
   display: block;
+
   flex: 0 0 190px;
+
   width: 190px;
+
   height: 135px;
+
   overflow: hidden;
+
   border-radius: 11px;
+
   background: #edf4fc;
+
   object-fit: cover;
 }
 
 .border-news-image img {
   display: block;
+
   width: 100%;
+
   height: 100%;
+
   object-fit: cover;
 }
 
 .border-news-image-placeholder {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
+
   flex: 0 0 190px;
+
   width: 190px;
+
   height: 135px;
+
   border: 1px solid #e1eaf5;
+
   border-radius: 11px;
+
   background: #edf5ff;
+
   color: #6b9ed3;
 }
 
 .border-news-image-placeholder svg {
   width: 36px;
+
   height: 36px;
 }
 
@@ -197,48 +276,75 @@
 
 .border-news-content {
   display: flex;
+
   flex: 1;
+
   flex-direction: column;
+
   align-items: flex-start;
+
   gap: 10px;
+
   min-width: 0;
 }
 
 .border-news-meta {
   display: flex;
+
   align-items: center;
+
   flex-wrap: wrap;
+
   gap: 8px;
+
   color: #7890aa;
+
   font-size: 11px;
+
   line-height: 1.5;
 }
 
 .border-news-category {
   display: inline-flex;
+
   align-items: center;
+
   padding: 5px 9px;
+
   border-radius: 6px;
+
   background: #edf5ff;
+
   color: #1766b0;
+
   font-size: 11px;
+
   font-weight: 700;
 }
 
 .border-news-content h3 {
   margin: 0;
+
   color: #102b4b;
+
   font-size: 18px;
+
   font-weight: 800;
+
   line-height: 1.4;
+
   overflow-wrap: anywhere;
 }
 
 .border-news-content p {
   margin: 0;
+
   color: #71869e;
+
   font-size: 13px;
+
   line-height: 1.7;
+
   overflow-wrap: anywhere;
 }
 
@@ -246,21 +352,33 @@
 
 .border-news-read {
   display: inline-flex;
+
   align-items: center;
+
   gap: 7px;
+
   padding: 0;
+
   border: 0;
+
   background: transparent;
+
   color: #1675d1;
+
   font: inherit;
+
   font-size: 12px;
+
   font-weight: 800;
+
   text-decoration: none;
+
   cursor: pointer;
 }
 
 .border-news-read:hover {
   color: #084578;
+
   text-decoration: underline;
 }
 
@@ -268,27 +386,44 @@
 
 .border-news-article-actions {
   display: flex;
+
   align-items: center;
+
   flex-wrap: wrap;
+
   gap: 8px;
+
   margin-top: 4px;
 }
 
 .border-news-edit,
 .border-news-delete {
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
+
   gap: 6px;
+
   min-height: 34px;
+
   padding: 7px 11px;
+
   border: 1px solid #d9e5f2;
+
   border-radius: 8px;
+
   background: #ffffff;
+
   font: inherit;
+
   font-size: 11px;
+
   font-weight: 700;
+
   cursor: pointer;
+
   transition: 0.2s ease;
 }
 
@@ -298,6 +433,7 @@
 
 .border-news-edit:hover {
   background: #edf5ff;
+
   border-color: #a9cbee;
 }
 
@@ -307,6 +443,7 @@
 
 .border-news-delete:hover {
   background: #fff1f1;
+
   border-color: #efc3c3;
 }
 
@@ -314,21 +451,37 @@
 
 .border-news-show-all {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
+
   gap: 10px;
+
   width: calc(100% - 40px);
+
   min-height: 46px;
+
   margin: 14px 20px 18px;
+
   padding: 12px 15px;
+
   border: 0;
+
   border-radius: 10px;
+
   background: #edf5ff;
+
   color: #1675d1;
+
   font: inherit;
+
   font-size: 13px;
+
   font-weight: 800;
+
   cursor: pointer;
+
   transition: 0.2s ease;
 }
 
@@ -337,7 +490,9 @@
 }
 
 /* ==========================================
+
    TABLETĂ
+
 ========================================== */
 
 @media (max-width: 1024px) {
@@ -347,13 +502,16 @@
 
   .border-news-article {
     padding: 18px;
+
     gap: 15px;
   }
 
   .border-news-image,
   .border-news-image-placeholder {
     flex-basis: 145px;
+
     width: 145px;
+
     height: 115px;
   }
 
@@ -363,7 +521,9 @@
 }
 
 /* ==========================================
+
    TELEFON
+
 ========================================== */
 
 @media (max-width: 640px) {
@@ -373,74 +533,100 @@
 
   .border-news-header {
     flex-direction: row;
+
     align-items: flex-start;
+
     gap: 8px;
+
     padding: 15px 13px;
   }
 
   .border-news-heading {
     gap: 7px;
+
     min-width: 0;
   }
 
   .border-news-heading > svg {
     width: 19px;
+
     height: 19px;
   }
 
   .border-news-heading h2,
   .border-news-heading h3 {
     font-size: 15px;
+
     line-height: 1.3;
   }
 
   .border-news-heading p {
     font-size: 10px;
+
     margin-top: 4px;
   }
 
   .border-news-header-actions {
     justify-content: flex-end;
+
     flex-wrap: wrap;
+
     gap: 5px;
+
     flex-shrink: 1;
   }
 
   .border-news-add,
   .dashboard-modern .border-news-add {
     min-height: 36px;
+
     padding: 7px 10px;
+
     gap: 5px;
+
     border-radius: 9px;
+
     background: #0874ed;
+
     border-color: #0874ed;
+
     color: #ffffff;
+
     font-size: 11px;
+
     white-space: nowrap;
+
     text-align: center;
   }
 
   .border-news-add svg {
     width: 14px;
+
     height: 14px;
+
     flex-shrink: 0;
   }
 
   .border-news-article {
     flex-direction: row;
+
     gap: 11px;
+
     padding: 14px 12px;
   }
 
   .border-news-image,
   .border-news-image-placeholder {
     flex: 0 0 clamp(90px, 29%, 124px);
+
     width: clamp(90px, 29%, 124px);
+
     height: 110px;
   }
 
   .border-news-content {
     width: auto;
+
     min-width: 0;
   }
 
@@ -458,84 +644,224 @@
 
   .border-news-show-all {
     width: calc(100% - 26px);
+
     margin: 12px 13px 14px;
+
     font-size: 12px;
   }
 }
 
 /* ==========================================
+
    MOBILE — ANTET ȘTIRI
+
 ========================================== */
 
 @media (max-width: 640px) {
   .dashboard-modern .border-news-card .card-header {
     display: flex;
+
     flex-direction: row;
+
     align-items: center;
+
     justify-content: space-between;
+
     gap: 9px;
+
     padding: 15px 12px;
+
     min-height: 78px;
   }
 
   .dashboard-modern .border-news-card .card-header > div:first-child {
     min-width: 0;
+
     flex: 1;
   }
 
   .dashboard-modern .border-news-heading {
     display: flex;
+
     align-items: center;
+
     gap: 7px;
+
     font-size: clamp(14px, 3.5vw, 18px);
+
     line-height: 1.25;
   }
 
   .dashboard-modern .border-news-heading > svg {
     width: 19px;
+
     height: 19px;
+
     flex-shrink: 0;
+
     margin-top: 0;
   }
 
   .dashboard-modern .border-news-card .card-header p {
     font-size: 10px;
+
     line-height: 1.35;
   }
 
   .dashboard-modern .border-news-header-actions {
     display: flex;
+
     flex: 0 0 auto;
+
     align-items: center;
+
     justify-content: flex-end;
+
     gap: 0;
   }
 
   .dashboard-modern .border-news-add {
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
+
     gap: 5px;
+
     min-height: 36px;
+
     padding: 7px 10px;
+
     border-radius: 9px;
+
     background: #0874ed;
+
     border-color: #0874ed;
+
     color: #ffffff;
+
     font-size: 11px;
+
     white-space: nowrap;
   }
 
   .dashboard-modern .border-news-add svg {
     width: 15px;
+
     height: 15px;
   }
 
   .dashboard-modern .border-news-show-all {
     width: calc(100% - 24px);
+
     min-height: 42px;
+
     margin: 10px 12px 13px;
+
     font-size: 12px;
+
     border-radius: 10px;
+  }
+}
+
+/* ==========================================
+   CATEGORII NOUTĂȚI — COMPACT, RESPONSIVE
+   Păstrează clasele din NewsSection.jsx
+========================================== */
+.border-news-categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 16px;
+  border-bottom: 1px solid #e8eef6;
+}
+
+.border-news-filter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid #d9e6f5;
+  border-radius: 8px;
+  background: #f5f8fd;
+  color: #355477;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: normal;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.border-news-filter-button:hover:not(.is-active) {
+  background: #eaf3ff;
+  border-color: #9cc7f7;
+}
+
+.border-news-filter-button.is-active {
+  background: #096fe7;
+  border-color: #096fe7;
+  color: #fff;
+}
+
+.border-news-filter-button:focus-visible {
+  outline: 2px solid #86bfff;
+  outline-offset: 2px;
+}
+
+.border-news-filter-count {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e4edfa;
+  color: #31577f;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.border-news-filter-button.is-active .border-news-filter-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .border-news-categories {
+    gap: 5px;
+    padding: 10px 12px;
+  }
+
+  .border-news-filter-button {
+    min-height: 29px;
+    padding: 5px 7px;
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .border-news-filter-count {
+    min-width: 17px;
+    height: 17px;
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .border-news-filter-button {
+    transition: none;
   }
 }

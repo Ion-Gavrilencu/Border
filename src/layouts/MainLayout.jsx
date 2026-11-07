@@ -15,6 +15,8 @@ import {
   LogOut,
   User,
   Search,
+  ArrowUpRight,
+  LoaderCircle,
   ChevronDown,
   Menu,
   X,
@@ -22,7 +24,6 @@ import {
 import api from "../services/api";
 import { sendMonitoringHeartbeat, recordMonitoringPageView } from "../services/monitoringService";
 import NotificationBell from "../components/layout/NotificationBell";
-import SearchDocumentPreview from "../components/SearchDocumentPreview";
 import "./MainLayout.css";
 
 function MainLayout() {
@@ -30,7 +31,7 @@ function MainLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [previewItem, setPreviewItem] = useState(null);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -38,6 +39,7 @@ function MainLayout() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
   const userMenuRef = useRef(null);
 
   // Actualizează prezența doar cât timp utilizatorul este autentificat.
@@ -123,6 +125,7 @@ function MainLayout() {
     const controller = new AbortController();
     setSearchLoading(true);
     setSearchError(false);
+    setActiveSearchIndex(0);
     setShowSearchResults(true);
     const timer = setTimeout(async () => {
       try {
@@ -138,7 +141,7 @@ function MainLayout() {
       } finally {
         if (!controller.signal.aborted) setSearchLoading(false);
       }
-    }, 400);
+    }, 300);
     return () => {
       clearTimeout(timer);
       controller.abort();
@@ -156,17 +159,45 @@ function MainLayout() {
   };
 
   const handleSearchResultClick = (item) => {
-    if (!item?.id || !item?.type) return;
-    setPreviewItem({ id: item.id, type: item.type, title: item.title });
+    if (item?.id == null || !item?.type) return;
+    const destinations = {
+      telegrama: "/telegrame",
+      ordin: "/ordine",
+      legislatie: "/legislatie",
+      informatie: "/informatii-utile",
+      informatii_utile: "/informatii-utile",
+      "informatii-utile": "/informatii-utile",
+    };
+    const destination = destinations[String(item.type).toLowerCase()];
+    if (!destination) {
+      toast.error("Categoria rezultatului nu este recunoscută.");
+      return;
+    }
     setSearchTerm("");
     setSearchResults([]);
     setShowSearchResults(false);
+    setActiveSearchIndex(0);
+    // Parametrul open este deja interpretat de InformatiiUtile.
+    // Alte pagini pot adopta același contract fără modificarea backendului.
+    navigate(`${destination}?open=${encodeURIComponent(String(item.id))}`, {
+      state: { openDocumentId: item.id, fromGlobalSearch: true },
+    });
   };
+
+  useEffect(() => {
+    const onShortcut = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onShortcut);
+    return () => document.removeEventListener("keydown", onShortcut);
+  }, []);
 
   return (
     <div className="app-layout app-layout-modern">
       <Toaster position="top-right" richColors closeButton duration={4000} />
-      <SearchDocumentPreview item={previewItem} onClose={() => setPreviewItem(null)} />
       {sidebarOpen && (
         <button
           type="button"
@@ -268,9 +299,14 @@ function MainLayout() {
           <div className="topbar-search" ref={searchRef}>
             <Search size={19} />
             <input
+              ref={searchInputRef}
               type="search"
+              role="combobox"
+              aria-expanded={showSearchResults}
+              aria-controls="border-global-search-results"
+              aria-autocomplete="list"
               aria-label="Caută în documente"
-              placeholder="Caută în pagină..."
+              placeholder="Caută în BORDER..."
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               onFocus={() => {
@@ -279,28 +315,70 @@ function MainLayout() {
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   setShowSearchResults(false);
+                  event.currentTarget.blur();
+                } else if (event.key === "ArrowDown" && searchResults.length) {
+                  event.preventDefault();
+                  setShowSearchResults(true);
+                  setActiveSearchIndex((index) => (index + 1) % searchResults.length);
+                } else if (event.key === "ArrowUp" && searchResults.length) {
+                  event.preventDefault();
+                  setShowSearchResults(true);
+                  setActiveSearchIndex(
+                    (index) => (index - 1 + searchResults.length) % searchResults.length,
+                  );
+                } else if (
+                  event.key === "Enter" &&
+                  showSearchResults &&
+                  !searchLoading &&
+                  searchResults.length
+                ) {
+                  event.preventDefault();
+                  handleSearchResultClick(searchResults[activeSearchIndex] || searchResults[0]);
                 }
               }}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                className="search-clear"
+                aria-label="Șterge căutarea"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSearchResults([]);
+                  setShowSearchResults(false);
+                  searchInputRef.current?.focus();
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
             {showSearchResults && (
               <motion.div
+                id="border-global-search-results"
+                role="listbox"
+                aria-label="Rezultatele căutării"
                 className="search-results"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
               >
                 {searchLoading ? (
-                  <div className="search-message">Se caută...</div>
+                  <div className="search-message">
+                    <LoaderCircle size={16} className="search-spinner" /> Se caută...
+                  </div>
                 ) : searchError ? (
                   <div className="search-message">Căutarea nu este disponibilă momentan.</div>
                 ) : searchResults.length === 0 ? (
                   <div className="search-message">Nu au fost găsite rezultate.</div>
                 ) : (
-                  searchResults.map((item) => (
+                  searchResults.map((item, index) => (
                     <button
                       type="button"
                       key={`${item.type}-${item.id}`}
-                      className="search-result-item"
+                      role="option"
+                      aria-selected={index === activeSearchIndex}
+                      className={`search-result-item ${index === activeSearchIndex ? "is-active" : ""}`}
+                      onMouseEnter={() => setActiveSearchIndex(index)}
                       onClick={() => handleSearchResultClick(item)}
                     >
                       <div className="search-result-icon">
@@ -326,6 +404,7 @@ function MainLayout() {
                                 : "Informație utilă"}
                         </span>
                       </div>
+                      <ArrowUpRight size={16} className="search-result-arrow" />
                     </button>
                   ))
                 )}
