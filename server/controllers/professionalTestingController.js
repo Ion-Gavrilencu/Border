@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { notifyTestAssignment } = require("../services/professionalTestNotificationService");
 const VALID_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]);
 const REVEAL = new Set(["NEVER", "AFTER_SUBMISSION", "AFTER_DEADLINE", "MANUAL"]);
 const integer = (v) => (Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : null);
@@ -505,6 +506,16 @@ const assign = asyncRoute(async (req, res) => {
         req.body.deadline_at || null,
       ],
     );
+    // Atribuirea a fost salvată. Eșecul notificării nu anulează atribuirea.
+    try {
+      await notifyTestAssignment({
+        assignmentId: r.rows[0].id,
+        versionId: id,
+        testTitle: v.title,
+      });
+    } catch (notificationError) {
+      console.error("TEST ASSIGNMENT NOTIFICATION ERROR:", notificationError);
+    }
     res.status(201).json({ assignment: r.rows[0] });
   } catch (e) {
     if (e.code === "23505") return fail(res, 409, "Atribuirea există deja.");

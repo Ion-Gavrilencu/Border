@@ -292,6 +292,12 @@ function NotificationBell() {
   };
 
   const openNotificationContent = async (item, tab) => {
+    if (item.type === "test") {
+      if (tab && !tab.closed) tab.close();
+      // Testele sunt pagini React, nu documente cu atașamente.
+      navigate("/testare");
+      return false;
+    }
     const config = MODULES[item.type];
 
     if (!config) {
@@ -354,7 +360,7 @@ function NotificationBell() {
   const handleOpenNotification = async (item) => {
     if (busy) return;
 
-    const tab = createDocumentTab();
+    const tab = item.type === "test" ? null : createDocumentTab();
     setBusy(true);
     setError("");
 
