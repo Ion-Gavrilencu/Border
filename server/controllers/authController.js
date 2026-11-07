@@ -123,7 +123,7 @@ const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
       maxAge: sessionDurationMs,
       path: "/",
     });
@@ -166,10 +166,11 @@ const logout = async (req, res) => {
     console.error("LOGOUT ERROR:", error);
   } finally {
     // Ștergem cookie-ul chiar dacă monitorizarea întâmpină erori.
+
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
       path: "/",
     });
   }
