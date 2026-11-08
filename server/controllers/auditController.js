@@ -1,5 +1,7 @@
+
 const pool = require("../config/database");
 
+// Înregistrează acțiunile utilizatorilor în jurnalul de audit.
 const createAuditLog = async ({
   userId,
   action,
@@ -10,14 +12,14 @@ const createAuditLog = async ({
   try {
     await pool.query(
       `
-      INSERT INTO audit_logs (
-        user_id,
-        action,
-        entity_type,
-        entity_id,
-        description
-      )
-      VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO audit_logs (
+          user_id,
+          action,
+          entity_type,
+          entity_id,
+          description
+        )
+        VALUES ($1, $2, $3, $4, $5)
       `,
       [userId, action, entityType, entityId, description],
     );
@@ -26,6 +28,7 @@ const createAuditLog = async ({
   }
 };
 
+// Returnează ultimele 200 de evenimente, împreună cu datele utilizatorilor.
 const getAuditLogs = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -36,17 +39,12 @@ const getAuditLogs = async (req, res) => {
         a.entity_id,
         a.description,
         a.created_at,
-
         u.username,
         u.full_name
-
       FROM audit_logs a
-
       LEFT JOIN users u
         ON a.user_id = u.id
-
       ORDER BY a.created_at DESC
-
       LIMIT 200
     `);
 

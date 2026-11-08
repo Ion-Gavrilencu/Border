@@ -8,6 +8,7 @@ const pool = require("../config/database");
 const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 
+// Pregătește datele utilizatorului fără a expune parola sau tokenurile.
 const publicUser = (row) => ({
   id: row.id,
   username: row.username,
@@ -21,6 +22,7 @@ const publicUser = (row) => ({
     : null,
 });
 
+// Creează un cont nou cu parola stocată sub formă de hash.
 const register = async (req, res) => {
   try {
     const { username, email, password, fullName } = req.body;
@@ -65,6 +67,7 @@ const register = async (req, res) => {
   }
 };
 
+// Creează sesiunea de monitorizare înainte de emiterea tokenului JWT.
 const login = async (req, res) => {
   try {
     const { username, password } = req.body || {};
@@ -147,6 +150,7 @@ const login = async (req, res) => {
   }
 };
 
+// Închide sesiunea și elimină cookie-ul de autentificare.
 const logout = async (req, res) => {
   try {
     if (req.user?.id && req.user?.sessionId) {
@@ -180,6 +184,7 @@ const logout = async (req, res) => {
   });
 };
 
+// Activează contul numai dacă tokenul este valid și nu a expirat.
 const activateAccount = async (req, res) => {
   try {
     const { token, password } = req.body || {};
@@ -236,6 +241,7 @@ const activateAccount = async (req, res) => {
   }
 };
 
+// Invalidează sesiunile anterioare prin incrementarea versiunii sesiunii.
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
@@ -303,6 +309,7 @@ const changePassword = async (req, res) => {
   }
 };
 
+// Actualizează profilul și verifică unicitatea numelui de utilizator.
 const updateProfile = async (req, res) => {
   try {
     const { fullName, username } = req.body || {};
@@ -429,6 +436,7 @@ const getAvatarImage = async (req, res) => {
   }
 };
 
+// Salvează preferința pentru notificările prin e-mail.
 const updatePreferences = async (req, res) => {
   const { emailNotifications } = req.body || {};
   if (typeof emailNotifications !== "boolean") {
@@ -452,6 +460,7 @@ const updatePreferences = async (req, res) => {
   }
 };
 
+// Returnează profilul asociat sesiunii autentificate.
 const getMe = async (req, res) => {
   try {
     const result = await pool.query(

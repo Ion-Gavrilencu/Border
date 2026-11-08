@@ -2,7 +2,7 @@ const { Pool } = require("pg");
 const dotenv = require("dotenv");
 const path = require("path");
 
-// Asigurăm încărcarea configurației și în alte puncte de intrare
+// Încarcă variabilele de mediu pentru conexiunea la baza de date.
 dotenv.config({
   path: path.join(__dirname, "../.env"),
 });
@@ -17,6 +17,7 @@ if (missingVariables.length > 0) {
   throw new Error(`Lipsesc variabilele PostgreSQL: ${missingVariables.join(", ")}`);
 }
 
+// Configurează conexiunile PostgreSQL pentru mediul curent.
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 5432,
@@ -35,10 +36,12 @@ const pool = new Pool({
   connectionTimeoutMillis: 10000,
 });
 
+// Înregistrează stabilirea unei conexiuni noi.
 pool.on("connect", () => {
   console.log("Conectat la PostgreSQL");
 });
 
+// Înregistrează erorile apărute la nivelul pool-ului.
 pool.on("error", (error) => {
   console.error("Eroare PostgreSQL:", error.message);
 });
