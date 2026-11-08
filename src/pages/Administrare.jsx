@@ -239,7 +239,7 @@ function Administrare() {
 
     const confirmation = await confirmDialog({
       title: "Ștergi utilizatorul?",
-      text: `Contul „${user?.username || userId}” va fi șters. Această acțiune nu poate fi anulată.`,
+      text: `Contul „${user?.username || userId}” va fi șters definitiv numai dacă nu are date asociate. Altfel, ștergerea va fi refuzată și îl poți dezactiva. Acțiunea nu poate fi anulată.`,
       icon: "warning",
       confirmButtonText: "Da, șterge",
       cancelButtonText: "Anulează",
@@ -251,11 +251,11 @@ function Administrare() {
     try {
       setUpdatingUserId(userId);
 
-      await api.delete(`/users/${userId}`);
+      const response = await api.delete(`/users/${userId}`);
 
       setUsers((current) => current.filter((item) => item.id !== userId));
 
-      toast.success("Utilizatorul a fost șters.");
+      toast.success(response.data?.message || "Utilizatorul a fost șters.");
     } catch (err) {
       console.error("DELETE USER ERROR:", err);
       toast.error(err.response?.data?.message || "Utilizatorul nu a putut fi șters.");

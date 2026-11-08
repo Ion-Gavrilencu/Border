@@ -33,6 +33,7 @@ function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const MAX_SEARCH_LENGTH = 120;
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(false);
@@ -165,6 +166,7 @@ function MainLayout() {
       ordin: "/ordine",
       legislatie: "/legislatie",
       informatie: "/informatii-utile",
+      informatii: "/informatii-utile",
       informatii_utile: "/informatii-utile",
       "informatii-utile": "/informatii-utile",
     };
@@ -301,6 +303,7 @@ function MainLayout() {
             <input
               ref={searchInputRef}
               type="search"
+              maxLength={MAX_SEARCH_LENGTH}
               role="combobox"
               aria-expanded={showSearchResults}
               aria-controls="border-global-search-results"

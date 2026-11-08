@@ -1,6 +1,9 @@
 const pool = require("../config/database");
+
 const bcrypt = require("bcryptjs");
+
 const crypto = require("crypto");
+
 const { sendActivationEmail } = require("../services/emailService");
 
 const createUser = async (req, res) => {
@@ -11,11 +14,13 @@ const createUser = async (req, res) => {
 
     const normalizedEmail = String(email || "")
       .trim()
+
       .toLowerCase();
 
     const normalizedFullName = String(fullName || "").trim();
 
     // VALIDARE DATE
+
     if (!normalizedUsername || !normalizedEmail || !normalizedFullName) {
       return res.status(400).json({
         message: "Completează toate câmpurile obligatorii.",
@@ -35,6 +40,7 @@ const createUser = async (req, res) => {
     }
 
     // VERIFICARE CONFIGURAȚIE FRONTEND
+
     const frontendUrl = process.env.FRONTEND_URL?.trim();
 
     if (!frontendUrl) {
@@ -64,14 +70,22 @@ const createUser = async (req, res) => {
     }
 
     // VERIFICĂM DACĂ UTILIZATORUL EXISTĂ
+
     const existingUser = await pool.query(
       `
+
       SELECT id
+
       FROM users
+
       WHERE LOWER(username) = LOWER($1)
+
          OR LOWER(email) = LOWER($2)
+
       LIMIT 1
+
       `,
+
       [normalizedUsername, normalizedEmail],
     );
 
@@ -82,6 +96,7 @@ const createUser = async (req, res) => {
     }
 
     // GENERARE TOKEN ACTIVARE
+
     const activationToken = crypto.randomBytes(32).toString("hex");
 
     const activationTokenHash = crypto.createHash("sha256").update(activationToken).digest("hex");
@@ -89,6 +104,7 @@ const createUser = async (req, res) => {
     const activationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     // PAROLĂ ALEATORIE
+
     const randomPassword = crypto.randomBytes(32).toString("hex");
 
     const passwordHash = await bcrypt.hash(randomPassword, 12);
@@ -96,36 +112,65 @@ const createUser = async (req, res) => {
     activationLink.searchParams.set("token", activationToken);
 
     // CREARE UTILIZATOR
+
     const result = await pool.query(
       `
+
       INSERT INTO users (
+
         username,
+
         email,
+
         full_name,
+
         password_hash,
+
         role,
+
         is_active,
+
         activation_token_hash,
+
         activation_expires_at,
+
         must_change_password
+
       )
+
       VALUES ($1, $2, $3, $4, $5, FALSE, $6, $7, TRUE)
+
       RETURNING
+
         id,
+
         username,
+
         email,
+
         full_name,
+
         role,
+
         is_active,
+
         created_at
+
       `,
+
       [
         normalizedUsername,
+
         normalizedEmail,
+
         normalizedFullName,
+
         passwordHash,
+
         role,
+
         activationTokenHash,
+
         activationExpiresAt,
       ],
     );
@@ -133,10 +178,13 @@ const createUser = async (req, res) => {
     const user = result.rows[0];
 
     // TRIMITERE EMAIL DE ACTIVARE
+
     try {
       await sendActivationEmail({
         email: normalizedEmail,
+
         username: normalizedUsername,
+
         activationLink: activationLink.toString(),
       });
     } catch (emailError) {
@@ -145,15 +193,20 @@ const createUser = async (req, res) => {
       return res.status(502).json({
         message:
           "Contul a fost creat, dar e-mailul de activare nu a putut fi trimis. Este necesară retrimiterea linkului de activare.",
+
         user,
+
         emailSent: false,
       });
     }
 
     // SUCCES
+
     return res.status(201).json({
       message: "Contul a fost creat. E-mailul de activare a fost trimis.",
+
       user,
+
       emailSent: true,
     });
   } catch (error) {
@@ -174,17 +227,29 @@ const createUser = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     const result = await pool.query(`
+
       SELECT
+
         id,
+
         username,
+
         email,
+
         full_name,
+
         role,
+
         is_active,
+
         created_at,
+
         updated_at
+
       FROM users
+
       ORDER BY id ASC
+
     `);
 
     return res.status(200).json({
@@ -202,12 +267,15 @@ const getUsers = async (req, res) => {
 const updateUserRole = async (req, res) => {
   try {
     const { id } = req.params;
+
     const { role } = req.body || {};
+
     if (Number(id) === Number(req.user.id) && role !== "ADMIN") {
       return res.status(400).json({
         message: "Nu îți poți modifica propriul rol de administrator.",
       });
     }
+
     const allowedRoles = ["USER", "EDITOR", "ADMIN"];
 
     if (!allowedRoles.includes(role)) {
@@ -218,20 +286,35 @@ const updateUserRole = async (req, res) => {
 
     const result = await pool.query(
       `
+
       UPDATE users
+
       SET role = $1,
+
           updated_at = CURRENT_TIMESTAMP
+
       WHERE id = $2
+
       RETURNING
+
         id,
+
         username,
+
         email,
+
         full_name,
+
         role,
+
         is_active,
+
         created_at,
+
         updated_at
+
       `,
+
       [role, id],
     );
 
@@ -243,6 +326,7 @@ const updateUserRole = async (req, res) => {
 
     return res.status(200).json({
       message: "Rolul utilizatorului a fost actualizat.",
+
       user: result.rows[0],
     });
   } catch (error) {
@@ -257,12 +341,15 @@ const updateUserRole = async (req, res) => {
 const updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
+
     const { isActive } = req.body;
+
     if (Number(id) === Number(req.user.id) && isActive === false) {
       return res.status(400).json({
         message: "Nu îți poți dezactiva propriul cont de administrator.",
       });
     }
+
     if (typeof isActive !== "boolean") {
       return res.status(400).json({
         message: "Valoarea statusului este invalidă.",
@@ -271,20 +358,35 @@ const updateUserStatus = async (req, res) => {
 
     const result = await pool.query(
       `
+
       UPDATE users
+
       SET is_active = $1,
+
           updated_at = CURRENT_TIMESTAMP
+
       WHERE id = $2
+
       RETURNING
+
         id,
+
         username,
+
         email,
+
         full_name,
+
         role,
+
         is_active,
+
         created_at,
+
         updated_at
+
       `,
+
       [isActive, id],
     );
 
@@ -296,6 +398,7 @@ const updateUserStatus = async (req, res) => {
 
     return res.status(200).json({
       message: "Statusul utilizatorului a fost actualizat.",
+
       user: result.rows[0],
     });
   } catch (error) {
@@ -307,41 +410,97 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+// Ștergerea este permisă doar dacă nu există date asociate utilizatorului.
+// Relațiile sunt descoperite din catalogul PostgreSQL, nu dintr-o listă fixă.
 const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  const userId = Number(id);
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    return res.status(400).json({ message: "ID-ul utilizatorului este invalid." });
+  }
+  if (userId === Number(req.user.id)) {
+    return res.status(400).json({ message: "Nu îți poți șterge propriul cont." });
+  }
+
+  const client = await pool.connect().catch((error) => {
+    console.error("DELETE USER CONNECTION ERROR:", error);
+    return null;
+  });
+  if (!client) return res.status(500).json({ message: "Conexiunea la baza de date a eșuat." });
+
   try {
-    const { id } = req.params;
-
-    if (Number(id) === req.user.id) {
-      return res.status(400).json({
-        message: "Nu îți poți șterge propriul cont.",
-      });
-    }
-
-    const result = await pool.query(
-      `
-      DELETE FROM users
-      WHERE id = $1
-      RETURNING id, username
-      `,
-      [id],
+    await client.query("BEGIN");
+    // Blochează rândul părinte până la finalul verificării și ștergerii.
+    const userResult = await client.query(
+      "SELECT id, username FROM users WHERE id = $1 FOR UPDATE",
+      [userId],
     );
+    if (!userResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Utilizatorul nu a fost găsit." });
+    }
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: "Utilizatorul nu a fost găsit.",
+    const references = await client.query(`
+      SELECT n.nspname AS schema_name,
+             c.relname AS table_name,
+             a.attname AS column_name,
+             array_length(fk.conkey, 1) AS fk_columns
+      FROM pg_constraint fk
+      JOIN pg_class c ON c.oid = fk.conrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = fk.conkey[1]
+      WHERE fk.contype = 'f' AND fk.confrelid = 'users'::regclass
+    `);
+
+    const blocked = [];
+    for (const reference of references.rows) {
+      // Nu riscăm ștergerea când o relație compusă nu poate fi verificată simplu.
+      if (Number(reference.fk_columns) !== 1) {
+        blocked.push(reference.table_name);
+        continue;
+      }
+      const quoted = (name) => '"' + String(name).replace(/"/g, '""') + '"';
+      const table = `${quoted(reference.schema_name)}.${quoted(reference.table_name)}`;
+      const column = quoted(reference.column_name);
+      const found = await client.query(
+        `SELECT EXISTS (SELECT 1 FROM ${table} WHERE ${column} = $1) AS has_data`,
+        [userId],
+      );
+      if (found.rows[0].has_data) blocked.push(reference.table_name);
+    }
+
+    if (blocked.length) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        message:
+          "Utilizatorul are date asociate și nu poate fi șters definitiv. Poți dezactiva contul fără a pierde istoricul.",
+        relatedTables: [...new Set(blocked)].sort(),
       });
     }
 
+    const deleted = await client.query("DELETE FROM users WHERE id = $1 RETURNING id, username", [
+      userId,
+    ]);
+    await client.query("COMMIT");
     return res.status(200).json({
-      message: "Utilizatorul a fost șters.",
-      user: result.rows[0],
+      message: "Utilizatorul a fost șters definitiv.",
+      user: deleted.rows[0],
     });
   } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("DELETE USER ROLLBACK ERROR:", rollbackError);
+    }
+    if (error.code === "23503") {
+      return res.status(409).json({
+        message: "Ștergerea este blocată de date asociate. Dezactivează contul în schimb.",
+      });
+    }
     console.error("DELETE USER ERROR:", error);
-
-    return res.status(500).json({
-      message: "Eroare la ștergerea utilizatorului.",
-    });
+    return res.status(500).json({ message: "Eroare la ștergerea utilizatorului." });
+  } finally {
+    client.release();
   }
 };
 
@@ -380,12 +539,18 @@ const resendActivation = async (req, res) => {
     }
 
     // Verificăm utilizatorul.
+
     const userResult = await pool.query(
       `
+
       SELECT id, username, email, is_active
+
       FROM users
+
       WHERE id = $1
+
       `,
+
       [id],
     );
 
@@ -404,6 +569,7 @@ const resendActivation = async (req, res) => {
     }
 
     // Generăm un token nou.
+
     const activationToken = crypto.randomBytes(32).toString("hex");
 
     const activationTokenHash = crypto.createHash("sha256").update(activationToken).digest("hex");
@@ -413,24 +579,37 @@ const resendActivation = async (req, res) => {
     activationLink.searchParams.set("token", activationToken);
 
     // Salvăm tokenul nou și invalidăm tokenul vechi.
+
     await pool.query(
       `
+
       UPDATE users
+
       SET
+
         activation_token_hash = $1,
+
         activation_expires_at = $2,
+
         updated_at = CURRENT_TIMESTAMP
+
       WHERE id = $3
+
         AND is_active = FALSE
+
       `,
+
       [activationTokenHash, activationExpiresAt, id],
     );
 
     // Trimitem e-mailul nou.
+
     try {
       await sendActivationEmail({
         email: user.email,
+
         username: user.username,
+
         activationLink: activationLink.toString(),
       });
     } catch (emailError) {
@@ -456,9 +635,14 @@ const resendActivation = async (req, res) => {
 
 module.exports = {
   createUser,
+
   getUsers,
+
   updateUserRole,
+
   updateUserStatus,
+
   deleteUser,
+
   resendActivation,
 };

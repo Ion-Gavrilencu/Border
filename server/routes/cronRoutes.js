@@ -2,12 +2,12 @@ const express = require("express");
 const crypto = require("node:crypto");
 
 const { syncBorderNews } = require("../services/borderNewsSyncService");
-
 const { processBlobCleanupQueue } = require("../services/blobCleanupService");
+const { cleanupMonitoringEvents } = require("../services/monitoringRetentionService");
 
 const router = express.Router();
 
-// Verificarea accesului prin CRON_SECRET
+// Autorizează toate sarcinile cron prin același secret.
 const authorizeCron = (req, res, next) => {
   const secret = process.env.CRON_SECRET;
   const authorization = req.get("authorization") || "";
@@ -30,7 +30,7 @@ const authorizeCron = (req, res, next) => {
   next();
 };
 
-// Sincronizarea știrilor existente
+// Sincronizarea știrilor existente.
 router.get("/sync-border-news", authorizeCron, async (req, res) => {
   try {
     const result = await syncBorderNews();
@@ -51,12 +51,10 @@ router.get("/sync-border-news", authorizeCron, async (req, res) => {
   }
 });
 
-// Curățarea fișierelor Vercel Blob
+// Curățarea fișierelor Vercel Blob.
 router.get("/cleanup-blobs", authorizeCron, async (req, res) => {
   try {
-    const result = await processBlobCleanupQueue({
-      limit: 10,
-    });
+    const result = await processBlobCleanupQueue({ limit: 10 });
 
     console.log("BORDER BLOB CLEANUP:", {
       processed: result.processed,
@@ -78,6 +76,20 @@ router.get("/cleanup-blobs", authorizeCron, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Curățarea fișierelor a eșuat.",
+    });
+  }
+});
+
+// Curățarea periodică a evenimentelor de monitorizare.
+router.get("/cleanup-monitoring", authorizeCron, async (req, res) => {
+  try {
+    const result = await cleanupMonitoringEvents();
+    console.log("BORDER MONITORING CLEANUP:", result);
+    return res.json(result);
+  } catch (error) {
+    console.error("MONITORING CLEANUP ERROR:", error);
+    return res.status(500).json({
+      message: "Curățarea istoricului a eșuat.",
     });
   }
 });
