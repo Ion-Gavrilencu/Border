@@ -3,7 +3,7 @@
 const { del } = require("@vercel/blob");
 const pool = require("../config/database");
 
-// Validarea căilor fișierelor din Vercel Blob
+// Permitem numai căi generate pentru atașamentele BORDER.
 const VALID_BLOB_PATH =
   /^attachments\/(telegrame|ordine|legislatie|informatii_utile|news)\/([1-9]\d*)\/[^/\\?#]+$/;
 
@@ -39,14 +39,15 @@ async function claimNextJob(handled) {
     const selected = await client.query(
       `SELECT * FROM blob_cleanup_queue
        WHERE (
-         status IN ('pending', 'error')
+         status = 'pending'
+         OR (status = 'error' AND updated_at < NOW() - ($2::integer * INTERVAL '1 minute'))
          OR (status = 'processing' AND updated_at < NOW() - INTERVAL '15 minutes')
        )
        AND NOT (id = ANY($1::bigint[]))
        ORDER BY id
        FOR UPDATE SKIP LOCKED
        LIMIT 1`,
-      [handled],
+      [handled, RETRY_AFTER_MINUTES],
     );
 
     if (!selected.rows.length) {
@@ -79,8 +80,6 @@ async function claimNextJob(handled) {
 }
 
 async function markJobDone(job) {
-  // Compare the claim timestamp indirectly via status and attempt number.
-  // A newer worker must not have reclaimed this job while the previous worker runs.
   const updated = await pool.query(
     `UPDATE blob_cleanup_queue
      SET status = 'done', processed_at = NOW(), last_error = NULL, updated_at = NOW()
@@ -102,7 +101,6 @@ async function markJobError(job, message) {
 }
 
 async function processBlobCleanupQueue({ limit = 25 } = {}) {
-  // Local development must never delete production Blob objects.
   if (process.env.NODE_ENV !== "production" || process.env.BLOB_CLEANUP_ENABLED !== "true") {
     return {
       processed: 0,
@@ -132,12 +130,19 @@ async function processBlobCleanupQueue({ limit = 25 } = {}) {
     try {
       validateJob(job);
 
-      // Don't delete a Blob that still has live attachment references.
+      // Nu ștergem fișiere care mai sunt referite în oricare dintre tabele.
       const referenced = await pool.query(
-        "SELECT 1 FROM attachments WHERE file_path = $1 LIMIT 1",
-        [`blob:${job.blob_path}`],
+        `SELECT
+           EXISTS (
+             SELECT 1 FROM attachments
+             WHERE file_path = $1
+           ) OR EXISTS (
+             SELECT 1 FROM news_attachments
+             WHERE blob_path = $2 OR blob_path = $1
+           ) AS is_referenced`,
+        [`blob:${job.blob_path}`, job.blob_path],
       );
-      if (referenced.rows.length) {
+      if (referenced.rows[0]?.is_referenced) {
         throw new Error("Fișierul este încă referit de un atașament; ștergerea a fost blocată.");
       }
 

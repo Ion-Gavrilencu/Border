@@ -1,6 +1,7 @@
 const pool = require("../config/database");
 const mammoth = require("mammoth");
-const XLSX = require("xlsx");
+const readXlsxFile = require("read-excel-file/node");
+const { parse: parseCsv } = require("csv-parse/sync");
 const pdfParse = require("pdf-parse"); // pdf-parse@1.1.1
 
 const LIMIT = 100;
@@ -86,51 +87,80 @@ function parseText(text) {
   }));
 }
 
-function parseSpreadsheet(buffer, isCsv) {
-  const book = XLSX.read(buffer, {
-    type: "buffer",
-    raw: false,
-    cellFormula: false,
-    cellHTML: false,
-  });
+function recordsToQuestions(records) {
   const rows = [];
-  for (const sheetName of book.SheetNames) {
-    const sheet = book.Sheets[sheetName];
-    const records = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
-    for (const r of records) {
-      const get = (...names) => {
-        const key = Object.keys(r).find((k) =>
-          names.some((n) => k.trim().toLowerCase() === n.toLowerCase()),
-        );
-        return key === undefined ? "" : r[key];
-      };
-      const options = "ABCDEFGHIJKL"
-        .split("")
-        .map((letter) => ({
-          letter,
-          option_text: clean(get(letter, `Varianta ${letter}`, `Option ${letter}`)),
-        }))
-        .filter((o) => o.option_text);
-      const correct =
-        clean(get("Corect", "Raspuns corect", "Răspuns corect", "Correct"))
-          .toUpperCase()
-          .match(/\b[A-L]\b/g) || [];
-      rows.push({
-        question_text: get("Intrebare", "Întrebare", "Question"),
-        question_type:
-          clean(get("Tip", "Type")).toUpperCase() ||
-          (correct.length > 1 ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE"),
-        points: clean(get("Punctaj", "Points")) || 1,
-        explanation: get("Explicatie", "Explicație", "Explanation"),
-        legal_reference: get("Referinta", "Referință", "Legal reference"),
-        options: options.map((o) => ({
-          option_text: o.option_text,
-          is_correct: correct.includes(o.letter),
-        })),
-      });
-    }
+  for (const r of records) {
+    const get = (...names) => {
+      const key = Object.keys(r).find((k) =>
+        names.some((n) => k.trim().toLowerCase() === n.toLowerCase()),
+      );
+      return key === undefined ? "" : r[key];
+    };
+    const options = "ABCDEFGHIJKL"
+      .split("")
+      .map((letter) => ({
+        letter,
+        option_text: clean(get(letter, `Varianta ${letter}`, `Option ${letter}`)),
+      }))
+      .filter((o) => o.option_text);
+    const correct =
+      clean(get("Corect", "Raspuns corect", "Răspuns corect", "Correct"))
+        .toUpperCase()
+        .match(/\b[A-L]\b/g) || [];
+    rows.push({
+      question_text: get("Intrebare", "Întrebare", "Question"),
+      question_type:
+        clean(get("Tip", "Type")).toUpperCase() ||
+        (correct.length > 1 ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE"),
+      points: clean(get("Punctaj", "Points")) || 1,
+      explanation: get("Explicatie", "Explicație", "Explanation"),
+      legal_reference: get("Referinta", "Referință", "Legal reference"),
+      options: options.map((o) => ({
+        option_text: o.option_text,
+        is_correct: correct.includes(o.letter),
+      })),
+    });
   }
   return rows;
+}
+
+function tableToRecords(table) {
+  if (!table.length) return [];
+  const headers = table[0].map((cell) => clean(cell));
+  return table
+    .slice(1)
+    .filter((cells) => cells.some((cell) => clean(cell)))
+    .map((cells) =>
+      Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ""])),
+    );
+}
+
+async function parseSpreadsheet(buffer, isCsv) {
+  try {
+    if (isCsv) {
+      const table = parseCsv(buffer, {
+        bom: true,
+        skip_empty_lines: true,
+        relax_column_count: true,
+      });
+      return recordsToQuestions(tableToRecords(table));
+    }
+
+    const sheets = await readXlsxFile(buffer, { getSheets: true });
+    const rows = [];
+    for (const sheet of sheets) {
+      const table = await readXlsxFile(buffer, { sheet: sheet.name });
+      rows.push(...recordsToQuestions(tableToRecords(table)));
+      if (rows.length > LIMIT) break;
+    }
+    return rows;
+  } catch (error) {
+    if (error.status) throw error;
+    throw Object.assign(new Error("Fișier Excel sau CSV invalid ori imposibil de citit."), {
+      status: 422,
+      cause: error,
+    });
+  }
 }
 
 async function extract(file) {
@@ -139,7 +169,8 @@ async function extract(file) {
     const result = await mammoth.extractRawText({ buffer: file.buffer });
     return parseText(result.value);
   }
-  if (name.endsWith(".xlsx") || name.endsWith(".csv")) return parseSpreadsheet(file.buffer);
+  if (name.endsWith(".xlsx") || name.endsWith(".csv"))
+    return parseSpreadsheet(file.buffer, name.endsWith(".csv"));
   if (name.endsWith(".txt")) return parseText(file.buffer.toString("utf8"));
   if (name.endsWith(".json")) {
     const obj = JSON.parse(file.buffer.toString("utf8"));

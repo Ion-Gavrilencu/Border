@@ -21,6 +21,7 @@
     "cheerio": "^1.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "csv-parse": "^7.0.3",
     "dotenv": "^18.0.2",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
@@ -30,9 +31,14 @@
     "nodemailer": "^10.2.1",
     "pdf-parse": "1.1.1",
     "pg": "^8.23.0",
-    "xlsx": "^0.18.5"
+    "read-excel-file": "^9.3.14"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "3.1.11"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "4.6.7"
+    }
   }
 }

@@ -22,8 +22,7 @@
     "react-dropzone": "^20.1.4",
     "react-router-dom": "^7.18.4",
     "sonner": "^2.0.8",
-    "sweetalert2": "^11.26.25",
-    "xlsx": "^0.18.5"
+    "sweetalert2": "^11.26.25"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
