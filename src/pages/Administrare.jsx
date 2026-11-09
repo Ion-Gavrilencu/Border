@@ -14,7 +14,6 @@ import {
   LoaderCircle,
   SlidersHorizontal,
   ArrowDownUp,
-  MoreVertical,
   Pencil,
   ShieldCheck,
   Crown,
@@ -89,7 +88,6 @@ function Administrare() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [sortOrder, setSortOrder] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
@@ -314,11 +312,44 @@ function Administrare() {
       <Toaster position="top-right" richColors closeButton duration={4000} />
 
       <div className="admin-header">
-        <div>
+        <div className="admin-heading">
+          <span className="admin-mobile-eyebrow">ADMINISTRARE PLATFORMĂ</span>
           <h1>Administrare utilizatori</h1>
           <p className="admin-description">
             Gestionarea conturilor, rolurilor și drepturilor utilizatorilor platformei.
           </p>
+          <Users className="admin-mobile-heading-art" size={70} aria-hidden="true" />
+        </div>
+
+        <div className="admin-mobile-summary-grid" aria-label="Statistici utilizatori">
+          <div className="admin-mobile-summary-card summary-total">
+            <span className="summary-icon">
+              <Users size={23} />
+            </span>
+            <strong>{users.length}</strong>
+            <span>Utilizatori totali</span>
+          </div>
+          <div className="admin-mobile-summary-card summary-active">
+            <span className="summary-icon">
+              <ShieldCheck size={23} />
+            </span>
+            <strong>{roleCounts.ACTIVE}</strong>
+            <span>Conturi active</span>
+          </div>
+          <div className="admin-mobile-summary-card summary-inactive">
+            <span className="summary-icon">
+              <XCircle size={23} />
+            </span>
+            <strong>{users.length - roleCounts.ACTIVE}</strong>
+            <span>Conturi inactive</span>
+          </div>
+          <div className="admin-mobile-summary-card summary-roles">
+            <span className="summary-icon">
+              <Crown size={23} />
+            </span>
+            <strong>{new Set(users.map((user) => user.role).filter(Boolean)).size}</strong>
+            <span>Roluri utilizate</span>
+          </div>
         </div>
 
         <div className="admin-user-count">
@@ -763,44 +794,6 @@ function Administrare() {
                       <span className="admin-status-dot" />
                       {user.is_active ? "Activ" : "Inactiv"}
                     </span>
-                    <div className="admin-mobile-menu-wrap">
-                      <button
-                        type="button"
-                        className="admin-mobile-menu-trigger"
-                        aria-label={`Opțiuni pentru ${user.username}`}
-                        aria-expanded={openMenuId === user.id}
-                        onClick={() => setOpenMenuId((id) => (id === user.id ? null : user.id))}
-                      >
-                        <MoreVertical size={19} />
-                      </button>
-                      {openMenuId === user.id && (
-                        <div className="admin-mobile-menu">
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              handleStatusChange(user.id, user.is_active);
-                            }}
-                          >
-                            {user.is_active ? <XCircle size={15} /> : <Check size={15} />}
-                            {user.is_active ? "Dezactivează contul" : "Activează contul"}
-                          </button>
-                          {!user.is_active && (
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handleResendActivation(user.id);
-                              }}
-                            >
-                              <Mail size={15} /> Retrimite activarea
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
                   </div>
                   <div className="admin-mobile-details">
                     <div className="admin-mobile-detail">
@@ -836,27 +829,43 @@ function Administrare() {
                           </span>
                         )}
                       </div>
-                      <div className="admin-mobile-actions">
+                    </div>
+                    <div className="admin-mobile-actions">
+                      <button
+                        type="button"
+                        className="admin-card-edit"
+                        disabled={busy}
+                        onClick={() => setEditingRoleId((id) => (id === user.id ? null : user.id))}
+                      >
+                        <Pencil size={16} />{" "}
+                        {editingRoleId === user.id ? "Închide" : "Editează rolul"}
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-card-delete"
+                        disabled={busy}
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        <Trash2 size={16} /> Șterge
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-card-status"
+                        disabled={busy}
+                        onClick={() => handleStatusChange(user.id, user.is_active)}
+                      >
+                        {user.is_active ? "Dezactivează contul" : "Activează contul"}
+                      </button>
+                      {!user.is_active && (
                         <button
                           type="button"
+                          className="admin-card-resend"
                           disabled={busy}
-                          aria-label={`Modifică rolul pentru ${user.username}`}
-                          onClick={() =>
-                            setEditingRoleId((id) => (id === user.id ? null : user.id))
-                          }
+                          onClick={() => handleResendActivation(user.id)}
                         >
-                          <Pencil size={16} />
+                          <Mail size={15} /> Retrimite activarea
                         </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          className="danger"
-                          aria-label={`Șterge ${user.username}`}
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </article>

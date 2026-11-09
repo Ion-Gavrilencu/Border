@@ -408,3 +408,71 @@
     margin-left: auto;
   }
 }
+
+/* ==========================================================
+   BORDER — antet responsive: butonul Înapoi pe lățimea cardului
+   Se aplică numai paginilor de editare, la <= 850px.
+   ========================================================== */
+@media (max-width: 850px) {
+  :is(.edit-order-page, .edit-telegram-page, .edit-legislation-page, .edit-informatii-page)
+    :is(
+      .edit-order-header,
+      .edit-telegram-header,
+      .edit-legislation-header,
+      .edit-informatii-header
+    ) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding-right: 0;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  :is(.edit-order-page, .edit-telegram-page, .edit-legislation-page, .edit-informatii-page)
+    :is(
+      .edit-order-header,
+      .edit-telegram-header,
+      .edit-legislation-header,
+      .edit-informatii-header
+    )
+    > div {
+    min-width: 0;
+    padding-right: 85px;
+  }
+
+  :is(.edit-order-page, .edit-telegram-page, .edit-legislation-page, .edit-informatii-page)
+    :is(
+      .edit-order-back-button,
+      .edit-telegram-back-button,
+      .edit-legislation-back-button,
+      .edit-informatii-back
+    ) {
+    display: flex;
+    align-self: stretch;
+    justify-content: center;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 48px;
+    margin: 0;
+    padding: 12px 16px;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  :is(.edit-order-page, .edit-telegram-page, .edit-legislation-page, .edit-informatii-page)
+    :is(
+      .edit-order-header,
+      .edit-telegram-header,
+      .edit-legislation-header,
+      .edit-informatii-header
+    )
+    > div {
+    padding-right: 65px;
+  }
+}

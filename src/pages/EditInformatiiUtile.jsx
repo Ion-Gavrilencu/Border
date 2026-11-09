@@ -11,6 +11,9 @@ import {
   FileText,
   FolderOpen,
   Paperclip,
+  Link2,
+  Image as ImageIcon,
+  ExternalLink,
   Save,
 } from "lucide-react";
 
@@ -20,8 +23,8 @@ import { useAuth } from "../context/authStore";
 
 import DocumentUploader from "../components/DocumentUploader";
 
-import "./EditInformatiiUtile.css";
 import "./EditPagesModern.css";
+import "./EditInformatiiUtile.css";
 
 const getFileCategory = (file) => {
   const type = file.type || "";
@@ -63,7 +66,9 @@ function EditInformatiiUtile() {
 
   const [formData, setFormData] = useState({
     title: "",
+
     category: "",
+
     content: "",
   });
 
@@ -164,7 +169,7 @@ function EditInformatiiUtile() {
       } catch {
         setMessageType("error");
 
-        setMessage("Introdu un link valid, care începe cu https\:// sau http\://.");
+        setMessage("Introdu un link valid, care începe cu https:// sau http://.");
 
         return;
       }
@@ -302,6 +307,46 @@ function EditInformatiiUtile() {
     }
   };
 
+  const handleOpenAttachment = async (attachment) => {
+    if (attachment.attachment_type === "link") {
+      try {
+        const url = new URL(attachment.url);
+        if (!["http:", "https:"].includes(url.protocol)) throw new Error("Link invalid");
+        window.open(url.href, "_blank", "noopener,noreferrer");
+      } catch {
+        setMessageType("error");
+        setMessage("Linkul atașamentului nu este valid.");
+      }
+      return;
+    }
+
+    const tab = window.open("", "_blank");
+    try {
+      const response = await api.get(`/attachments/file/${attachment.id}`, {
+        responseType: "blob",
+      });
+      const mime =
+        response.headers?.["content-type"] || response.data.type || "application/octet-stream";
+      const objectUrl = URL.createObjectURL(new Blob([response.data], { type: mime }));
+      if (tab && !tab.closed) {
+        tab.location.href = objectUrl;
+      } else {
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download =
+          attachment.original_name || attachment.file_name || attachment.name || "document";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (error) {
+      if (tab && !tab.closed) tab.close();
+      setMessageType("error");
+      setMessage(errorText(error, "Fișierul nu a putut fi deschis."));
+    }
+  };
+
   if (loading) {
     return (
       <main className="edit-informatii-page">
@@ -318,143 +363,149 @@ function EditInformatiiUtile() {
     <main className="edit-informatii-page">
       <header className="edit-informatii-header">
         <div>
-          <span className="edit-informatii-label">
-            <BookOpen size={14} aria-hidden="true" />
-            CENTRU DE RESURSE
-          </span>
-
+          <span className="edit-informatii-label">CENTRU DE RESURSE</span>
           <h1>Editează informația utilă</h1>
-
-          <p>Modifică datele informației și înlocuiește materialele atașate.</p>
+          <p>Modifică datele informației și documentele atașate.</p>
         </div>
-
         <button
           type="button"
           className="edit-informatii-back"
           onClick={() => navigate("/informatii-utile")}
           disabled={saving}
         >
-          <ArrowLeft size={17} />
-          Înapoi la listă
+          <ArrowLeft size={17} /> Înapoi la listă
         </button>
       </header>
 
       {message && (
         <div className={`edit-informatii-message ${messageType}`} role="status">
           {messageType === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-
           <span>{message}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="edit-informatii-form">
+      <form className="edit-informatii-form" onSubmit={handleSubmit}>
         <div className="edit-informatii-form-header">
-          <span className="edit-informatii-form-header-icon">
-            <FilePenLine size={24} />
-          </span>
-
-          <div>
-            <h2>Date informație</h2>
-
-            <p>Actualizează câmpurile necesare și salvează modificările.</p>
-          </div>
+          <h2>Datele informației utile</h2>
+          <p>Actualizează informațiile și gestionează atașamentele.</p>
         </div>
 
         <div className="edit-informatii-form-body">
-          <div className="edit-informatii-fields-grid">
-            <div className="edit-informatii-form-group">
-              <label htmlFor="edit-info-title">
-                Titlu <span className="edit-informatii-required">*</span>
-              </label>
-
-              <div className="edit-informatii-field">
-                <FileText className="edit-informatii-field-icon" size={19} />
-
-                <input
-                  id="edit-info-title"
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="Introduceți titlul informației"
-                  required
-                  disabled={saving}
-                />
+          <div className="edit-informatii-main-grid">
+            <section className="edit-informatii-fields" aria-label="Date informație">
+              <div className="edit-informatii-fields-grid">
+                <div className="edit-informatii-form-group">
+                  <label htmlFor="edit-info-title">
+                    Titlu <span className="edit-informatii-required">*</span>
+                  </label>
+                  <div className="edit-informatii-field">
+                    <FileText className="edit-informatii-field-icon" size={17} />
+                    <input
+                      id="edit-info-title"
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      placeholder="Introduceți titlul informației"
+                      required
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
+                <div className="edit-informatii-form-group">
+                  <label htmlFor="edit-info-category">Categorie</label>
+                  <div className="edit-informatii-field">
+                    <FolderOpen className="edit-informatii-field-icon" size={17} />
+                    <input
+                      id="edit-info-category"
+                      type="text"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      placeholder="Ex.: Proceduri, Contacte, General"
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
+                <div className="edit-informatii-form-group edit-informatii-full">
+                  <label htmlFor="edit-info-content">Conținut</label>
+                  <div className="edit-informatii-field">
+                    <FileText className="edit-informatii-field-icon" size={17} />
+                    <textarea
+                      id="edit-info-content"
+                      name="content"
+                      value={formData.content}
+                      onChange={handleChange}
+                      rows={5}
+                      placeholder="Introduceți conținutul informației..."
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div className="edit-informatii-form-group">
-              <label htmlFor="edit-info-category">Categorie</label>
-
-              <div className="edit-informatii-field">
-                <FolderOpen className="edit-informatii-field-icon" size={19} />
-
-                <input
-                  id="edit-info-category"
-                  type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  placeholder="Ex.: Proceduri, Contacte, General"
-                  disabled={saving}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="edit-informatii-form-group">
-            <label htmlFor="edit-info-content">Conținut</label>
-
-            <div className="edit-informatii-field">
-              <FileText className="edit-informatii-field-icon" size={19} />
-
-              <textarea
-                id="edit-info-content"
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                rows={7}
-                placeholder="Introduceți conținutul informației..."
-                disabled={saving}
-              />
-            </div>
-          </div>
-
-          <section className="edit-informatii-attachments">
-            <div className="edit-informatii-attachments-header">
-              <span className="edit-informatii-attachments-icon">
-                <Paperclip size={22} />
-              </span>
-
-              <div>
-                <h3>Materiale și documente</h3>
-
-                <p>Adaugă fotografii, PDF, Word, videoclipuri sau linkuri.</p>
-              </div>
-            </div>
-
-            {existingAttachments.length > 0 && (
-              <div className="edit-informatii-existing">
-                <strong>Materiale existente ({existingAttachments.length})</strong>
-
-                <ul>
-                  {existingAttachments.map((item) => (
-                    <li key={item.id}>
-                      {item.attachment_type === "link"
-                        ? item.url || item.name
-                        : item.original_name || item.name}
-                    </li>
-                  ))}
-                </ul>
-
-                <p>
+            <section
+              className="edit-informatii-section edit-informatii-existing-section"
+              aria-label="Materiale existente"
+            >
+              <h3>Documente și linkuri existente</h3>
+              {existingAttachments.length === 0 ? (
+                <p className="edit-informatii-empty">Nu există documente atașate.</p>
+              ) : (
+                <div className="edit-informatii-attachments-list">
+                  {existingAttachments.map((item) => {
+                    const isLink = item.attachment_type === "link";
+                    const isImage =
+                      item.file_category === "image" || item.mime_type?.startsWith("image/");
+                    const Icon = isLink ? Link2 : isImage ? ImageIcon : FileText;
+                    return (
+                      <div className="edit-informatii-attachment" key={item.id}>
+                        <span className="edit-informatii-attachment-icon">
+                          <Icon size={19} />
+                        </span>
+                        <div className="edit-informatii-attachment-name">
+                          <strong
+                            title={item.original_name || item.file_name || item.name || item.url}
+                          >
+                            {item.original_name ||
+                              item.file_name ||
+                              item.name ||
+                              item.url ||
+                              "Document"}
+                          </strong>
+                          <span>{isLink ? "LINK" : isImage ? "FOTOGRAFIE" : "DOCUMENT"}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="edit-informatii-open"
+                          title="Deschide"
+                          aria-label="Deschide atașamentul"
+                          onClick={() => handleOpenAttachment(item)}
+                        >
+                          <ExternalLink size={17} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {existingAttachments.length > 0 && (
+                <p className="edit-informatii-replacement-note">
                   {user?.role === "ADMIN"
-                    ? "Dacă adaugi materiale noi, acestea vor înlocui toate materialele existente. Dacă nu adaugi nimic, cele existente rămân neschimbate."
+                    ? "Materialele noi vor înlocui toate materialele existente. Dacă nu adaugi nimic, acestea se păstrează."
                     : "Doar administratorul poate înlocui materialele existente. Modificarea textului nu le afectează."}
                 </p>
-              </div>
-            )}
+              )}
+            </section>
+          </div>
 
+          <section className="edit-informatii-section edit-informatii-upload-section">
+            <h3>Adaugă documente, fotografii sau link</h3>
+            <p className="edit-informatii-section-description">
+              Încarcă fișiere noi sau adaugă un link extern. Materialele noi vor înlocui materialele
+              existente.
+            </p>
             <DocumentUploader
               files={selectedFiles}
               onFilesChange={setSelectedFiles}
@@ -462,11 +513,10 @@ function EditInformatiiUtile() {
               onLinkChange={setLinkUrl}
               disabled={saving}
               allowMixed
+              variant="telegram"
               onError={(error) => {
                 if (!error) return;
-
                 setMessageType("error");
-
                 setMessage(error);
               }}
             />
@@ -482,11 +532,8 @@ function EditInformatiiUtile() {
           >
             Anulează
           </button>
-
           <button type="submit" className="edit-informatii-save-button" disabled={saving}>
-            <Save size={17} />
-
-            {saving ? "Se salvează..." : "Salvează modificările"}
+            <Save size={17} /> {saving ? "Se salvează..." : "Salvează modificările"}
           </button>
         </div>
       </form>
