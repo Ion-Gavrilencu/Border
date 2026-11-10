@@ -95,6 +95,12 @@ function NewsSection() {
 
   // ȘTIRI
   const [news, setNews] = useState([]);
+  const [counts, setCounts] = useState({});
+  const [totalNews, setTotalNews] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [expandedLimit, setExpandedLimit] = useState(2);
+  const requestSequence = useRef(0);
   const [loadingNews, setLoadingNews] = useState(true);
   const [newsError, setNewsError] = useState("");
   const [newsMessage, setNewsMessage] = useState("");
@@ -151,55 +157,55 @@ function NewsSection() {
     }
   }, []);
 
-  // ÎNCĂRCARE ȘTIRI
-  const loadNews = useCallback(async () => {
+  // ÎNCĂRCARE ȘTIRI: doar lotul solicitat, fără N cereri pentru atașamente.
+  const loadNews = useCallback(async (category = "toate", limit = 2) => {
+    const sequence = ++requestSequence.current;
     try {
       setLoadingNews(true);
       setNewsError("");
-
-      const response = await api.get("/news");
-
-      const articles = Array.isArray(response.data?.articles) ? response.data.articles : [];
-
-      const validArticles = articles.filter((article) => {
-        if (typeof article.title !== "string" || !article.title.trim()) {
-          return false;
-        }
-
-        if (article.type === "internal") {
-          return typeof article.content === "string";
-        }
-
-        return validUrl(article.url);
-      });
-
-      setNews(validArticles);
-
-      // ÎNCĂRCARE FOTOGRAFII ȘI DOCUMENTE
-      const results = await Promise.allSettled(
-        validArticles.map((article) => api.get(`/attachments/news/${article.id}`)),
-      );
-
-      const attachmentsByNews = {};
-
-      results.forEach((result, index) => {
-        const articleId = validArticles[index].id;
-
-        attachmentsByNews[articleId] =
-          result.status === "fulfilled" && Array.isArray(result.value.data?.attachments)
-            ? result.value.data.attachments
-            : [];
-      });
-
-      setNewsAttachments(attachmentsByNews);
+      const response = await api.get("/news", { params: { category, limit, offset: 0 } });
+      if (sequence !== requestSequence.current) return;
+      setNews(Array.isArray(response.data?.articles) ? response.data.articles : []);
+      setCounts(response.data?.counts || {});
+      setTotalNews(Number(response.data?.total || 0));
+      setHasMore(Boolean(response.data?.hasMore));
+      setExpandedLimit(limit);
+      setNewsAttachments({});
     } catch (err) {
-      console.error("NEWS ERROR:", err);
-
-      setNewsError(err.response?.data?.message || "Noutățile nu au putut fi încărcate.");
+      if (sequence === requestSequence.current) {
+        console.error("NEWS ERROR:", err);
+        setNewsError(err.response?.data?.message || "Noutățile nu au putut fi încărcate.");
+      }
     } finally {
-      setLoadingNews(false);
+      if (sequence === requestSequence.current) setLoadingNews(false);
     }
   }, []);
+
+  const loadMoreNews = useCallback(async () => {
+    if (loadingMore || loadingNews || !hasMore) return;
+    const sequence = requestSequence.current;
+    setLoadingMore(true);
+    try {
+      const response = await api.get("/news", {
+        params: { category: activeCategory, limit: 10, offset: news.length },
+      });
+      if (sequence !== requestSequence.current) return;
+      const next = Array.isArray(response.data?.articles) ? response.data.articles : [];
+      setNews((current) => {
+        const known = new Set(current.map((article) => String(article.id)));
+        return [...current, ...next.filter((article) => !known.has(String(article.id)))];
+      });
+      setHasMore(Boolean(response.data?.hasMore));
+      setCounts(response.data?.counts || {});
+      setTotalNews(Number(response.data?.total || 0));
+    } catch (err) {
+      if (sequence === requestSequence.current) {
+        setNewsError(err.response?.data?.message || "Nu s-au putut încărca alte noutăți.");
+      }
+    } finally {
+      if (sequence === requestSequence.current) setLoadingMore(false);
+    }
+  }, [activeCategory, hasMore, loadingMore, loadingNews, news.length]);
 
   // ÎNCĂRCARE ROL UTILIZATOR
   const loadUser = useCallback(async () => {
@@ -217,7 +223,7 @@ function NewsSection() {
 
   // ÎNCĂRCARE INIȚIALĂ
   useEffect(() => {
-    loadNews();
+    loadNews("toate", 2);
     loadUser();
   }, [loadNews, loadUser]);
 
@@ -406,11 +412,12 @@ function NewsSection() {
     { value: "altele", label: "Alte noutăți" },
   ];
 
-  const filteredNews =
-    activeCategory === "toate"
-      ? news
-      : news.filter((article) => article.category === activeCategory);
+  const filteredNews = news.filter(
+    (article) => activeCategory === "toate" || article.category === activeCategory,
+  );
   const displayedNews = showAllNews ? filteredNews : filteredNews.slice(0, 2);
+  const categoryTotal =
+    activeCategory === "toate" ? totalNews : Number(counts[activeCategory] || 0);
 
   // ATAȘAMENTE ARTICOL SELECTAT
   const selectedArticleAttachments = selectedArticle
@@ -419,6 +426,8 @@ function NewsSection() {
 
   // FOTOGRAFIA PRINCIPALĂ
   const getMainNewsImage = (newsId) => {
+    const article = news.find((item) => String(item.id) === String(newsId));
+    if (article?.mainImage) return article.mainImage;
     const attachments = newsAttachments[newsId] || [];
 
     return [...attachments]
@@ -490,13 +499,13 @@ function NewsSection() {
               onClick={() => {
                 setActiveCategory(category.value);
                 setShowAllNews(false);
+                setHighlightedNewsId(null);
+                loadNews(category.value, 2);
               }}
             >
               {category.label}
               <span className="border-news-filter-count">
-                {category.value === "toate"
-                  ? news.length
-                  : news.filter((article) => article.category === category.value).length}
+                {category.value === "toate" ? totalNews : Number(counts[category.value] || 0)}
               </span>
             </button>
           ))}
@@ -508,7 +517,7 @@ function NewsSection() {
             <div className="border-news-state">Se încarcă noutățile...</div>
           ) : filteredNews.length === 0 ? (
             <div className="border-news-state">
-              {news.length === 0
+              {categoryTotal === 0
                 ? "Nu există noutăți disponibile."
                 : "Nu există noutăți în categoria selectată."}
             </div>
@@ -544,16 +553,42 @@ function NewsSection() {
           )}
         </div>
 
-        {/* VEZI TOATE */}
-        {filteredNews.length > 2 && (
+        {/* VEZI TOATE / PAGINARE PROGRESIVĂ */}
+        {!showAllNews && categoryTotal > 2 && (
           <button
             type="button"
             className="border-news-show-all"
-            onClick={() => setShowAllNews((current) => !current)}
+            onClick={async () => {
+              setShowAllNews(true);
+              // Primele 10 articole sunt preluate de backend doar la solicitare.
+              await loadNews(activeCategory, 10);
+            }}
           >
-            {showAllNews ? "Afișează mai puține" : `Vezi toate noutățile (${filteredNews.length})`}
-
+            {`Vezi toate noutățile (${categoryTotal})`}
             <ArrowRight size={17} />
+          </button>
+        )}
+        {showAllNews && hasMore && (
+          <button
+            type="button"
+            className="border-news-show-all"
+            disabled={loadingMore}
+            onClick={loadMoreNews}
+          >
+            {loadingMore ? "Se încarcă..." : "Încarcă mai multe"}
+            <ArrowRight size={17} />
+          </button>
+        )}
+        {showAllNews && !hasMore && categoryTotal > 2 && (
+          <button
+            type="button"
+            className="border-news-show-all"
+            onClick={() => {
+              setShowAllNews(false);
+              loadNews(activeCategory, 2);
+            }}
+          >
+            Afișează mai puține <ArrowRight size={17} />
           </button>
         )}
       </section>
