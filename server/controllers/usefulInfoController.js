@@ -4,7 +4,7 @@ const { createAuditLog } = require("./auditController");
 
 const { notifyUsers } = require("../services/notificationService");
 
-const isValidUsefulInfoId = (id) => /^[1-9]\d+$/.test(String(id || ""));
+const isValidUsefulInfoId = (id) => /^[1-9]\d*$/.test(String(id ?? ""));
 
 const getUsefulInfo = async (req, res) => {
   try {
