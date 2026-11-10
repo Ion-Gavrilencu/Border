@@ -10,6 +10,7 @@ import {
   ScrollText,
   Landmark,
   FolderOpen,
+  Sparkles,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -49,7 +50,12 @@ const sections = [
   },
 ];
 
-export default function DashboardStats({ stats = {}, loadingStats = false, trends = {} }) {
+export default function DashboardStats({
+  stats = {},
+  loadingStats = false,
+  trends = {},
+  trendStatus = {},
+}) {
   const navigate = useNavigate();
 
   const counts = sections.map(({ key }) => {
@@ -69,7 +75,6 @@ export default function DashboardStats({ stats = {}, loadingStats = false, trend
         const count = counts[index];
 
         const rawTrend = trends?.[section.key];
-
         const trend = Number(rawTrend);
 
         const hasTrend =
@@ -79,7 +84,21 @@ export default function DashboardStats({ stats = {}, loadingStats = false, trend
           rawTrend !== "" &&
           Number.isFinite(trend);
 
+        const status = trendStatus?.[section.key] ?? "unavailable";
+
+        const isNew = !loadingStats && !hasTrend && status === "new";
+
         const progress = loadingStats ? 0 : (count / maxCount) * 100;
+
+        let trendLabel = "Fără date comparative";
+
+        if (hasTrend) {
+          trendLabel = `Variație ${trend > 0 ? "+" : ""}${trend}%`;
+        } else if (isNew) {
+          trendLabel = "Documente noi, fără bază de comparație";
+        } else if (status === "no_activity") {
+          trendLabel = "Fără documente în ultimele două perioade";
+        }
 
         return (
           <button
@@ -90,36 +109,45 @@ export default function DashboardStats({ stats = {}, loadingStats = false, trend
             aria-busy={loadingStats}
             aria-label={`${section.title}: ${
               loadingStats ? "se încarcă" : count.toLocaleString("ro-RO")
-            } documente. Deschide secțiunea.`}
+            } documente. ${trendLabel}. Deschide secțiunea.`}
           >
-            {/* Ilustrație decorativă */}
+            {/* ILUSTRAȚIE DECORATIVĂ */}
             <Decoration className="stat-watermark" aria-hidden="true" />
 
-            {/* Procent de creștere/scădere */}
-            {hasTrend && (
+            {/* INDICATOR STATISTIC */}
+            {!loadingStats && (
               <span
-                className={`stat-trend ${trend < 0 ? "stat-trend--down" : ""}`}
-                aria-label={`Variație ${trend > 0 ? "+" : ""}${trend}%`}
+                className={`stat-trend ${hasTrend && trend < 0 ? "stat-trend--down" : ""} ${
+                  isNew ? "stat-trend--new" : ""
+                }`}
+                aria-hidden="true"
               >
-                {trend < 0 ? (
-                  <ArrowDownRight aria-hidden="true" />
-                ) : (
-                  <ArrowUpRight aria-hidden="true" />
-                )}
+                {hasTrend ? (
+                  <>
+                    {trend < 0 ? <ArrowDownRight /> : <ArrowUpRight />}
 
-                <span>
-                  {trend > 0 ? "+" : ""}
-                  {trend}%
-                </span>
+                    <span>
+                      {trend > 0 ? "+" : ""}
+                      {trend}%
+                    </span>
+                  </>
+                ) : isNew ? (
+                  <>
+                    <Sparkles />
+                    <span>Nou</span>
+                  </>
+                ) : (
+                  <span>—</span>
+                )}
               </span>
             )}
 
-            {/* Pictograma */}
+            {/* PICTOGRAMĂ */}
             <span className="stat-icon" aria-hidden="true">
               <Icon />
             </span>
 
-            {/* Număr și denumire */}
+            {/* NUMĂR ȘI DENUMIRE */}
             <span className="stat-content">
               <strong className="stat-value">
                 {loadingStats ? "…" : count.toLocaleString("ro-RO")}
@@ -128,7 +156,7 @@ export default function DashboardStats({ stats = {}, loadingStats = false, trend
               <span className="stat-title">{section.title}</span>
             </span>
 
-            {/* Bară de progres */}
+            {/* BARĂ PROGRES */}
             <span className="stat-progress-track" aria-hidden="true">
               <span
                 className="stat-progress"
@@ -138,7 +166,7 @@ export default function DashboardStats({ stats = {}, loadingStats = false, trend
               />
             </span>
 
-            {/* Cerc alb cu săgeată */}
+            {/* SĂGEATĂ DE NAVIGARE */}
             <span className="stat-arrow-circle" aria-hidden="true">
               <ArrowRight className="stat-arrow" />
             </span>

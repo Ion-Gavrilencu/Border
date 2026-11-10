@@ -977,3 +977,18 @@
     height: 15px;
   }
 }
+
+/* Indicator pentru documente noi */
+.dashboard-modern .stat-trend--new {
+  color: #078847;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.dashboard-modern .stat-trend--new svg {
+  color: #10a75c;
+}
+
+/* Indicator fără date comparative */
+.dashboard-modern .stat-trend {
+  white-space: nowrap;
+}

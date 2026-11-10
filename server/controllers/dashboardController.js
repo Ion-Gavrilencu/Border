@@ -3,7 +3,12 @@ const pool = require("../config/database");
 const PAGE_SIZE = 20;
 const INITIAL_RECENT_SIZE = 4;
 
-// Ordine stabilă pentru Dashboard și paginare.
+const DOCUMENT_CATEGORIES = ["telegrame", "ordine", "legislatie", "informatii_utile"];
+
+// =====================================================
+// DOCUMENTE RECENTE — ORDINE STABILĂ
+// =====================================================
+
 const recentDocumentsSql = `
   SELECT id, 'telegrama' AS type, title, created_at
   FROM telegrame
@@ -24,36 +29,76 @@ const recentDocumentsSql = `
   FROM informatii_utile
 `;
 
-// Calculează variația procentuală.
-// Dacă nu există date în perioada precedentă,
-// returnează null pentru a evita procente incorecte.
-const calculateTrend = (current, previous) => {
+// =====================================================
+// CALCULUL VARIAȚIEI PROCENTUALE
+// =====================================================
+
+function calculateTrend(current, previous) {
   const currentCount = Number(current);
   const previousCount = Number(previous);
 
-  if (!Number.isFinite(currentCount) || !Number.isFinite(previousCount) || previousCount === 0) {
-    return null;
+  if (
+    !Number.isFinite(currentCount) ||
+    !Number.isFinite(previousCount) ||
+    currentCount < 0 ||
+    previousCount < 0
+  ) {
+    return {
+      percentage: null,
+      status: "unavailable",
+    };
   }
 
-  return Math.round(((currentCount - previousCount) / previousCount) * 100);
-};
+  // Nu există bază de comparație.
+  if (previousCount === 0) {
+    if (currentCount > 0) {
+      return {
+        percentage: null,
+        status: "new",
+      };
+    }
+
+    return {
+      percentage: null,
+      status: "no_activity",
+    };
+  }
+
+  const percentage = Math.round(((currentCount - previousCount) / previousCount) * 100);
+
+  return {
+    percentage,
+    status: percentage > 0 ? "increase" : percentage < 0 ? "decrease" : "stable",
+  };
+}
 
 // =====================================================
 // STATISTICI DASHBOARD
 // =====================================================
+
 const getDashboardStats = async (req, res) => {
   try {
+    // Numărul total de documente și utilizatori.
     const statsResult = await pool.query(`
       SELECT
-        (SELECT COUNT(*) FROM telegrame) AS telegrame,
-        (SELECT COUNT(*) FROM ordine) AS ordine,
-        (SELECT COUNT(*) FROM legislatie) AS legislatie,
-        (SELECT COUNT(*) FROM informatii_utile) AS informatii_utile,
-        (SELECT COUNT(*) FROM users) AS utilizatori
+        (SELECT COUNT(*) FROM telegrame)
+          AS telegrame,
+
+        (SELECT COUNT(*) FROM ordine)
+          AS ordine,
+
+        (SELECT COUNT(*) FROM legislatie)
+          AS legislatie,
+
+        (SELECT COUNT(*) FROM informatii_utile)
+          AS informatii_utile,
+
+        (SELECT COUNT(*) FROM users)
+          AS utilizatori
     `);
 
-    // Comparăm ultimele 30 de zile cu cele 30 anterioare.
-    // Folosim o singură interogare pentru toate categoriile.
+    // Documentele adăugate în două perioade
+    // consecutive de câte 30 de zile.
     const trendsResult = await pool.query(`
       WITH document_counts AS (
         SELECT
@@ -81,35 +126,72 @@ const getDashboardStats = async (req, res) => {
           'informatii_utile' AS category,
           created_at
         FROM informatii_utile
+      ),
+
+      period_counts AS (
+        SELECT
+          category,
+
+          COUNT(*) FILTER (
+            WHERE created_at >=
+              NOW() - INTERVAL '30 days'
+              AND created_at <= NOW()
+          ) AS current_count,
+
+          COUNT(*) FILTER (
+            WHERE created_at >=
+              NOW() - INTERVAL '60 days'
+              AND created_at <
+                NOW() - INTERVAL '30 days'
+          ) AS previous_count
+
+        FROM document_counts
+        GROUP BY category
       )
+
       SELECT
         category,
+        current_count,
+        previous_count
 
-        COUNT(*) FILTER (
-          WHERE created_at >= NOW() - INTERVAL '30 days'
-            AND created_at <= NOW()
-        ) AS current_count,
-
-        COUNT(*) FILTER (
-          WHERE created_at >= NOW() - INTERVAL '60 days'
-            AND created_at < NOW() - INTERVAL '30 days'
-        ) AS previous_count
-
-      FROM document_counts
-      GROUP BY category
+      FROM period_counts
     `);
 
-    const trends = {
-      telegrame: null,
-      ordine: null,
-      legislatie: null,
-      informatii_utile: null,
-    };
+    const trends = {};
+    const trendStatus = {};
+    const trendCounts = {};
 
+    // Inițializăm toate categoriile.
+    for (const category of DOCUMENT_CATEGORIES) {
+      trends[category] = null;
+      trendStatus[category] = "unavailable";
+
+      trendCounts[category] = {
+        current: 0,
+        previous: 0,
+      };
+    }
+
+    // Prelucrăm datele reale.
     for (const row of trendsResult.rows) {
-      if (Object.prototype.hasOwnProperty.call(trends, row.category)) {
-        trends[row.category] = calculateTrend(row.current_count, row.previous_count);
+      const category = row.category;
+
+      if (!Object.prototype.hasOwnProperty.call(trends, category)) {
+        continue;
       }
+
+      const current = Number(row.current_count);
+      const previous = Number(row.previous_count);
+
+      const result = calculateTrend(current, previous);
+
+      trends[category] = result.percentage;
+      trendStatus[category] = result.status;
+
+      trendCounts[category] = {
+        current,
+        previous,
+      };
     }
 
     // Ultimele 4 documente.
@@ -139,8 +221,16 @@ const getDashboardStats = async (req, res) => {
         utilizatori: Number(row.utilizatori),
       },
 
+      // Procentele reale.
       trends,
 
+      // Starea fiecărei categorii.
+      trendStatus,
+
+      // Numărul documentelor din fiecare perioadă.
+      trendCounts,
+
+      // Documentele recente.
       recent: recentResult.rows,
     });
   } catch (error) {
@@ -155,6 +245,7 @@ const getDashboardStats = async (req, res) => {
 // =====================================================
 // DOCUMENTE RECENTE — PAGINARE
 // =====================================================
+
 const getDashboardRecent = async (req, res) => {
   const rawOffset = req.query.offset;
   const offset = Number(rawOffset);
