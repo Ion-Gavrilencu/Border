@@ -1,4 +1,4 @@
-/* BORDER — Dashboard: banner, statistici, panouri, informații recente */
+/* BORDER — Dashboard CSS consolidat, fără suprascrieri statistice duplicate */
 
 .dashboard {
   box-sizing: border-box;
@@ -94,182 +94,6 @@
   padding: 0 7px;
 
   color: #c4d8f2;
-}
-
-.stats-grid {
-  display: grid;
-
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-
-  gap: 16px;
-
-  margin-bottom: 18px;
-}
-
-.stat-card {
-  position: relative;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 16px;
-
-  width: 100%;
-
-  min-width: 0;
-
-  min-height: 108px;
-
-  padding: 18px;
-
-  overflow: hidden;
-
-  border: 1px solid #d7e8ff;
-
-  border-radius: 13px;
-
-  background: linear-gradient(120deg, #f2f8ff, #edf5ff);
-
-  color: #102747;
-
-  text-align: left;
-
-  box-shadow: 0 4px 15px rgba(15, 40, 75, 0.04);
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.stat-card-clickable {
-  font: inherit;
-
-  cursor: pointer;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-
-  box-shadow: 0 10px 24px rgba(15, 40, 75, 0.1);
-}
-
-.stat-card:focus-visible {
-  outline: 2px solid #1674df;
-
-  outline-offset: 3px;
-}
-
-.stat-card:nth-child(2) {
-  background: linear-gradient(120deg, #f2fcf8, #ecfaf4);
-
-  border-color: #d5f2e5;
-}
-
-.stat-card:nth-child(3) {
-  background: linear-gradient(120deg, #f8f6ff, #f2efff);
-
-  border-color: #e2d9ff;
-}
-
-.stat-card:nth-child(4) {
-  background: linear-gradient(120deg, #fffcf4, #fff8e9);
-
-  border-color: #f9ecd0;
-}
-
-.stat-icon {
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  flex: 0 0 60px;
-
-  width: 60px;
-
-  height: 60px;
-
-  border-radius: 14px;
-
-  background: #dcecff;
-
-  color: #1674ef;
-}
-
-.stat-card:nth-child(2) .stat-icon {
-  background: #dff7ec;
-
-  color: #08ad7a;
-}
-
-.stat-card:nth-child(3) .stat-icon {
-  background: #eae3ff;
-
-  color: #6739ec;
-}
-
-.stat-card:nth-child(4) .stat-icon {
-  background: #fff0d1;
-
-  color: #e4960b;
-}
-
-.stat-icon svg {
-  width: 29px;
-
-  height: 29px;
-
-  stroke-width: 2.2;
-}
-
-.stat-content {
-  display: flex;
-
-  flex: 1;
-
-  flex-direction: column;
-
-  justify-content: center;
-
-  gap: 5px;
-
-  min-width: 0;
-}
-
-.stat-content span {
-  color: #526b8b;
-
-  font-size: 13px;
-
-  font-weight: 500;
-}
-
-.stat-content strong {
-  color: #071e42;
-
-  font-size: 32px;
-
-  font-weight: 800;
-
-  line-height: 1.1;
-}
-
-.stat-arrow {
-  flex-shrink: 0;
-
-  margin-left: auto;
-
-  color: #829bb9;
-
-  opacity: 0.8;
-
-  transition: transform 0.2s ease;
-}
-
-.stat-card:hover .stat-arrow {
-  transform: translateX(4px);
 }
 
 .dashboard-grid {
@@ -594,23 +418,26 @@
   cursor: pointer;
 }
 
-/* Consolidated responsive dashboard rules */
 .dashboard-panel-motion {
   display: flex;
   min-width: 0;
   height: auto;
   align-self: start;
 }
+
 .dashboard-panel-motion > * {
   width: 100%;
   min-width: 0;
 }
+
 .dashboard-modern .dashboard-card {
   border-radius: 16px;
 }
+
 .dashboard-modern .dashboard-refresh-button {
   display: none;
 }
+
 @media (max-width: 1599px) {
   .dashboard-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -619,6 +446,7 @@
     height: auto;
   }
 }
+
 @media (max-width: 1399px) {
   .dashboard {
     padding: 16px 18px 32px;
@@ -629,14 +457,8 @@
   .border-hero-content {
     padding: 18px 20px;
   }
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-  .stat-card {
-    min-height: 100px;
-  }
 }
+
 @media (max-width: 850px) {
   .dashboard {
     padding: 16px 16px 30px;
@@ -653,6 +475,7 @@
     font-size: 13px;
   }
 }
+
 @media (max-width: 640px) {
   .dashboard.dashboard-modern {
     padding: 14px 12px 30px;
@@ -672,64 +495,6 @@
   }
   .dashboard-modern .border-hero-description span {
     padding: 0 2px;
-  }
-  .dashboard-modern .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  .dashboard-modern .stat-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 30px;
-    grid-template-rows: 45px auto;
-    align-content: start;
-    align-items: center;
-    gap: 8px 4px;
-    min-height: 148px;
-    padding: 14px 12px 12px;
-    border-radius: 17px;
-    text-align: left;
-  }
-  .dashboard-modern .stat-icon {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    width: 44px;
-    height: 44px;
-    flex-basis: auto;
-    border-radius: 13px;
-  }
-  .dashboard-modern .stat-icon svg {
-    width: 24px;
-    height: 24px;
-  }
-  .dashboard-modern .stat-content {
-    grid-column: 1;
-    grid-row: 2;
-    gap: 5px;
-  }
-  .dashboard-modern .stat-content strong {
-    order: -1;
-    font-size: 30px;
-    line-height: 1.05;
-  }
-  .dashboard-modern .stat-content span {
-    font-size: 11px;
-    font-weight: 650;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-  .dashboard-modern .stat-arrow {
-    grid-column: 2;
-    grid-row: 2;
-    justify-self: end;
-    align-self: end;
-    width: 27px;
-    height: 27px;
-    padding: 6px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.85);
-    color: #41668d;
-    opacity: 1;
   }
   .dashboard-modern .dashboard-grid {
     gap: 16px;
@@ -774,63 +539,39 @@
     border-radius: 11px;
   }
 }
+
 @media (max-width: 360px) {
   .dashboard.dashboard-modern {
     padding-inline: 9px;
   }
-  .dashboard-modern .stats-grid {
-    gap: 8px;
-  }
-  .dashboard-modern .stat-card {
-    padding: 11px 9px;
-    min-height: 142px;
-  }
-  .dashboard-modern .stat-content strong {
-    font-size: 27px;
-  }
-  .dashboard-modern .stat-content span {
-    font-size: 10px;
-  }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .refresh-spin {
     animation: none;
   }
-  .dashboard-modern .stat-card,
-  .dashboard-modern .dashboard-card,
-  .dashboard-modern .information-item {
-    transition: none;
-  }
-  .dashboard-modern .stat-card:hover {
-    transform: none;
-  }
 }
 
-/* Desktop: ambele panouri au exact aceeași înălțime. */
 @media (min-width: 1600px) {
   .dashboard-modern .dashboard-grid {
     align-items: stretch;
   }
-
   .dashboard-modern .dashboard-grid > .dashboard-panel-motion {
     display: flex;
     align-self: stretch;
     height: auto;
     min-width: 0;
   }
-
   .dashboard-modern .dashboard-grid > .dashboard-panel-motion > .dashboard-card {
     width: 100%;
     height: 100%;
   }
-
   .dashboard-modern .dashboard-grid > .dashboard-panel-motion:first-child .information-list {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
   }
-
   .dashboard-modern
     .dashboard-grid
     > .dashboard-panel-motion:first-child
@@ -838,5 +579,401 @@
     > .information-item {
     flex: 1 1 0;
     min-height: 90px;
+  }
+}
+
+/* ==========================================================
+   BORDER — Statistici pastelate, reguli unificate
+   Desktop: 4 coloane; tabletă/telefon: 2 coloane.
+   Săgeata SVG rămâne centrată în cercul alb.
+   ========================================================== */
+.dashboard-modern .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+  align-items: stretch;
+}
+.dashboard-modern .stat-card {
+  --stat-accent: #167aff;
+  --stat-light: #dcecff;
+  --stat-track: #cce1ff;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: 38px auto 5px;
+  column-gap: 8px;
+  row-gap: 5px;
+  align-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 112px;
+  padding: 12px 44px 12px 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.94);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f7fbff, #e8f3ff 78%, #d9eaff);
+  color: #082659;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  box-shadow:
+    0 7px 18px rgba(48, 107, 177, 0.13),
+    inset 0 1px 1px #fff;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.dashboard-modern .stat-card--green,
+.dashboard-modern .stat-card:nth-child(2) {
+  --stat-accent: #08b995;
+  --stat-light: #d5f7ed;
+  --stat-track: #bdece0;
+  background: linear-gradient(135deg, #f5fffc, #e7faf4 78%, #d7f7ef);
+}
+.dashboard-modern .stat-card--purple,
+.dashboard-modern .stat-card:nth-child(3) {
+  --stat-accent: #733cf3;
+  --stat-light: #eae1ff;
+  --stat-track: #e1d3ff;
+  background: linear-gradient(135deg, #fcfaff, #f4efff 75%, #e9e0ff);
+}
+.dashboard-modern .stat-card--orange,
+.dashboard-modern .stat-card:nth-child(4) {
+  --stat-accent: #ffa000;
+  --stat-light: #fff0d8;
+  --stat-track: #fbe8c9;
+  background: linear-gradient(135deg, #fffdf8, #fff8ee 75%, #fff0dc);
+}
+.dashboard-modern .stat-card:hover {
+  transform: translateY(-2px);
+}
+.dashboard-modern .stat-card:focus-visible {
+  outline: 3px solid var(--stat-accent);
+  outline-offset: 3px;
+}
+.dashboard-modern .stat-icon {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--stat-light);
+  color: var(--stat-accent);
+}
+.dashboard-modern .stat-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.1;
+}
+.dashboard-modern .stat-content {
+  display: contents;
+}
+.dashboard-modern .stat-content .stat-value,
+.dashboard-modern .stat-content strong {
+  grid-column: 2;
+  grid-row: 1;
+  color: #082659;
+  font-size: clamp(25px, 2.3vw, 34px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-modern .stat-content .stat-title,
+.dashboard-modern .stat-content > span {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  color: #082659;
+  font-size: clamp(11px, 1vw, 15px);
+  font-weight: 750;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.dashboard-modern .stat-watermark,
+.dashboard-modern .stat-decoration {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  width: 78px;
+  height: 78px;
+  color: var(--stat-accent);
+  opacity: 0.08;
+  transform: rotate(-13deg);
+  pointer-events: none;
+}
+.dashboard-modern .stat-decoration svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.2;
+}
+.dashboard-modern .stat-trend {
+  position: absolute;
+  z-index: 3;
+  top: 7px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #168b3b;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.dashboard-modern .stat-trend svg {
+  width: 13px;
+  height: 13px;
+  color: #10b442;
+}
+.dashboard-modern .stat-trend--down,
+.dashboard-modern .stat-trend--down svg {
+  color: #c44343;
+}
+.dashboard-modern .stat-progress-track {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: block;
+  width: min(112px, 80%);
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--stat-track);
+}
+.dashboard-modern .stat-progress {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--stat-accent),
+    color-mix(in srgb, var(--stat-accent) 55%, white)
+  );
+  transition: width 0.35s ease;
+}
+/* Acceptă atât wrapper-ul .stat-arrow-circle, cât și săgeata directă. */
+.dashboard-modern .stat-arrow-circle,
+.dashboard-modern .stat-card > .stat-arrow {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #082659;
+  box-shadow: 0 4px 11px rgba(25, 65, 115, 0.12);
+  transform: translateY(-50%);
+}
+.dashboard-modern .stat-arrow-circle .stat-arrow,
+.dashboard-modern .stat-card > .stat-arrow svg {
+  display: block;
+  flex: none;
+  position: static;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #082659;
+  stroke-width: 2.2;
+  transform: none;
+}
+.dashboard-modern .stat-card:hover .stat-arrow-circle,
+.dashboard-modern .stat-card:hover > .stat-arrow {
+  transform: translate(2px, -50%);
+}
+.dashboard-modern .stat-card:hover .stat-arrow-circle .stat-arrow {
+  transform: none;
+}
+@media (max-width: 1099px) {
+  .dashboard-modern .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+@media (max-width: 640px) {
+  .dashboard-modern .stat-card {
+    min-height: 74px;
+    padding: 8px 37px 8px 8px;
+    grid-template-columns: 27px minmax(0, 1fr);
+    grid-template-rows: 28px auto 4px;
+    column-gap: 6px;
+    row-gap: 3px;
+    border-radius: 16px;
+  }
+  .dashboard-modern .stat-icon {
+    width: 27px;
+    height: 27px;
+    border-radius: 9px;
+  }
+  .dashboard-modern .stat-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .dashboard-modern .stat-content .stat-value,
+  .dashboard-modern .stat-content strong {
+    font-size: clamp(21px, 6vw, 28px);
+  }
+  .dashboard-modern .stat-content .stat-title,
+  .dashboard-modern .stat-content > span {
+    font-size: clamp(9px, 2.6vw, 11px);
+  }
+  .dashboard-modern .stat-progress-track {
+    height: 4px;
+    width: min(70px, 80%);
+  }
+  .dashboard-modern .stat-watermark,
+  .dashboard-modern .stat-decoration {
+    width: 58px;
+    height: 58px;
+  }
+  .dashboard-modern .stat-arrow-circle,
+  .dashboard-modern .stat-card > .stat-arrow {
+    right: 7px;
+    width: 24px;
+    height: 24px;
+  }
+  .dashboard-modern .stat-arrow-circle .stat-arrow,
+  .dashboard-modern .stat-card > .stat-arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+  .dashboard-modern .stat-trend {
+    top: 4px;
+    right: 5px;
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+  .dashboard-modern .stat-trend svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+@media (max-width: 360px) {
+  .dashboard-modern .stats-grid {
+    gap: 7px;
+  }
+  .dashboard-modern .stat-card {
+    padding-right: 32px;
+  }
+  .dashboard-modern .stat-arrow-circle,
+  .dashboard-modern .stat-card > .stat-arrow {
+    width: 22px;
+    height: 22px;
+    right: 5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-modern .stat-card,
+  .dashboard-modern .stat-progress {
+    transition: none;
+  }
+  .dashboard-modern .stat-card:hover {
+    transform: none;
+  }
+}
+ 
+/* Ilustrația decorativă din fundal */
+.dashboard-modern .stat-watermark {
+  position: absolute;
+  z-index: 0;
+  right: 48px;
+  bottom: 12px;
+
+  width: 75px;
+  height: 75px;
+
+  color: var(--stat-accent);
+  opacity: 0.075;
+  transform: rotate(-13deg);
+  pointer-events: none;
+}
+
+/* Cercul alb cu săgeata */
+.dashboard-modern .stat-arrow-circle {
+  position: absolute;
+  z-index: 3;
+  right: 10px;
+  bottom: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 30px;
+  height: 30px;
+
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: #fff;
+
+  box-shadow: 0 3px 10px rgba(8, 35, 80, 0.12);
+}
+
+/* Săgeata centrată în cerc */
+.dashboard-modern .stat-arrow-circle .stat-arrow {
+  position: static;
+  display: block;
+  flex-shrink: 0;
+
+  width: 17px;
+  height: 17px;
+
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  color: #082b65;
+  box-shadow: none;
+
+  transform: none;
+  stroke-width: 2.2;
+}
+
+.dashboard-modern .stat-card:hover
+.stat-arrow-circle .stat-arrow {
+  transform: translateX(2px);
+}
+
+/* Telefon */
+@media (max-width: 640px) {
+  .dashboard-modern .stat-watermark {
+    right: 43px;
+    bottom: 8px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .dashboard-modern .stat-arrow-circle {
+    right: 8px;
+    bottom: 10px;
+    width: 25px;
+    height: 25px;
+  }
+
+  .dashboard-modern .stat-arrow-circle .stat-arrow {
+    width: 15px;
+    height: 15px;
   }
 }
