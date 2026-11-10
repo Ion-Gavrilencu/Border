@@ -431,8 +431,8 @@ function NewsSection() {
       {/* ACTUALITATE */}
       <section className="dashboard-card border-news-card">
         {/* ANTET */}
-        <div className="card-header">
-          <div>
+        <div className="card-header border-news-header">
+          <div className="border-news-header-content">
             <h2 className="border-news-heading">
               <Newspaper size={19} />
               Actualitate și securitate la frontieră

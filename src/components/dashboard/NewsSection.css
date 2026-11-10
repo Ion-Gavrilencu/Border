@@ -865,3 +865,77 @@
     transition: none;
   }
 }
+
+/* ==========================================
+   BORDER — ANTET NOUTĂȚI PE TELEFON
+   Titlul și butonul ocupă primul rând;
+   descrierea rămâne sub titlu.
+========================================== */
+@media (max-width: 640px) {
+  .dashboard-modern .border-news-card .card-header.border-news-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 5px;
+    min-height: 0;
+    padding: 15px 12px;
+  }
+
+  .dashboard-modern .border-news-card .border-news-header-content {
+    display: contents;
+  }
+
+  .dashboard-modern .border-news-card .border-news-heading {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    gap: 7px;
+    font-size: clamp(14px, 3.5vw, 17px);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-modern .border-news-card .border-news-heading > svg {
+    flex: 0 0 19px;
+    width: 19px;
+    height: 19px;
+    margin-top: 0;
+  }
+
+  .dashboard-modern .border-news-card .border-news-header-content > p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-modern .border-news-card .border-news-header-actions {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    align-self: center;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .dashboard-modern .border-news-card .border-news-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+}
