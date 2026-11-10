@@ -1390,3 +1390,16 @@
 .informatii-modern .informatii-table td:nth-child(9) {
   display: none;
 }
+ 
+/* ==========================================
+   BORDER - EVIDENȚIERE DOCUMENT CĂUTAT
+   Tabletă și telefon
+   ========================================== */
+
+.informatii-mobile-list .informatii-card--highlighted {
+  outline: 3px solid #2b70d7;
+  outline-offset: -3px;
+  background-color: #eef5ff;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(43, 112, 215, 0.12);
+}

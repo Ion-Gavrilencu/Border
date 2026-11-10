@@ -1194,7 +1194,9 @@ function InformatiiUtile() {
             <div className="informatii-mobile-list">
               {visibleItems.map((item) => (
                 <article
-                  className="informatii-card"
+                  className={`informatii-card ${
+                    String(item.id) === highlightedInfoId ? "informatii-card--highlighted" : ""
+                  }`}
                   key={item.id}
                   data-info-document-id={String(item.id)}
                 >
