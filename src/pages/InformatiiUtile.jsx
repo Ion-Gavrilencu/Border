@@ -462,19 +462,29 @@ function InformatiiUtile() {
 
     try {
       setOpeningId(attachment.id);
+
       const response = await api.get(`/attachments/file/${attachment.id}?download=1`, {
         responseType: "blob",
       });
+
       const blobUrl = URL.createObjectURL(response.data);
+
       const link = document.createElement("a");
+
       link.href = blobUrl;
+
       link.download = attachment.original_name || attachment.name || "document";
+
       document.body.appendChild(link);
+
       link.click();
+
       link.remove();
+
       setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
     } catch (error) {
       console.error("DOWNLOAD ATTACHMENT:", error);
+
       notify(error.response?.data?.message || "Fișierul nu a putut fi descărcat.", "error");
     } finally {
       setOpeningId(null);
@@ -539,8 +549,11 @@ function InformatiiUtile() {
         }
 
         preopenedTab?.close();
+
         setGallery(null);
+
         setViewer({ item, attachments });
+
         return;
       }
 
@@ -782,7 +795,7 @@ function InformatiiUtile() {
           <svg
             className="informatii-art-svg"
             viewBox="0 0 320 240"
-            xmlns="http://www\.w3.org/2000/svg"
+            xmlns="http://www.w3.org/2000/svg"
             focusable="false"
           >
             <defs>
@@ -1235,8 +1248,6 @@ function InformatiiUtile() {
                   </div>
 
                   <div className="informatii-card-top-actions">
-                    <span className="informatii-card-id">#{item.id}</span>
-
                     <button
                       type="button"
                       className="info-favorite-button"
@@ -1394,11 +1405,14 @@ function InformatiiUtile() {
                         ) : (
                           <FileText size={21} />
                         )}
+
                         <span>
                           {attachment.original_name || attachment.name || "Material atașat"}
                         </span>
+
                         <ExternalLink size={17} />
                       </button>
+
                       {!isLink && (
                         <button
                           type="button"
@@ -1409,6 +1423,7 @@ function InformatiiUtile() {
                           title="Descarcă fișierul"
                         >
                           <Download size={19} />
+
                           <span>Descarcă</span>
                         </button>
                       )}

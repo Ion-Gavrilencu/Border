@@ -834,15 +834,6 @@
     cursor: pointer;
   }
 
-  .informatii-card-id {
-    padding: 7px 9px;
-    border-radius: 10px;
-    background: #f0f5fb;
-    color: #7088aa;
-    font-size: 12px;
-    font-weight: 750;
-  }
-
   .informatii-card-footer {
     grid-column: 1/-1;
     display: flex;
@@ -973,11 +964,6 @@
 
   .informatii-card-top-actions .info-star {
     width: 17px;
-  }
-
-  .informatii-card-id {
-    font-size: 10px;
-    padding: 5px;
   }
 
   .informatii-card-title {
@@ -1390,7 +1376,7 @@
 .informatii-modern .informatii-table td:nth-child(9) {
   display: none;
 }
- 
+
 /* ==========================================
    BORDER - EVIDENȚIERE DOCUMENT CĂUTAT
    Tabletă și telefon

@@ -34,7 +34,7 @@ const sections = [
   },
   {
     key: "legislatie",
-    title: "Acte legislative",
+    title: "Acte normative",
     path: "/legislatie",
     icon: Scale,
     decoration: Landmark,
