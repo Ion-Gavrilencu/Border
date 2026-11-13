@@ -49,3 +49,29 @@ export const previewTestQuestionsImport = async (versionId, file) => {
 };
 export const confirmTestQuestionsImport = async (versionId, questions) =>
   (await api.post(`/testare/versiuni/${versionId}/import-confirmare`, { questions })).data;
+
+export const getTestPreferences = async () => (await api.get("/testare/preferinte")).data;
+
+export const saveTestPreferences = async (preferences) =>
+  (await api.put("/testare/preferinte", { preferences })).data;
+
+// Grupuri comune ADMIN/EDITOR; autorizarea modificărilor este aplicată de server.
+export const getTestGroups = async () => (await api.get("/testare/grupuri")).data;
+export const getTestGroup = async (groupId) =>
+  (await api.get(`/testare/grupuri/${encodeURIComponent(groupId)}`)).data;
+export const createTestGroup = async (payload) =>
+  (await api.post("/testare/grupuri", payload)).data;
+export const updateTestGroup = async (groupId, payload) =>
+  (await api.patch(`/testare/grupuri/${encodeURIComponent(groupId)}`, payload)).data;
+export const addTestGroupMembers = async (groupId, userIds) =>
+  (
+    await api.post(`/testare/grupuri/${encodeURIComponent(groupId)}/membri/lot`, {
+      user_ids: userIds,
+    })
+  ).data;
+export const removeTestGroupMember = async (groupId, userId) =>
+  (
+    await api.delete(
+      `/testare/grupuri/${encodeURIComponent(groupId)}/membri/${encodeURIComponent(userId)}`,
+    )
+  ).data;

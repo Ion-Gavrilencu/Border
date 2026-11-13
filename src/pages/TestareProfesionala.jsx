@@ -1,3 +1,10 @@
+import TestareUserViews from "../components/testare/TestareUserViews";
+import PanouGeneral from "../components/testare/PanouGeneral";
+import ListaTeste from "../components/testare/ListaTeste";
+import Incercari from "../components/testare/Incercari";
+import Atribuiri from "../components/testare/Atribuiri";
+import Rezultate from "../components/testare/Rezultate";
+import SetariTestare from "../components/testare/SetariTestare";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,6 +23,19 @@ import {
   FileCheck2,
   Sparkles,
   ShieldCheck,
+  LayoutDashboard,
+  Search,
+  Users,
+  BarChart3,
+  Settings2,
+  CalendarDays,
+  Layers3,
+  ChevronLeft,
+  ChevronRight,
+  ListChecks,
+  Target,
+  Activity,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/authStore";
@@ -23,11 +43,12 @@ import {
   getAssignedTests,
   getMyTestResults,
   getManagedTests,
-  createProfessionalTest,
   startProfessionalTest,
   deleteProfessionalTest,
+  getManagedTestResults,
+  getVersionAssignments,
 } from "../services/professionalTestingService";
-import "./TestareProfesionala.css";
+import "../components/testare/testare.css";
 
 const rowsOf = (data, key) => {
   if (Array.isArray(data)) return data;
@@ -69,16 +90,34 @@ function TestareProfesionala() {
   const { user } = useAuth();
   const canManage = user?.role === "ADMIN" || user?.role === "EDITOR";
   const canDelete = user?.role === "ADMIN";
-  const [tab, setTab] = useState("assigned");
+  const [tab, setTab] = useState(canManage ? "dashboard" : "assigned");
+  const [dashboardSearch, setDashboardSearch] = useState("");
+  const [testSearch, setTestSearch] = useState("");
+  const [testStatus, setTestStatus] = useState("all");
+  const [testView, setTestView] = useState("list");
+  const [testPage, setTestPage] = useState(1);
+  const [dashboardPage, setDashboardPage] = useState(1);
+  const [assignmentRows, setAssignmentRows] = useState([]);
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
+  const [assignmentError, setAssignmentError] = useState("");
+  const [assignmentSearch, setAssignmentSearch] = useState("");
+  const [assignmentStatus, setAssignmentStatus] = useState("all");
+  const [assignmentPage, setAssignmentPage] = useState(1);
+  const [attemptRows, setAttemptRows] = useState([]);
+  const [attemptLoading, setAttemptLoading] = useState(false);
+  const [attemptError, setAttemptError] = useState("");
+  const [attemptSearch, setAttemptSearch] = useState("");
+  const [attemptStatus, setAttemptStatus] = useState("all");
+  const [attemptPage, setAttemptPage] = useState(1);
+  const [settingsSection, setSettingsSection] = useState("general");
+  const [reportSearch, setReportSearch] = useState("");
+  const [reportTest, setReportTest] = useState("all");
+  const [reportPage, setReportPage] = useState(1);
   const [assigned, setAssigned] = useState([]);
   const [results, setResults] = useState([]);
   const [managed, setManaged] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [saving, setSaving] = useState(false);
   const [startingId, setStartingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -132,14 +171,16 @@ function TestareProfesionala() {
   };
 
   // Accesarea unei încercări deja încheiate nu pornește o testare nouă.
-  const openFinishedAttempt = (item) => {
-    const attemptId = item?.attempt_id ?? item?.attempt?.id ?? item?.id;
-    if (attemptId == null) {
-      toast.error("Rezultatul nu conține ID-ul încercării.");
-      return;
-    }
-    navigate(`/testare/incercari/${encodeURIComponent(attemptId)}`);
-  };
+const openFinishedAttempt = (item) => {
+  const attemptId = item?.attempt_id ?? item?.attempt?.id ?? item?.id;
+
+  if (attemptId == null) {
+    toast.error("Rezultatul nu conține ID-ul încercării.");
+    return;
+  }
+
+  navigate(`/testare/incercari/${encodeURIComponent(attemptId)}/rezultat`);
+};
 
   const finishedForVersion = (versionId) => {
     if (versionId == null) return [];
@@ -150,34 +191,6 @@ function TestareProfesionala() {
           String(r.status ?? r.attempt_status ?? "SUBMITTED").toUpperCase(),
         ),
     );
-  };
-
-  const createTest = async (event) => {
-    event.preventDefault();
-    if (!title.trim() || saving) return;
-    setSaving(true);
-    try {
-      const created = await createProfessionalTest({
-        title: title.trim(),
-        description: description.trim(),
-      });
-      const versionId = versionIdOf(created?.data ?? created);
-      toast.success("Testul a fost creat.");
-      setTitle("");
-      setDescription("");
-      setShowCreate(false);
-      setTab("manage");
-      if (versionId != null) {
-        navigate(`/testare/${encodeURIComponent(versionId)}/editare`);
-      } else {
-        toast.info("Testul a fost creat. Selectează-l din lista de administrare.");
-        await load();
-      }
-    } catch (err) {
-      toast.error(messageOf(err));
-    } finally {
-      setSaving(false);
-    }
   };
 
   const confirmDelete = async () => {
@@ -196,22 +209,414 @@ function TestareProfesionala() {
     }
   };
 
+  const loadAttempts = useCallback(async () => {
+    if (!canManage) return;
+    const versions = [...new Set(managed.map(versionIdOf).filter((id) => id != null))];
+    setAttemptLoading(true);
+    setAttemptError("");
+    try {
+      const outcomes = await Promise.allSettled(versions.map((id) => getManagedTestResults(id)));
+      const rows = [];
+      let failures = 0;
+      outcomes.forEach((outcome, index) => {
+        if (outcome.status !== "fulfilled") {
+          failures += 1;
+          return;
+        }
+        const version = versions[index];
+        const test = managed.find((item) => String(versionIdOf(item)) === String(version));
+        rowsOf(outcome.value, "results").forEach((attempt) =>
+          rows.push({
+            ...attempt,
+            version_id: version,
+            test_title: test?.title ?? test?.test_title ?? "Test profesional",
+          }),
+        );
+      });
+      rows.sort((a, b) => new Date(b.started_at || 0) - new Date(a.started_at || 0));
+      setAttemptRows(rows);
+      if (failures)
+        setAttemptError(
+          `Nu au putut fi încărcate rezultatele pentru ${failures} versiuni. Datele afișate pot fi incomplete.`,
+        );
+    } catch (err) {
+      setAttemptError(messageOf(err));
+    } finally {
+      setAttemptLoading(false);
+    }
+  }, [canManage, managed]);
+
+  useEffect(() => {
+    if ((tab === "attempts" || tab === "reports") && canManage && !loading) loadAttempts();
+  }, [tab, canManage, loading, loadAttempts]);
+
+  const loadAssignments = useCallback(async () => {
+    if (!canManage) return;
+    const versions = [...new Set(managed.map(versionIdOf).filter((id) => id != null))];
+    setAssignmentLoading(true);
+    setAssignmentError("");
+    try {
+      const responses = await Promise.allSettled(versions.map((id) => getVersionAssignments(id)));
+      const all = [];
+      let failures = 0;
+      responses.forEach((response, index) => {
+        if (response.status !== "fulfilled") {
+          failures += 1;
+          return;
+        }
+        const versionId = versions[index];
+        const test = managed.find((item) => String(versionIdOf(item)) === String(versionId));
+        rowsOf(response.value, "assignments").forEach((assignment) =>
+          all.push({
+            ...assignment,
+            version_id: versionId,
+            test_title: test?.title ?? test?.test_title ?? "Test profesional",
+          }),
+        );
+      });
+      all.sort((a, b) => new Date(b.assigned_at || 0) - new Date(a.assigned_at || 0));
+      setAssignmentRows(all);
+      if (failures)
+        setAssignmentError(
+          `Nu s-au încărcat atribuirile pentru ${failures} versiuni. Datele afișate pot fi incomplete.`,
+        );
+    } catch (err) {
+      setAssignmentError(messageOf(err));
+    } finally {
+      setAssignmentLoading(false);
+    }
+  }, [canManage, managed]);
+
+  useEffect(() => {
+    if (tab === "assignments" && canManage && !loading) loadAssignments();
+  }, [tab, canManage, loading, loadAssignments]);
+
+  // Testele proprii sunt disponibile tuturor rolurilor, inclusiv ADMIN și EDITOR.
   const tabs = [
-    { id: "assigned", label: "Teste atribuite", icon: ClipboardList },
+    ...(canManage ? [{ id: "dashboard", label: "Panou general", icon: LayoutDashboard }] : []),
+    { id: "assigned", label: "Testele mele", icon: ClipboardList },
     { id: "results", label: "Rezultatele mele", icon: Trophy },
-    ...(canManage ? [{ id: "manage", label: "Administrare teste", icon: GraduationCap }] : []),
+    ...(canManage
+      ? [
+          { id: "manage", label: "Teste", icon: GraduationCap },
+          { id: "attempts", label: "Încercări", icon: Activity },
+          { id: "assignments", label: "Atribuiri", icon: Users },
+          { id: "reports", label: "Rezultate", icon: Trophy },
+          { id: "settings", label: "Setări", icon: Settings2 },
+        ]
+      : []),
   ];
+  const filteredAssignments = assignmentRows.filter((item) => {
+    const query = assignmentSearch.trim().toLocaleLowerCase("ro");
+    const status = String(item.progress_status ?? "NOT_STARTED").toUpperCase();
+    return (
+      `${item.full_name ?? ""} ${item.username ?? ""} ${item.test_title ?? ""}`
+        .toLocaleLowerCase("ro")
+        .includes(query) &&
+      (assignmentStatus === "all" || status === assignmentStatus)
+    );
+  });
+  const assignmentPages = Math.max(1, Math.ceil(filteredAssignments.length / 8));
+  const safeAssignmentPage = Math.min(assignmentPage, assignmentPages);
+  const visibleAssignments = filteredAssignments.slice(
+    (safeAssignmentPage - 1) * 8,
+    safeAssignmentPage * 8,
+  );
+  const assignmentFinished = assignmentRows.filter(
+    (item) => item.progress_status === "FINISHED",
+  ).length;
+  const assignmentStarted = assignmentRows.filter(
+    (item) => item.progress_status === "IN_PROGRESS",
+  ).length;
+  const assignmentPending = assignmentRows.filter(
+    (item) => item.progress_status === "NOT_STARTED",
+  ).length;
   const current = tab === "assigned" ? assigned : tab === "results" ? results : managed;
+  const filteredAttempts = attemptRows.filter((item) => {
+    const query = attemptSearch.toLocaleLowerCase("ro");
+    const status = String(item.status ?? "").toUpperCase();
+    return (
+      `${item.user_name_snapshot ?? ""} ${item.test_title ?? ""}`
+        .toLocaleLowerCase("ro")
+        .includes(query) &&
+      (attemptStatus === "all" ||
+        (attemptStatus === "finished"
+          ? ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"].includes(status)
+          : ["STARTED", "IN_PROGRESS", "ACTIVE"].includes(status)))
+    );
+  });
+  const attemptPages = Math.max(1, Math.ceil(filteredAttempts.length / 8));
+  const safeAttemptPage = Math.min(attemptPage, attemptPages);
+  const visibleAttempts = filteredAttempts.slice((safeAttemptPage - 1) * 8, safeAttemptPage * 8);
+  const finishedAttempts = attemptRows.filter((item) =>
+    ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"].includes(
+      String(item.status ?? "").toUpperCase(),
+    ),
+  );
+  const gradedAttempts = finishedAttempts.filter((item) => typeof item.passed === "boolean");
+  const attemptPassRate = gradedAttempts.length
+    ? Math.round(
+        (100 * gradedAttempts.filter((item) => item.passed).length) / gradedAttempts.length,
+      )
+    : null;
+  const reportRows = finishedAttempts.filter((item) => {
+    const q = reportSearch.trim().toLocaleLowerCase("ro");
+    return (
+      `${item.user_name_snapshot ?? ""} ${item.test_title ?? ""}`
+        .toLocaleLowerCase("ro")
+        .includes(q) &&
+      (reportTest === "all" || String(item.version_id) === reportTest)
+    );
+  });
+  const reportPages = Math.max(1, Math.ceil(reportRows.length / 8));
+  const safeReportPage = Math.min(reportPage, reportPages);
+  const visibleReports = reportRows.slice((safeReportPage - 1) * 8, safeReportPage * 8);
+  const reportPercentages = finishedAttempts
+    .map((item) => Number(item.percentage ?? item.score_percent))
+    .filter((n) => Number.isFinite(n) && n >= 0 && n <= 100);
+  const reportAverage = reportPercentages.length
+    ? Math.round(reportPercentages.reduce((a, b) => a + b, 0) / reportPercentages.length)
+    : null;
+  const reportGrades = finishedAttempts
+    .map((item) => Number(item.grade))
+    .filter((n) => Number.isFinite(n));
+  const reportGradeAverage = reportGrades.length
+    ? (reportGrades.reduce((a, b) => a + b, 0) / reportGrades.length).toFixed(2)
+    : null;
+  const reportDistribution = [0, 0, 0, 0, 0];
+  for (const value of reportPercentages)
+    reportDistribution[Math.min(4, Math.floor(value / 20))] += 1;
+  const reportKnownPasses = finishedAttempts.filter(
+    (item) => typeof item.passed === "boolean" || typeof item.is_passed === "boolean",
+  );
+  const reportPassRate = reportKnownPasses.length
+    ? Math.round(
+        (100 *
+          reportKnownPasses.filter((item) => item.passed === true || item.is_passed === true)
+            .length) /
+          reportKnownPasses.length,
+      )
+    : null;
+  const attemptDate = (value) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("ro-RO");
+  };
+  const filteredDashboardTests = managed.filter((item) =>
+    `${item.title ?? ""} ${item.description ?? ""}`
+      .toLocaleLowerCase("ro")
+      .includes(dashboardSearch.toLocaleLowerCase("ro")),
+  );
+  const dashboardPages = Math.max(1, Math.ceil(filteredDashboardTests.length / 4));
+  const visibleDashboardTests = filteredDashboardTests.slice(
+    (Math.min(dashboardPage, dashboardPages) - 1) * 4,
+    Math.min(dashboardPage, dashboardPages) * 4,
+  );
+  const completedResults = results.filter((r) =>
+    ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"].includes(
+      String(r.status ?? r.attempt_status ?? "SUBMITTED").toUpperCase(),
+    ),
+  );
+  const passedResults = completedResults.filter(
+    (r) =>
+      r.passed === true ||
+      r.is_passed === true ||
+      String(r.result ?? "").toUpperCase() === "PASSED",
+  );
+  const knownPasses =
+    completedResults.length > 0 &&
+    completedResults.every(
+      (r) =>
+        typeof r.passed === "boolean" ||
+        typeof r.is_passed === "boolean" ||
+        ["PASSED", "FAILED"].includes(String(r.result ?? "").toUpperCase()),
+    );
+  const passRate = knownPasses
+    ? Math.round((passedResults.length / completedResults.length) * 100)
+    : null;
+  const filteredTests = managed.filter((item) => {
+    const searchable =
+      `${item.title ?? item.test_title ?? ""} ${item.description ?? ""}`.toLocaleLowerCase("ro");
+    const status = String(item.version_status ?? item.status ?? "").toUpperCase();
+    return (
+      searchable.includes(testSearch.toLocaleLowerCase("ro")) &&
+      (testStatus === "all" ||
+        (testStatus === "published" ? status === "PUBLISHED" : status === "DRAFT"))
+    );
+  });
+  const testPages = Math.max(1, Math.ceil(filteredTests.length / 5));
+  const safeTestPage = Math.min(testPage, testPages);
+  const visibleTests = filteredTests.slice((safeTestPage - 1) * 5, safeTestPage * 5);
+  const publishedTests = managed.filter(
+    (t) => String(t.version_status ?? t.status ?? "").toUpperCase() === "PUBLISHED",
+  ).length;
+  const draftTests = managed.filter(
+    (t) => String(t.version_status ?? t.status ?? "").toUpperCase() === "DRAFT",
+  ).length;
+  const dashboardStats = [
+    { label: "Teste totale", value: managed.length, icon: Layers3, color: "blue" },
+    {
+      label: "Teste publicate",
+      value: managed.filter(
+        (t) => String(t.status ?? t.version_status ?? "").toUpperCase() === "PUBLISHED",
+      ).length,
+      icon: Users,
+      color: "violet",
+    },
+    { label: "Teste atribuite mie", value: assigned.length, icon: ListChecks, color: "cyan" },
+    { label: "Rezultatele mele", value: results.length, icon: Trophy, color: "purple" },
+  ];
+
+  const sectionCtx = {
+    navigate,
+    user,
+    canManage,
+    canDelete,
+    tab,
+    setTab,
+    dashboardSearch,
+    setDashboardSearch,
+    testSearch,
+    setTestSearch,
+    testStatus,
+    setTestStatus,
+    testView,
+    setTestView,
+    testPage,
+    setTestPage,
+    dashboardPage,
+    setDashboardPage,
+    assignmentRows,
+    setAssignmentRows,
+    assignmentLoading,
+    setAssignmentLoading,
+    assignmentError,
+    setAssignmentError,
+    assignmentSearch,
+    setAssignmentSearch,
+    assignmentStatus,
+    setAssignmentStatus,
+    assignmentPage,
+    setAssignmentPage,
+    attemptRows,
+    setAttemptRows,
+    attemptLoading,
+    setAttemptLoading,
+    attemptError,
+    setAttemptError,
+    attemptSearch,
+    setAttemptSearch,
+    attemptStatus,
+    setAttemptStatus,
+    attemptPage,
+    setAttemptPage,
+    settingsSection,
+    setSettingsSection,
+    reportSearch,
+    setReportSearch,
+    reportTest,
+    setReportTest,
+    reportPage,
+    setReportPage,
+    assigned,
+    setAssigned,
+    results,
+    setResults,
+    managed,
+    setManaged,
+    loading,
+    setLoading,
+    error,
+    setError,
+    // Refolosește editorul existent, în modul de creare (fără modal).
+    setShowCreate: () => navigate("/testare/nou/editare"),
+    startingId,
+    setStartingId,
+    deleteTarget,
+    setDeleteTarget,
+    deleting,
+    setDeleting,
+    load,
+    openEditor,
+    openAssignedTest,
+    openFinishedAttempt,
+    finishedForVersion,
+    confirmDelete,
+    loadAttempts,
+    loadAssignments,
+    tabs,
+    filteredAssignments,
+    assignmentPages,
+    safeAssignmentPage,
+    visibleAssignments,
+    assignmentFinished,
+    assignmentStarted,
+    assignmentPending,
+    current,
+    filteredAttempts,
+    attemptPages,
+    safeAttemptPage,
+    visibleAttempts,
+    finishedAttempts,
+    gradedAttempts,
+    attemptPassRate,
+    reportRows,
+    reportPages,
+    safeReportPage,
+    visibleReports,
+    reportPercentages,
+    reportAverage,
+    reportGrades,
+    reportGradeAverage,
+    reportDistribution,
+    reportKnownPasses,
+    reportPassRate,
+    attemptDate,
+    filteredDashboardTests,
+    dashboardPages,
+    visibleDashboardTests,
+    completedResults,
+    passedResults,
+    knownPasses,
+    passRate,
+    filteredTests,
+    testPages,
+    safeTestPage,
+    visibleTests,
+    publishedTests,
+    draftTests,
+    dashboardStats,
+    rowsOf,
+    messageOf,
+    versionIdOf,
+    groupAssigned,
+  };
 
   return (
     <section className="pt-page">
       <div className="pt-heading">
-        <div>
+        <div className="pt-heading-copy">
+          <button className="pt-back-link" type="button" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft size={17} /> Înapoi la Dashboard
+          </button>
           <span className="pt-eyebrow">
-            <Sparkles size={14} /> BORDER / FORMARE PROFESIONALĂ
+            <Sparkles size={14} /> BORDER / TESTARE PROFESIONALĂ
           </span>
-          <h1>Testare profesională</h1>
-          <p>Accesează testele atribuite și urmărește rezultatele evaluărilor.</p>
+          <div className="pt-heading-title">
+            <span className="pt-heading-emblem">
+              <GraduationCap size={34} />
+            </span>
+            <div>
+              <h1>Testare</h1>
+              <p>
+                {tab === "results"
+                  ? "Rezultatele testelor finalizate, cu punctaj și detalii."
+                  : tab === "assigned"
+                    ? "Testele atribuite pentru tine. Parcurge instrucțiunile, rezolvă testele și vezi rezultatele."
+                    : "Creare teste, configurare, atribuire și analiză rezultate."}
+              </p>
+            </div>
+          </div>
         </div>
         <div className="pt-actions">
           <button
@@ -222,49 +627,9 @@ function TestareProfesionala() {
           >
             <RefreshCw size={17} /> Actualizează
           </button>
-          {canManage && (
-            <button
-              className="pt-button pt-button-primary"
-              type="button"
-              onClick={() => setShowCreate(true)}
-            >
-              <Plus size={17} /> Creează test
-            </button>
-          )}
         </div>
       </div>
 
-      <div className="pt-overview" aria-label="Rezumat testare profesională">
-        <div className="pt-overview-item">
-          <div className="pt-overview-icon pt-overview-blue">
-            <ClipboardList size={20} />
-          </div>
-          <div>
-            <span>Teste atribuite</span>
-            <strong>{assigned.length}</strong>
-          </div>
-        </div>
-        <div className="pt-overview-item">
-          <div className="pt-overview-icon pt-overview-green">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <span>Rezultate înregistrate</span>
-            <strong>{results.length}</strong>
-          </div>
-        </div>
-        {canManage && (
-          <div className="pt-overview-item">
-            <div className="pt-overview-icon pt-overview-violet">
-              <GraduationCap size={20} />
-            </div>
-            <div>
-              <span>Teste administrate</span>
-              <strong>{managed.length}</strong>
-            </div>
-          </div>
-        )}
-      </div>
       <div className="pt-panel">
         <div className="pt-tabs" role="tablist" aria-label="Secțiuni testare profesională">
           {tabs.map(({ id, label, icon: Icon }) => (
@@ -285,7 +650,30 @@ function TestareProfesionala() {
             {error}
           </div>
         )}
-        {loading ? (
+        {tab === "settings" && canManage ? (
+          <SetariTestare ctx={sectionCtx} />
+        ) : tab === "reports" && canManage && !loading && !error ? (
+          <Rezultate ctx={sectionCtx} />
+        ) : tab === "assignments" && canManage && !loading && !error ? (
+          <Atribuiri ctx={sectionCtx} />
+        ) : (tab === "attempts" || tab === "reports") && canManage && !loading && !error ? (
+          <Incercari ctx={sectionCtx} />
+        ) : tab === "manage" && canManage && !loading && !error ? (
+          <ListaTeste ctx={sectionCtx} />
+        ) : tab === "dashboard" && !loading && !error ? (
+          <PanouGeneral ctx={sectionCtx} />
+        ) : (tab === "assigned" || tab === "results") && !loading && !error ? (
+          <TestareUserViews
+            mode={tab}
+            assigned={assigned}
+            results={results}
+            startingId={startingId}
+            onStart={openAssignedTest}
+            onOpenResult={openFinishedAttempt}
+            versionIdOf={versionIdOf}
+            finishedForVersion={finishedForVersion}
+          />
+        ) : loading ? (
           <div className="pt-loading">
             <span className="pt-spinner" aria-hidden="true" /> Se încarcă datele...
           </div>
@@ -491,67 +879,6 @@ function TestareProfesionala() {
                 <Trash2 size={17} /> {deleting ? "Se șterge..." : "Șterge definitiv"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showCreate && canManage && (
-        <div className="pt-modal-backdrop" onClick={() => !saving && setShowCreate(false)}>
-          <div
-            className="pt-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="pt-modal-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="pt-modal-header">
-              <h2 id="pt-modal-title">Creează un test profesional</h2>
-              <button
-                type="button"
-                className="pt-icon-button"
-                aria-label="Închide"
-                onClick={() => setShowCreate(false)}
-                disabled={saving}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={createTest}>
-              <label htmlFor="pt-title">Denumirea testului *</label>
-              <input
-                id="pt-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                maxLength={200}
-                placeholder="Ex. Test de verificare profesională"
-              />
-              <label htmlFor="pt-description">Descriere</label>
-              <textarea
-                id="pt-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                placeholder="Descrierea testului (opțional)"
-              />
-              <div className="pt-modal-actions">
-                <button
-                  type="button"
-                  className="pt-button pt-button-light"
-                  disabled={saving}
-                  onClick={() => setShowCreate(false)}
-                >
-                  Anulează
-                </button>
-                <button
-                  type="submit"
-                  className="pt-button pt-button-primary"
-                  disabled={saving || !title.trim()}
-                >
-                  {saving ? "Se salvează..." : "Creează testul"}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

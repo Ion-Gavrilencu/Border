@@ -85,6 +85,7 @@ app.use(
   }),
 );
 
+app.use("/api/testare", express.json({ limit: "2mb" }));
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 app.use(cookieParser());

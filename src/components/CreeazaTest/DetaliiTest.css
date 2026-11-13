@@ -1,0 +1,234 @@
+/* Etapa 1: Detalii test. Stilurile sunt izolate sub .ptd-details-card. */
+.pte-page .ptd-details-card {
+  padding: 20px 21px 18px;
+  border-radius: 19px;
+  box-shadow: 0 10px 26px rgba(40, 70, 170, 0.09);
+}
+.pte-page .ptd-card-heading {
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.pte-page .ptd-card-heading .pte-section-icon {
+  background: #e6edff;
+  color: #1559ff;
+}
+.pte-page .ptd-card-heading h2 {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.pte-page .ptd-card-heading p {
+  font-size: 13px;
+}
+.pte-page .ptd-details-card .pte-fields {
+  gap: 15px 17px;
+}
+.pte-page .ptd-details-card .pte-field {
+  margin: 0;
+  min-width: 0;
+}
+.pte-page .ptd-general-grid {
+  margin-bottom: 16px;
+}
+.pte-page .ptd-label-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 20px;
+}
+.pte-page .ptd-field-label {
+  color: #101a40;
+  font-weight: 750;
+  font-size: 13px;
+}
+.pte-page .ptd-field-label b {
+  color: #e23b4f;
+}
+.pte-page .ptd-hint {
+  display: inline-flex;
+  align-items: center;
+  color: #6378aa;
+  cursor: help;
+}
+.pte-page .ptd-input-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.pte-page .ptd-input-wrap input,
+.pte-page .ptd-input-wrap select,
+.pte-page .ptd-input-wrap textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 43px;
+  border: 1px solid #cbd5fa;
+  border-radius: 11px;
+  background: #fff;
+  color: #111a3b;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  padding: 10px 13px;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(36, 66, 155, 0.025);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.pte-page .ptd-input-wrap input:focus,
+.pte-page .ptd-input-wrap select:focus,
+.pte-page .ptd-input-wrap textarea:focus {
+  border-color: #3876ff;
+  box-shadow: 0 0 0 3px rgba(56, 118, 255, 0.13);
+}
+.pte-page .ptd-input-wrap textarea {
+  min-height: 66px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.pte-page .ptd-input-icon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  transform: translateY(-50%);
+  color: #214b9b;
+  pointer-events: none;
+  z-index: 1;
+}
+.pte-page .ptd-input-wrap:has(.ptd-input-icon) input,
+.pte-page .ptd-input-wrap:has(.ptd-input-icon) select {
+  padding-left: 43px;
+}
+.pte-page .ptd-input-wrap select {
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231a356b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+}
+.pte-page .ptd-input-wrap input[type="number"] {
+  padding-right: 48px;
+}
+.pte-page .ptd-input-suffix {
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4c5e8a;
+  font-size: 12px;
+  pointer-events: none;
+}
+.pte-page .ptd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 12px;
+  color: #111a40;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.pte-page .ptd-section-title svg {
+  color: #1559ff;
+  flex: none;
+}
+.pte-page .ptd-evaluation-grid {
+  padding: 15px 16px;
+  border: 1px solid #dce5ff;
+  border-radius: 15px;
+  background: #f9faff;
+  margin-bottom: 0;
+}
+.pte-page .ptd-evaluation-grid .pte-field {
+  gap: 6px;
+}
+.pte-page .ptd-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 22px;
+  padding: 15px 18px;
+  border: 1px solid #dce5ff;
+  border-radius: 15px;
+  background: #f9faff;
+}
+.pte-page .ptd-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #14214b;
+  cursor: pointer;
+}
+.pte-page .ptd-switch-row input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.pte-page .ptd-switch-row .pte-switch {
+  position: relative;
+  display: block;
+  width: 43px;
+  height: 24px;
+  flex: 0 0 43px;
+  border-radius: 30px;
+  background: #c4cce1;
+  transition: background 0.2s;
+}
+.pte-page .ptd-switch-row .pte-switch::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px #15244d29;
+  transition: transform 0.2s;
+}
+.pte-page .ptd-switch-row input:checked + .pte-switch {
+  background: #1559ff;
+}
+.pte-page .ptd-switch-row input:checked + .pte-switch::after {
+  transform: translateX(19px);
+}
+.pte-page .ptd-switch-row input:focus-visible + .pte-switch {
+  outline: 3px solid #89aeff;
+  outline-offset: 2px;
+}
+.pte-page .ptd-switch-text {
+  flex: 0 1 auto;
+  line-height: 1.45;
+}
+.pte-page .ptd-caveat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 15px 0 0;
+  padding: 11px 13px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.pte-page .ptd-caveat svg {
+  flex: none;
+  margin-top: 1px;
+}
+@media (max-width: 700px) {
+  .pte-page .ptd-details-card {
+    padding: 15px;
+  }
+  .pte-page .ptd-details-card .pte-fields.two,
+  .pte-page .ptd-details-card .pte-fields.three,
+  .pte-page .ptd-options-grid {
+    grid-template-columns: 1fr;
+  }
+  .pte-page .ptd-options-grid {
+    gap: 15px;
+  }
+  .pte-page .ptd-section-title {
+    font-size: 17px;
+  }
+}

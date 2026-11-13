@@ -213,6 +213,8 @@ export default function SustinereTestProfesional() {
     const correct = revealed ? questions.filter((q) => q.is_correct).length : null;
     const wrong = revealed ? questions.filter((q) => q.answered && !q.is_correct).length : null;
     const unanswered = questions.length - answered;
+    const displayGrade = a.show_grade !== false && a.grade != null;
+    const displayPercent = a.show_grade !== false && a.percentage != null;
     const percentage = Math.max(0, Math.min(100, Number(a.percentage) || 0));
     const statusOf = (q) => (!q.answered ? "unanswered" : q.is_correct ? "correct" : "wrong");
     return (
@@ -235,11 +237,22 @@ export default function SustinereTestProfesional() {
         </div>
         <div className="st-review-hero">
           <div className="st-review-score">
-            <div className="st-score-ring" style={{ "--st-progress": `${percentage}%` }}>
+            <div
+              className="st-score-ring"
+              style={{ "--st-progress": `${displayPercent ? percentage : 0}%` }}
+            >
               <div className="st-score-ring-inner">
                 <Trophy size={24} />
-                <strong>{a.percentage}%</strong>
-                <span>Scor obținut</span>
+                <strong>
+                  {displayPercent ? `${a.percentage}%` : displayGrade ? a.grade : "—"}
+                </strong>
+                <span>
+                  {displayPercent
+                    ? "Scor obținut"
+                    : displayGrade
+                      ? "Nota obținută"
+                      : "Evaluare finalizată"}
+                </span>
               </div>
             </div>
           </div>
@@ -253,13 +266,15 @@ export default function SustinereTestProfesional() {
               {revealed ? " și variantele corecte." : "."}
             </p>
             <div className="st-summary-stats">
-              <div className="st-summary-stat">
-                <Target size={19} />
-                <div>
-                  <span>Nota finală</span>
-                  <strong>{a.grade}</strong>
+              {displayGrade && (
+                <div className="st-summary-stat">
+                  <Target size={19} />
+                  <div>
+                    <span>Nota finală</span>
+                    <strong>{a.grade}</strong>
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="st-summary-stat">
                 <Clock3 size={19} />
                 <div>

@@ -94,4 +94,31 @@ router.get("/cleanup-monitoring", authorizeCron, async (req, res) => {
   }
 });
 
+
+ // Reminder pentru testarea profesională.
+ // Acces permis numai prin CRON_SECRET.
+router.get("/test-reminders", authorizeCron, async (req, res) => {
+  try {
+    const { processTestReminders } = require(
+      "../services/professionalTestNotificationService"
+    );
+
+    const result = await processTestReminders({ limit: 100 });
+
+    console.log("BORDER TEST REMINDERS:", result);
+
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error("TEST REMINDERS CRON ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Reminderul nu a putut fi procesat.",
+    });
+  }
+});
+
 module.exports = router;

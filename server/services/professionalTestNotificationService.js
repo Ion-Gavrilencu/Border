@@ -144,7 +144,7 @@ function buildTestEmailHtml({ title, message, url, logoSrc }) {
 // Notifică numai destinatarii efectivi ai atribuirii curente.
 // Un utilizator primește cel mult o notificare pentru aceeași versiune de test.
 async function notifyTestAssignment({ assignmentId, versionId, testTitle }) {
-  const link = `/testare?versiune=${encodeURIComponent(versionId)}`;
+  const link = `/testare?versiune=${encodeURIComponent(versionId)}&atribuire=${encodeURIComponent(assignmentId)}`;
   const title = "Test profesional nou atribuit";
   const message = `Vi s-a atribuit testul profesional „${testTitle}”. Accesați secțiunea Testare profesională pentru detalii.`;
   const inserted = await pool.query(
@@ -178,7 +178,13 @@ async function notifyTestAssignment({ assignmentId, versionId, testTitle }) {
     [assignmentId, versionId, title, message, link],
   );
 
-  const recipients = inserted.rows.map((r) => r.email);
+  await sendTestEmails(
+    inserted.rows.map((r) => r.email),
+    { versionId, title, message },
+  );
+}
+
+async function sendTestEmails(recipients, { versionId, title, message }) {
   if (!recipients.length) return;
 
   const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
@@ -247,4 +253,66 @@ async function notifyTestAssignment({ assignmentId, versionId, testTitle }) {
   }
 }
 
-module.exports = { notifyTestAssignment };
+// Rulează numai prin endpoint cron protejat cu CRON_SECRET.
+// Marchează reminderul în aceeași operație SQL cu notificarea in-app.
+// E-mailurile SMTP sunt best-effort: un eșec SMTP nu reia notificarea in-app.
+async function processTestReminders({ limit = 100 } = {}) {
+  const due = await pool.query(
+    `
+    SELECT a.id AS assignment_id, a.version_id, t.title,
+           a.deadline_at, a.reminder_hours
+    FROM professional_test_assignments a
+    JOIN professional_test_versions v ON v.id=a.version_id AND v.status='PUBLISHED'
+    JOIN professional_tests t ON t.id=v.test_id AND t.archived_at IS NULL
+    WHERE a.send_reminder=true AND a.revoked_at IS NULL
+      AND a.deadline_at IS NOT NULL AND a.deadline_at > now()
+      AND a.deadline_at <= now() + a.reminder_hours * interval '1 hour'
+    ORDER BY a.deadline_at, a.id LIMIT $1
+  `,
+    [Math.min(500, Math.max(1, Number(limit) || 100))],
+  );
+  let delivered = 0;
+  for (const a of due.rows) {
+    const title = "Reminder: test profesional";
+    const message = `Testul profesional „${a.title}” expiră la ${new Date(a.deadline_at).toLocaleString("ro-RO", { timeZone: "Europe/Chisinau" })}.`;
+    const link = `/testare?versiune=${encodeURIComponent(a.version_id)}`;
+    const inserted = await pool.query(
+      `
+      WITH recipients AS (
+        SELECT DISTINCT u.id, u.email, u.email_notifications
+        FROM professional_test_assignments a JOIN users u ON u.is_active=true
+        WHERE a.id=$1 AND a.revoked_at IS NULL
+          AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=u.id)
+            OR (a.target_type='GROUP' AND EXISTS (
+              SELECT 1 FROM professional_test_group_members gm
+              WHERE gm.group_id=a.group_id AND gm.user_id=u.id)))
+          AND NOT EXISTS (
+            SELECT 1 FROM professional_test_attempts att
+            WHERE att.version_id=a.version_id AND att.user_id_snapshot=u.id
+              AND att.status='SUBMITTED')
+      ), marked AS (
+        INSERT INTO professional_test_reminder_deliveries(assignment_id,user_id)
+        SELECT $1, id FROM recipients ON CONFLICT DO NOTHING RETURNING user_id
+      ), notifications_inserted AS (
+        INSERT INTO notifications(user_id,title,message,type,link)
+        SELECT m.user_id,$2,$3,'test',$4 FROM marked m RETURNING user_id
+      )
+      SELECT r.email FROM recipients r JOIN notifications_inserted n ON n.user_id=r.id
+      WHERE r.email_notifications=true AND r.email IS NOT NULL AND btrim(r.email)<>''
+    `,
+      [a.assignment_id, title, message, link],
+    );
+    delivered += inserted.rowCount;
+    try {
+      await sendTestEmails(
+        inserted.rows.map((x) => x.email),
+        { versionId: a.version_id, title, message },
+      );
+    } catch (error) {
+      console.error("TEST REMINDER EMAIL ERROR:", error);
+    }
+  }
+  return { assignments_checked: due.rowCount, email_recipients: delivered };
+}
+
+module.exports = { notifyTestAssignment, processTestReminders };
