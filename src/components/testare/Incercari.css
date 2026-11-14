@@ -3,7 +3,9 @@
   padding: 18px 0 12px;
   color: #101a43;
   min-width: 0;
+  width: 100%;
   font-size: 14px;
+  container-type: inline-size;
 }
 .pt-ia-page * {
   box-sizing: border-box;
@@ -159,7 +161,7 @@
 }
 .pt-ia-data {
   padding: 14px 12px 0;
-  overflow: hidden;
+  min-width: 0;
 }
 .pt-ia-filters {
   display: grid;
@@ -499,7 +501,51 @@
   font-weight: 800;
   cursor: pointer;
 }
-@media (max-width: 1350px) {
+
+/* BORDER / Încercări — responsive unificat în funcție de lățimea
+   conținutului real (inclusiv când sidebarul este deschis).
+   Nu necesită modificări în JSX sau în logica aplicației. */
+.pt-ia-page :is(button, select, input):focus-visible {
+  outline: 2px solid #245cff;
+  outline-offset: 3px;
+}
+.pt-ia-page :is(.pt-ia-heading, .pt-ia-result-body, .pt-ia-activity-row) {
+  min-width: 0;
+}
+.pt-ia-page :is(.pt-ia-panel, .pt-ia-stat, .pt-ia-layout, .pt-ia-table-scroll) {
+  max-width: 100%;
+}
+.pt-ia-table-scroll {
+  min-width: 0;
+}
+.pt-ia-table th,
+.pt-ia-table td {
+  overflow-wrap: break-word;
+}
+.pt-ia-view {
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 10px;
+}
+.pt-ia-pages button {
+  min-width: 40px;
+  min-height: 40px;
+}
+.pt-ia-filters > * {
+  max-width: 100%;
+}
+.pt-ia-filters select {
+  width: 100%;
+}
+.pt-ia-stat-copy {
+  overflow-wrap: anywhere;
+}
+.pt-ia-activity-copy {
+  overflow-wrap: anywhere;
+}
+
+/* Laptop / desktop îngust: renunțăm la panoul lateral paralel. */
+@container (max-width: 1399px) {
   .pt-ia-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -507,89 +553,351 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .pt-ia-filters {
-    grid-template-columns: minmax(200px, 2fr) repeat(3, minmax(115px, 1fr));
+    grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(120px, 1fr));
+  }
+  .pt-ia-search {
+    grid-column: auto;
   }
   .pt-ia-reset {
     grid-column: auto;
   }
-  .pt-ia-spark {
-    width: 55px;
-  }
 }
-@media (max-width: 850px) {
+
+/* Tabletă landscape / spațiu de lucru mediu. */
+@container (max-width: 1050px) {
   .pt-ia-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .pt-ia-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pt-ia-search {
+    grid-column: 1 / -1;
+  }
+  .pt-ia-spark {
+    width: 50px;
+  }
+}
+
+/* Tabelul devine carduri la lățimea unde toate cele 9 coloane
+   nu mai încap confortabil. Păstrăm semantica HTML table. */
+@container (max-width: 960px) {
+  .pt-ia-data {
+    padding: 14px 12px 14px;
+  }
+  .pt-ia-table-scroll {
+    overflow: visible;
+  }
+  .pt-ia-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border-collapse: separate;
+  }
+  .pt-ia-table thead {
+    display: none;
+  }
+  .pt-ia-table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .pt-ia-table tbody tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 12px 14px;
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid #dce4ff;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 5px 16px #243c9210;
+  }
+  .pt-ia-table tbody tr:hover {
+    background: #fff;
+  }
+  .pt-ia-table tbody td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+    vertical-align: initial;
+  }
+  .pt-ia-table tbody td:nth-child(1) {
+    position: absolute;
+    right: 65px;
+    top: 25px;
+    color: #647697;
+    font-size: 11px;
+  }
+  .pt-ia-table tbody td:nth-child(1)::before {
+    content: "#";
+  }
+  .pt-ia-table tbody td:nth-child(2) {
+    grid-column: 1 / -1;
+    padding-right: 88px;
+    min-height: 44px;
+  }
+  .pt-ia-table .pt-ia-person {
+    min-width: 0;
+    white-space: normal;
+  }
+  .pt-ia-table .pt-ia-person strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 14px;
+  }
+  .pt-ia-table .pt-ia-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  .pt-ia-table tbody td:nth-child(3) {
+    grid-column: 1 / -1;
+    padding: 11px 0;
+    border-top: 1px solid #edf1fa;
+    border-bottom: 1px solid #edf1fa;
+  }
+  .pt-ia-table tbody td:nth-child(3) strong {
+    font-size: 14px;
+  }
+  .pt-ia-table tbody td:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+  .pt-ia-table tbody td:nth-child(n + 4):nth-child(-n + 8)::before {
+    display: block;
+    margin-bottom: 5px;
+    color: #63779b;
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .pt-ia-table tbody td:nth-child(4)::before {
+    content: "Data începerii";
+  }
+  .pt-ia-table tbody td:nth-child(5)::before {
+    content: "Durată";
+  }
+  .pt-ia-table tbody td:nth-child(6)::before {
+    content: "Scor";
+  }
+  .pt-ia-table tbody td:nth-child(7)::before {
+    content: "Rezultat";
+  }
+  .pt-ia-table tbody td:nth-child(8)::before {
+    content: "Status";
+  }
+  .pt-ia-table .pt-ia-nowrap {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    align-items: flex-start;
+  }
+  .pt-ia-table .pt-ia-nowrap svg {
+    flex: none;
+  }
+  .pt-ia-table .pt-ia-pill {
+    white-space: normal;
+    max-width: 100%;
+    line-height: 1.35;
+  }
+  .pt-ia-table tbody td:nth-child(9) {
+    position: absolute;
+    top: 13px;
+    right: 13px;
+  }
+  .pt-ia-table .pt-ia-view {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    background: #f5f8ff;
+    border: 1px solid #dce4ff;
+    border-radius: 11px;
+  }
+  .pt-ia-footer {
+    flex-wrap: wrap;
+  }
+}
+
+/* Tabletă portret: un card pe rând, panourile secundare stivuite. */
+@container (max-width: 720px) {
   .pt-ia-aside {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pt-ia-table tbody {
+    grid-template-columns: minmax(0, 1fr);
   }
   .pt-ia-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .pt-ia-search {
-    grid-column: 1/-1;
+    grid-column: 1 / -1;
+  }
+  .pt-ia-reset {
+    grid-column: 1 / -1;
   }
 }
-@media (max-width: 520px) {
+
+/* Telefon: carduri lizibile și filtre utilizabile. */
+@container (max-width: 520px) {
   .pt-ia-page {
-    padding-top: 12px;
+    padding: 12px 0;
   }
   .pt-ia-overview {
     padding: 13px;
   }
+  .pt-ia-heading {
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .pt-ia-heading-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+  }
   .pt-ia-heading h2 {
-    font-size: 21px;
+    font-size: clamp(19px, 5vw, 22px);
   }
   .pt-ia-heading p {
     font-size: 12px;
+    line-height: 1.45;
   }
   .pt-ia-stats {
-    gap: 8px;
+    gap: 9px;
   }
   .pt-ia-stat {
-    padding: 9px;
-    gap: 7px;
-    min-height: 77px;
+    gap: 8px;
+    padding: 10px;
+    min-height: 86px;
+    border-radius: 13px;
   }
   .pt-ia-stat-icon {
     width: 36px;
     height: 36px;
+    border-radius: 10px;
   }
   .pt-ia-stat-icon svg {
-    width: 21px;
-  }
-  .pt-ia-stat-number strong {
-    font-size: 23px;
+    width: 20px;
+    height: 20px;
   }
   .pt-ia-stat-copy > span {
     font-size: 11px;
+    line-height: 1.25;
+  }
+  .pt-ia-stat-number strong {
+    font-size: 24px;
   }
   .pt-ia-spark {
     display: none;
   }
+  .pt-ia-data {
+    padding: 12px 10px 14px;
+  }
   .pt-ia-filters {
-    gap: 7px;
+    gap: 9px;
+  }
+  .pt-ia-filters select,
+  .pt-ia-reset,
+  .pt-ia-search {
+    min-height: 44px;
+    height: 44px;
   }
   .pt-ia-filters select {
+    font-size: 12px;
+  }
+  .pt-ia-table tbody {
+    gap: 10px;
+  }
+  .pt-ia-table tbody tr {
+    gap: 11px 10px;
+    padding: 14px;
+  }
+  .pt-ia-table .pt-ia-pill {
     font-size: 11px;
-  }
-  .pt-ia-reset {
-    grid-column: 1/-1;
-  }
-  .pt-ia-footer {
-    flex-direction: column;
-    align-items: flex-start;
   }
   .pt-ia-result-body {
     flex-wrap: wrap;
     justify-content: center;
   }
   .pt-ia-legend {
-    min-width: 160px;
+    flex: 1 1 160px;
+  }
+  .pt-ia-results,
+  .pt-ia-activity {
+    padding: 14px;
   }
   .pt-ia-activity-row time {
+    max-width: 85px;
     white-space: normal;
-    max-width: 70px;
     text-align: right;
+  }
+  .pt-ia-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .pt-ia-pages {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .pt-ia-pages button {
+    min-width: 42px;
+    min-height: 42px;
+  }
+}
+
+/* Telefon foarte mic / viewport disponibil redus de un sidebar. */
+@container (max-width: 370px) {
+  .pt-ia-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pt-ia-filters > * {
+    grid-column: 1 / -1;
+  }
+  .pt-ia-stat {
+    gap: 6px;
+    padding: 8px;
+  }
+  .pt-ia-stat-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .pt-ia-stat-number strong {
+    font-size: 22px;
+  }
+  .pt-ia-table tbody tr {
+    padding: 12px;
+    gap: 10px 8px;
+  }
+  .pt-ia-table tbody td:nth-child(1) {
+    top: 22px;
+    right: 57px;
+  }
+  .pt-ia-table tbody td:nth-child(2) {
+    padding-right: 76px;
+  }
+  .pt-ia-table tbody td:nth-child(9) {
+    top: 10px;
+    right: 10px;
+  }
+  .pt-ia-table .pt-ia-pill {
+    font-size: 10px;
+    padding: 5px 7px;
+  }
+  .pt-ia-legend p {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-ia-page *,
+  .pt-ia-page *::before,
+  .pt-ia-page *::after {
+    scroll-behavior: auto;
+    animation-duration: 0.01ms;
+    transition-duration: 0.01ms;
   }
 }

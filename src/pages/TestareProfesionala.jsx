@@ -48,7 +48,7 @@ import {
   getManagedTestResults,
   getVersionAssignments,
 } from "../services/professionalTestingService";
-import "../components/testare/testare.css";
+import "./TestareProfesionala.css";
 
 const rowsOf = (data, key) => {
   if (Array.isArray(data)) return data;
@@ -171,16 +171,16 @@ function TestareProfesionala() {
   };
 
   // Accesarea unei încercări deja încheiate nu pornește o testare nouă.
-const openFinishedAttempt = (item) => {
-  const attemptId = item?.attempt_id ?? item?.attempt?.id ?? item?.id;
+  const openFinishedAttempt = (item) => {
+    const attemptId = item?.attempt_id ?? item?.attempt?.id ?? item?.id;
 
-  if (attemptId == null) {
-    toast.error("Rezultatul nu conține ID-ul încercării.");
-    return;
-  }
+    if (attemptId == null) {
+      toast.error("Rezultatul nu conține ID-ul încercării.");
+      return;
+    }
 
-  navigate(`/testare/incercari/${encodeURIComponent(attemptId)}/rezultat`);
-};
+    navigate(`/testare/incercari/${encodeURIComponent(attemptId)}/rezultat`);
+  };
 
   const finishedForVersion = (versionId) => {
     if (versionId == null) return [];

@@ -138,8 +138,7 @@ export default function PanouGeneral({ ctx }) {
     return "—";
   };
   const activeCount = allTests.filter((item) => statusMeta(item).cls === "active").length;
-  const attemptsCount =
-    Array.isArray(attemptRows) && attemptRows.length ? attemptRows.length : results.length;
+  const attemptsCount = ctx.attemptRowsComplete === true ? attemptRows.length : "—";
   const rate =
     knownPasses && Number.isFinite(Number(passRate))
       ? Math.max(0, Math.min(100, Number(passRate)))
@@ -185,7 +184,7 @@ export default function PanouGeneral({ ctx }) {
   };
 
   return (
-    <div className="pt-dashboard pt-dashboard-premium">
+    <div className="pt-dashboard pt-dashboard-premium pt-mobile-refresh">
       <div className="pt-dashboard-stats">
         {stats.map(({ label, value, Icon, theme }) => (
           <div className={`pt-dashboard-stat pt-ds-${theme}`} key={label}>
@@ -214,7 +213,7 @@ export default function PanouGeneral({ ctx }) {
           <section className="pt-dashboard-card pt-dashboard-create">
             <div className="pt-dashboard-section-title">
               <span className="pt-dashboard-section-icon">
-                <Plus size={27} />
+                <Layers3 size={27} />
               </span>
               <div>
                 <h2>Creează un test nou</h2>
@@ -331,7 +330,7 @@ export default function PanouGeneral({ ctx }) {
                     const cat = String(item.category_name ?? item.category ?? "General");
                     return (
                       <tr key={testKey}>
-                        <td>
+                        <td data-label="Titlu test">
                           <div className="pt-test-title-cell">
                             <span className="pt-test-row-icon">
                               <ShieldCheck size={20} />
@@ -346,19 +345,21 @@ export default function PanouGeneral({ ctx }) {
                             </span>
                           </div>
                         </td>
-                        <td>
+                        <td data-label="Categorie">
                           <span
                             className={`pt-category-chip pt-category-${normalize(cat).includes("legis") ? "blue" : normalize(cat).includes("manage") ? "violet" : "neutral"}`}
                           >
                             {cat}
                           </span>
                         </td>
-                        <td>{item.question_count ?? item.questions_count ?? "—"}</td>
-                        <td>
+                        <td data-label="Întrebări">
+                          {item.question_count ?? item.questions_count ?? "—"}
+                        </td>
+                        <td data-label="Durată">
                           {item.duration_minutes != null ? `${item.duration_minutes} min` : "—"}
                         </td>
-                        <td>{attemptCountFor(item)}</td>
-                        <td>
+                        <td data-label="Încercări">{attemptCountFor(item)}</td>
+                        <td data-label="Stare">
                           <span className={`pt-dashboard-status pt-status-${s.cls}`}>
                             {s.Icon && (
                               <s.Icon
@@ -369,7 +370,7 @@ export default function PanouGeneral({ ctx }) {
                             {s.label}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="Acțiuni">
                           <div className="pt-row-actions">
                             <button
                               type="button"

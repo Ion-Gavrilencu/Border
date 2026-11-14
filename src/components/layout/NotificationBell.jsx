@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   Bell,
+  ClipboardCheck,
+  Newspaper,
+  Clock3,
   CheckCheck,
   RefreshCw,
   ExternalLink,
@@ -66,6 +70,7 @@ function NotificationBell() {
   const navigate = useNavigate();
   const location = useLocation();
   const containerRef = useRef(null);
+  const panelRef = useRef(null);
   const objectUrlsRef = useRef([]);
 
   const [open, setOpen] = useState(false);
@@ -130,7 +135,10 @@ function NotificationBell() {
     if (!open) return;
 
     const onPointerDown = (event) => {
-      if (!containerRef.current?.contains(event.target)) {
+      if (
+        !containerRef.current?.contains(event.target) &&
+        !panelRef.current?.contains(event.target)
+      ) {
         setOpen(false);
         setShowAttachmentPicker(false);
       }
@@ -453,104 +461,160 @@ function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <section className="notification-panel" aria-label="Lista notificărilor">
-          <div className="notification-panel-header">
-            <strong>{showAttachmentPicker ? "Alege documentul" : "Notificări"}</strong>
+      {open &&
+        createPortal(
+          <section ref={panelRef} className="notification-panel" aria-label="Lista notificărilor">
+            <div className="notification-panel-header">
+              <div className="notification-panel-heading">
+                <strong>{showAttachmentPicker ? "Alege documentul" : "Notificări"}</strong>
+                <span className="notification-panel-subtitle">
+                  {showAttachmentPicker
+                    ? `${selectedAttachments.length} documente disponibile`
+                    : unreadCount > 0
+                      ? `${unreadCount} ${unreadCount === 1 ? "notificare necitită" : "notificări necitite"}`
+                      : "Ești la curent cu toate notificările"}
+                </span>
+              </div>
+
+              <div className="notification-panel-actions">
+                {showAttachmentPicker ? (
+                  <button
+                    type="button"
+                    className="notification-text-button"
+                    onClick={() => {
+                      setShowAttachmentPicker(false);
+                      setSelectedAttachments([]);
+                    }}
+                  >
+                    <X size={16} />
+                    Înapoi
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="notification-text-button"
+                    onClick={markAllRead}
+                    disabled={busy || unreadCount === 0}
+                  >
+                    <CheckCheck size={16} />
+                    Toate citite
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="notification-close-button"
+                  aria-label="Închide notificările"
+                  title="Închide"
+                  onClick={() => {
+                    setOpen(false);
+                    setShowAttachmentPicker(false);
+                  }}
+                >
+                  <X size={17} />
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <p className="notification-error" role="alert">
+                {error}
+              </p>
+            )}
 
             {showAttachmentPicker ? (
-              <button
-                type="button"
-                className="notification-text-button"
-                onClick={() => {
-                  setShowAttachmentPicker(false);
-                  setSelectedAttachments([]);
-                }}
-              >
-                <X size={16} />
-                Înapoi
-              </button>
+              <div className="notification-attachment-list">
+                {selectedAttachments.map((attachment) => (
+                  <button
+                    key={attachment.id}
+                    type="button"
+                    className="notification-attachment-item"
+                    disabled={busy}
+                    onClick={() => handleSelectAttachment(attachment)}
+                  >
+                    {getAttachmentIcon(attachment)}
+
+                    <span className="notification-attachment-name">{attachment.name}</span>
+
+                    <ExternalLink size={15} />
+                  </button>
+                ))}
+              </div>
+            ) : loading ? (
+              <p className="notification-empty">Se încarcă notificările...</p>
+            ) : notifications.length === 0 ? (
+              <div className="notification-empty">
+                <Bell size={26} />
+                <p>Nu există notificări.</p>
+              </div>
             ) : (
+              <div className="notification-list">
+                {notifications.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={`notification-item ${item.is_read ? "" : "notification-item--unread"}`}
+                    onClick={() => handleOpenNotification(item)}
+                    disabled={busy}
+                  >
+                    <span
+                      className={`notification-item-icon ${item.type === "test" ? "notification-item-icon--test" : item.type === "stire" ? "notification-item-icon--news" : "notification-item-icon--document"}`}
+                      aria-hidden="true"
+                    >
+                      {item.type === "test" ? (
+                        <ClipboardCheck size={17} />
+                      ) : item.type === "stire" ? (
+                        <Newspaper size={17} />
+                      ) : (
+                        <FileText size={17} />
+                      )}
+                    </span>
+                    <span className="notification-item-content">
+                      <span className="notification-item-heading">
+                        <span className="notification-item-title">{item.title}</span>
+                        {!item.is_read && (
+                          <span className="notification-unread-dot" aria-label="Necitită" />
+                        )}
+                      </span>
+                      {item.message && (
+                        <span className="notification-item-message">{item.message}</span>
+                      )}
+                      <time
+                        className="notification-item-time"
+                        dateTime={item.created_at || undefined}
+                      >
+                        <Clock3 size={12} aria-hidden="true" />
+                        {item.created_at
+                          ? new Date(item.created_at).toLocaleString("ro-RO", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })
+                          : ""}
+                      </time>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="notification-panel-footer">
+              <span className="notification-footer-label">
+                {showAttachmentPicker
+                  ? "Selectează un document"
+                  : `${notifications.length} ${notifications.length === 1 ? "notificare" : "notificări"}`}
+              </span>
               <button
                 type="button"
-                className="notification-text-button"
-                onClick={markAllRead}
-                disabled={busy || unreadCount === 0}
+                className="notification-text-button notification-footer-refresh"
+                onClick={() => loadNotifications()}
+                disabled={loading || busy}
               >
-                <CheckCheck size={16} />
-                Toate citite
+                <RefreshCw size={15} />
+                Actualizează
               </button>
-            )}
-          </div>
-
-          {error && (
-            <p className="notification-error" role="alert">
-              {error}
-            </p>
-          )}
-
-          {showAttachmentPicker ? (
-            <div className="notification-attachment-list">
-              {selectedAttachments.map((attachment) => (
-                <button
-                  key={attachment.id}
-                  type="button"
-                  className="notification-attachment-item"
-                  disabled={busy}
-                  onClick={() => handleSelectAttachment(attachment)}
-                >
-                  {getAttachmentIcon(attachment)}
-
-                  <span className="notification-attachment-name">{attachment.name}</span>
-
-                  <ExternalLink size={15} />
-                </button>
-              ))}
             </div>
-          ) : loading ? (
-            <p className="notification-empty">Se încarcă notificările...</p>
-          ) : notifications.length === 0 ? (
-            <div className="notification-empty">
-              <Bell size={26} />
-              <p>Nu există notificări.</p>
-            </div>
-          ) : (
-            <div className="notification-list">
-              {notifications.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  className={`notification-item ${item.is_read ? "" : "notification-item--unread"}`}
-                  onClick={() => handleOpenNotification(item)}
-                  disabled={busy}
-                >
-                  <span className="notification-item-title">{item.title}</span>
-
-                  {item.message && (
-                    <span className="notification-item-message">{item.message}</span>
-                  )}
-
-                  <time className="notification-item-time" dateTime={item.created_at || undefined}>
-                    {item.created_at ? new Date(item.created_at).toLocaleString("ro-RO") : ""}
-                  </time>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="notification-panel-footer">
-            <button
-              type="button"
-              className="notification-text-button"
-              onClick={() => loadNotifications()}
-              disabled={loading || busy}
-            >
-              <RefreshCw size={15} />
-              Actualizează
-            </button>
-          </div>
-        </section>
-      )}
+          </section>,
+          document.body,
+        )}
     </div>
   );
 }

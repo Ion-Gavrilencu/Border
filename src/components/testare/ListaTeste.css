@@ -8,6 +8,7 @@
   width: 100%;
   min-width: 0;
   font-family: inherit;
+  container-type: inline-size;
 }
 .lt-page * {
   box-sizing: border-box;
@@ -35,6 +36,7 @@
 .lt-header-title {
   gap: 18px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 .lt-header-icon {
   display: grid;
@@ -65,6 +67,7 @@
   border-radius: 15px;
   background: #fff;
   gap: 3px;
+  flex: 0 0 auto;
 }
 .lt-view-switch button {
   display: flex;
@@ -181,7 +184,7 @@
 .lt-search {
   height: 46px;
   flex: 1 1 330px;
-  min-width: 200px;
+  min-width: min(200px, 100%);
   border: 1px solid #cdd9ff;
   border-radius: 15px;
   padding: 0 13px;
@@ -270,6 +273,9 @@
   width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .lt-table {
   min-width: 960px;
@@ -277,10 +283,9 @@
 }
 .lt-row {
   display: grid;
-  grid-template-columns: minmax(215px, 2.5fr) minmax(120px, 1.05fr) 75px 100px 95px minmax(
-      130px,
-      1.35fr
-    ) 110px 105px;
+  grid-template-columns:
+    minmax(215px, 2.5fr) minmax(120px, 1.05fr) 75px 100px 95px minmax(130px, 1.35fr)
+    110px 105px;
   gap: 10px;
   align-items: center;
   min-height: 61px;
@@ -432,7 +437,7 @@
   right: 0;
   top: 34px;
   z-index: 5;
-  width: 185px;
+  width: min(185px, calc(100vw - 32px));
   border: 1px solid #dce4ff;
   border-radius: 12px;
   padding: 6px;
@@ -553,23 +558,25 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
-@media (max-width: 1350px) {
+/* Responsive by actual component width (works inside sidebars and layouts). */
+@container (max-width: 1200px) {
   .lt-stat-grid {
     gap: 12px;
   }
   .lt-stat {
-    padding: 13px;
-    gap: 10px;
+    padding: 14px;
+    gap: 11px;
   }
   .lt-stat-icon {
-    width: 51px;
-    height: 51px;
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
   }
   .lt-spark {
-    width: 50px;
+    width: 46px;
   }
   .lt-select {
-    flex: 1 1 145px;
+    flex: 1 1 155px;
   }
   .lt-reset {
     flex: 1 1 160px;
@@ -578,97 +585,438 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 850px) {
+
+@container (max-width: 900px) {
   .lt-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .lt-header {
+    align-items: flex-start;
+  }
   .lt-header h2 {
-    font-size: 22px;
-  }
-  .lt-header-icon {
-    width: 49px;
-    height: 49px;
-  }
-  .lt-filters {
-    gap: 9px;
+    font-size: 23px;
   }
   .lt-search {
-    flex-basis: 100%;
+    flex: 1 1 100%;
+  }
+  .lt-filters {
+    gap: 10px;
   }
   .lt-select {
     flex: 1 1 170px;
   }
 }
-@media (max-width: 560px) {
+
+/* Listă compactă: structura de desktop rămâne neschimbată.
+   La lățime redusă rândurile devin elemente responsive, nu un tabel decupat. */
+@container (max-width: 980px) {
+  .lt-table-scroll {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .lt-table {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 9px;
+  }
+
+  .lt-table-head {
+    display: none;
+  }
+
+  .lt-row:not(.lt-table-head) {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.15fr) auto auto;
+    grid-template-areas:
+      "test category state actions"
+      "period category state actions"
+      "metrics metrics metrics metrics";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    padding: 11px 12px 10px 15px;
+    border: 1px solid #dfebff;
+    border-radius: 15px;
+    background: linear-gradient(120deg, #ffffff, #f9fbff);
+    box-shadow:
+      0 3px 9px #254d9a10,
+      0 8px 20px #183e8410;
+    overflow: visible;
+    isolation: isolate;
+  }
+
+  .lt-row:not(.lt-table-head)::before {
+    content: none;
+  }
+
+  .lt-row:not(.lt-table-head) > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  .lt-row:not(.lt-table-head) > div:nth-child(1) {
+    grid-area: test;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(2) {
+    grid-area: category;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(6) {
+    grid-area: period;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(7) {
+    grid-area: state;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(8) {
+    grid-area: actions;
+  }
+
+  .lt-row:not(.lt-table-head) > div:nth-child(3),
+  .lt-row:not(.lt-table-head) > div:nth-child(4),
+  .lt-row:not(.lt-table-head) > div:nth-child(5) {
+    grid-area: metrics;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    font-size: 11px;
+    color: #62749b;
+  }
+  /* Cele trei informații secundare se păstrează fără să împingă titlul. */
+  .lt-row:not(.lt-table-head) > div:nth-child(3) {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+    margin-top: 6px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(4) {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: center;
+    margin-top: 6px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(5) {
+    grid-column: 3 / 5;
+    grid-row: 3;
+    justify-self: end;
+    margin-top: 6px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(3)::before {
+    content: "Întrebări: ";
+    margin-right: 4px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(4)::before {
+    content: "Durată: ";
+    margin-right: 4px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(5)::before {
+    content: "Atribuiri: ";
+    margin-right: 4px;
+  }
+
+  .lt-row .lt-test-cell {
+    gap: 9px;
+  }
+  .lt-row .lt-row-icon {
+    width: 43px;
+    height: 43px;
+    border-radius: 12px;
+  }
+  .lt-row .lt-test-text {
+    gap: 3px;
+  }
+  .lt-row .lt-test-text strong {
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .lt-row .lt-test-text small {
+    font-size: 10px;
+  }
+  .lt-row > div:nth-child(6) .lt-inline {
+    gap: 4px;
+    color: #405b91;
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .lt-row > div:nth-child(6) svg {
+    width: 13px;
+    height: 13px;
+  }
+  .lt-row .lt-chip {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  .lt-row .lt-state {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .lt-row .lt-actions {
+    justify-content: flex-end;
+    gap: 1px;
+    flex-wrap: nowrap;
+  }
+  .lt-row .lt-actions button {
+    width: 34px;
+    height: 38px;
+    min-width: 34px;
+  }
+  .lt-row .lt-menu {
+    top: calc(100% + 5px);
+  }
+  .lt-row .lt-number {
+    text-align: left;
+  }
+  .lt-row .lt-inline {
+    flex-wrap: wrap;
+  }
+}
+
+@container (max-width: 620px) {
   .lt-header {
-    align-items: flex-start;
     flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
   }
   .lt-header-title {
-    gap: 10px;
+    gap: 12px;
+  }
+  .lt-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
   }
   .lt-header h2 {
     font-size: 21px;
   }
   .lt-header p {
     font-size: 12px;
+    line-height: 1.45;
   }
   .lt-view-switch {
     width: 100%;
+    min-width: 0;
   }
   .lt-view-switch button {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     justify-content: center;
+    padding: 11px 8px;
+    min-height: 44px;
   }
   .lt-stat-grid {
-    gap: 9px;
+    gap: 10px;
+    margin-bottom: 15px;
   }
   .lt-stat {
-    min-height: 93px;
-    padding: 10px;
-    border-radius: 14px;
-    gap: 8px;
+    min-height: 96px;
+    padding: 12px;
+    gap: 10px;
+    border-radius: 15px;
   }
   .lt-stat-icon {
-    width: 42px;
-    height: 42px;
+    width: 43px;
+    height: 43px;
     border-radius: 12px;
   }
   .lt-stat-icon svg {
     width: 23px;
+    height: 23px;
+  }
+  .lt-stat-copy {
+    gap: 5px;
   }
   .lt-stat-copy > span {
     font-size: 11px;
+    line-height: 1.3;
   }
   .lt-stat-copy strong {
-    font-size: 24px;
+    font-size: 25px;
   }
   .lt-spark {
     display: none;
   }
   .lt-content {
     padding: 12px;
-    border-radius: 15px;
+    border-radius: 16px;
+  }
+  .lt-filters {
+    gap: 9px;
+    margin-bottom: 13px;
+  }
+  .lt-search {
+    flex-basis: 100%;
+    min-width: 0;
+    height: 44px;
+  }
+  .lt-search input {
+    font-size: 16px;
   }
   .lt-select {
-    flex: 1 1 100%;
+    flex: 1 1 calc(33.333% - 8px);
+    min-width: 0;
+    height: 44px;
+    padding-inline: 8px;
+    gap: 5px;
+  }
+  .lt-select select {
     width: 100%;
   }
   .lt-reset {
     flex: 1 1 100%;
+    min-height: 44px;
+  }
+  .lt-sort {
+    margin: 0 0 10px;
   }
   .lt-footer {
     align-items: flex-start;
     flex-direction: column;
+    gap: 12px;
+    margin: 15px 0 0;
   }
   .lt-pagination {
     align-self: flex-end;
   }
+  .lt-pagination button {
+    min-width: 40px;
+    min-height: 40px;
+  }
   .lt-cards {
     grid-template-columns: 1fr;
+    gap: 11px;
   }
-  .lt-sort {
-    margin: 0 0 9px;
+  .lt-test-card {
+    padding: 15px;
+  }
+  .lt-actions button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Pe telefoane reale de 320–430px: două rânduri de informații principale,
+   fără eliminarea butoanelor de vizualizare/editare. */
+@container (max-width: 470px) {
+  .lt-row:not(.lt-table-head) {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "test test actions"
+      "period period actions"
+      "category state state"
+      "metrics metrics metrics";
+    column-gap: 8px;
+    row-gap: 7px;
+    padding: 11px 10px 10px 14px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(2) {
+    justify-self: start;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(7) {
+    justify-self: end;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(8) {
+    align-self: start;
+  }
+  .lt-row .lt-test-text strong {
+    font-size: 13px;
+  }
+  .lt-row .lt-actions button {
+    width: 32px;
+    min-width: 32px;
+  }
+  .lt-row .lt-row-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .lt-row .lt-row-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(3),
+  .lt-row:not(.lt-table-head) > div:nth-child(4),
+  .lt-row:not(.lt-table-head) > div:nth-child(5) {
+    grid-row: 4;
+    font-size: 10px;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(3) {
+    grid-column: 1;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(4) {
+    grid-column: 2;
+  }
+  .lt-row:not(.lt-table-head) > div:nth-child(5) {
+    grid-column: 3;
+  }
+  .lt-row > div:nth-child(6) .lt-inline {
+    font-size: 10px;
+  }
+  .lt-footer {
+    font-size: 12px;
+  }
+}
+
+@container (max-width: 370px) {
+  .lt-stat {
+    padding: 10px;
+    gap: 8px;
+  }
+  .lt-stat-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .lt-stat-copy strong {
+    font-size: 23px;
+  }
+  .lt-stat-copy > span {
+    font-size: 10px;
+  }
+  .lt-select {
+    flex-basis: 100%;
+  }
+  .lt-view-switch button {
+    gap: 5px;
+    padding-inline: 5px;
+    font-size: 12px;
+  }
+  .lt-content {
+    padding: 10px;
+  }
+  .lt-row:not(.lt-table-head) {
+    padding: 12px;
+    gap: 11px;
+  }
+  .lt-pagination {
+    align-self: center;
+  }
+}
+
+/* Keyboard and touch usability */
+.lt-page :is(button, select, input):focus-visible,
+.lt-page .lt-search:focus-within,
+.lt-page .lt-select:focus-within {
+  outline: 2px solid var(--lt-blue);
+  outline-offset: 2px;
+}
+.lt-page :is(.lt-view-switch button, .lt-reset, .lt-open, .lt-pagination button) {
+  touch-action: manipulation;
+}
+@media (hover: none) and (pointer: coarse) {
+  .lt-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .lt-pagination button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
