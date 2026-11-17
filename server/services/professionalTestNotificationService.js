@@ -142,7 +142,7 @@ function buildTestEmailHtml({ title, message, url, logoSrc }) {
 }
 
 // Notifică numai destinatarii efectivi ai atribuirii curente.
-// Un utilizator primește cel mult o notificare pentru aceeași versiune de test.
+// Un utilizator primește cel mult o notificare pentru aceeași atribuire (în execuția normală).
 async function notifyTestAssignment({ assignmentId, versionId, testTitle }) {
   const link = `/testare?versiune=${encodeURIComponent(versionId)}&atribuire=${encodeURIComponent(assignmentId)}`;
   const title = "Test profesional nou atribuit";
@@ -267,6 +267,18 @@ async function processTestReminders({ limit = 100 } = {}) {
     WHERE a.send_reminder=true AND a.revoked_at IS NULL
       AND a.deadline_at IS NOT NULL AND a.deadline_at > now()
       AND a.deadline_at <= now() + a.reminder_hours * interval '1 hour'
+      AND EXISTS (
+        SELECT 1 FROM users u WHERE u.is_active=true
+          AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=u.id)
+            OR (a.target_type='GROUP' AND EXISTS (
+              SELECT 1 FROM professional_test_group_members gm
+              WHERE gm.group_id=a.group_id AND gm.user_id=u.id)))
+          AND NOT EXISTS (SELECT 1 FROM professional_test_attempts att
+            WHERE att.assignment_id=a.id AND att.user_id_snapshot=u.id
+              AND att.status IN ('SUBMITTED','EXPIRED'))
+          AND NOT EXISTS (SELECT 1 FROM professional_test_reminder_deliveries d
+            WHERE d.assignment_id=a.id AND d.user_id=u.id)
+      )
     ORDER BY a.deadline_at, a.id LIMIT $1
   `,
     [Math.min(500, Math.max(1, Number(limit) || 100))],
@@ -275,7 +287,7 @@ async function processTestReminders({ limit = 100 } = {}) {
   for (const a of due.rows) {
     const title = "Reminder: test profesional";
     const message = `Testul profesional „${a.title}” expiră la ${new Date(a.deadline_at).toLocaleString("ro-RO", { timeZone: "Europe/Chisinau" })}.`;
-    const link = `/testare?versiune=${encodeURIComponent(a.version_id)}`;
+    const link = `/testare?versiune=${encodeURIComponent(a.version_id)}&atribuire=${encodeURIComponent(a.assignment_id)}`;
     const inserted = await pool.query(
       `
       WITH recipients AS (
@@ -288,8 +300,8 @@ async function processTestReminders({ limit = 100 } = {}) {
               WHERE gm.group_id=a.group_id AND gm.user_id=u.id)))
           AND NOT EXISTS (
             SELECT 1 FROM professional_test_attempts att
-            WHERE att.version_id=a.version_id AND att.user_id_snapshot=u.id
-              AND att.status='SUBMITTED')
+            WHERE att.assignment_id=a.id AND att.user_id_snapshot=u.id
+              AND att.status IN ('SUBMITTED','EXPIRED'))
       ), marked AS (
         INSERT INTO professional_test_reminder_deliveries(assignment_id,user_id)
         SELECT $1, id FROM recipients ON CONFLICT DO NOTHING RETURNING user_id

@@ -19,13 +19,6 @@ async function versionAccess(client, id) {
   );
   return r.rows[0];
 }
-async function eligible(client, versionId, userId) {
-  const r = await client.query(
-    `SELECT a.id FROM professional_test_assignments a WHERE a.version_id=$1 AND a.revoked_at IS NULL AND (a.available_from IS NULL OR a.available_from<=now()) AND (NOT a.block_after_expiry OR a.deadline_at IS NULL OR a.deadline_at>=now()) AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$2) OR (a.target_type='GROUP' AND EXISTS(SELECT 1 FROM professional_test_group_members m WHERE m.group_id=a.group_id AND m.user_id=$2))) LIMIT 1`,
-    [versionId, userId],
-  );
-  return !!r.rowCount;
-}
 async function questionList(client, versionId, includeCorrect = false) {
   const q = await client.query(
     "SELECT id,version_id,position,question_type,question_text,points" +
@@ -239,6 +232,7 @@ const listTests = asyncRoute(async (req, res) => {
        t.created_at,
        v.id AS version_id,
        v.version_number,
+       v.updated_at,
        v.status,
        v.duration_minutes,
        v.max_attempts,
@@ -1059,7 +1053,7 @@ const assign = asyncRoute(async (req, res) => {
   )
     return fail(res, 400, "Atribuire invalidă.");
   const v = await versionAccess(pool, id);
-  if (!v) return fail(res, 404, "Versiune inexistentă.");
+  if (!v || v.archived_at) return fail(res, 404, "Versiune inexistentă.");
   if (!canManage(req, v)) return fail(res, 403, "Acces interzis.");
   if (v.status !== "PUBLISHED")
     return fail(res, 409, "Doar versiunile publicate pot fi atribuite.");
@@ -1085,9 +1079,10 @@ const assign = asyncRoute(async (req, res) => {
     !until ||
     !Number.isFinite(from.getTime()) ||
     !Number.isFinite(until.getTime()) ||
-    until <= from
+    until <= from ||
+    until.getTime() <= Date.now()
   )
-    return fail(res, 400, "Perioada atribuirii este invalidă.");
+    return fail(res, 400, "Perioada atribuirii este invalidă sau a expirat.");
   const target = type === "USER" ? userId : null,
     group = type === "GROUP" ? groupId : null;
   if (type === "USER") {
@@ -1151,14 +1146,34 @@ const assign = asyncRoute(async (req, res) => {
 });
 const listAssigned = asyncRoute(async (req, res) => {
   const r = await pool.query(
-    `SELECT DISTINCT v.id AS version_id,t.title,v.version_number,v.duration_minutes,v.max_attempts,v.available_until FROM professional_test_versions v JOIN professional_tests t ON t.id=v.test_id JOIN professional_test_assignments a ON a.version_id=v.id WHERE v.status='PUBLISHED' AND t.archived_at IS NULL AND a.revoked_at IS NULL AND (a.available_from IS NULL OR a.available_from<=now()) AND (NOT a.block_after_expiry OR a.deadline_at IS NULL OR a.deadline_at>=now()) AND a.show_in_assigned_tests AND (v.available_from IS NULL OR v.available_from<=now()) AND (v.available_until IS NULL OR v.available_until>=now()) AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$1) OR (a.target_type='GROUP' AND EXISTS(SELECT 1 FROM professional_test_group_members m WHERE m.group_id=a.group_id AND m.user_id=$1))) ORDER BY t.title LIMIT 200`,
+    `SELECT a.id AS id, a.id AS assignment_id, v.id AS version_id,
+      t.id AS test_id, t.title, v.version_number, v.duration_minutes,
+      CASE WHEN v.allow_retake AND a.allow_retake THEN v.max_attempts ELSE 1 END AS max_attempts,
+      a.available_from, a.deadline_at AS available_until, a.deadline_at,
+      a.assigned_at, a.allow_retake, a.block_after_expiry,
+      (SELECT COUNT(*)::int FROM professional_test_attempts at
+       WHERE at.assignment_id=a.id AND at.user_id_snapshot=$1) AS attempts_used
+     FROM professional_test_assignments a
+     JOIN professional_test_versions v ON v.id=a.version_id
+     JOIN professional_tests t ON t.id=v.test_id
+     WHERE v.status='PUBLISHED' AND t.archived_at IS NULL AND a.revoked_at IS NULL
+       AND a.show_in_assigned_tests
+       AND (a.available_from IS NULL OR a.available_from<=now())
+       AND (NOT a.block_after_expiry OR a.deadline_at IS NULL OR a.deadline_at>=now())
+       AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$1)
+         OR (a.target_type='GROUP' AND EXISTS(SELECT 1 FROM professional_test_group_members gm
+            WHERE gm.group_id=a.group_id AND gm.user_id=$1)))
+     ORDER BY t.title, a.assigned_at DESC, a.id DESC LIMIT 200`,
     [req.user.id],
   );
   res.json({ tests: r.rows });
 });
+
 const startAttempt = asyncRoute(async (req, res) => {
   const id = integer(req.params.versionId);
-  if (!id) return fail(res, 400, "ID invalid.");
+  const raw = req.body?.assignment_id ?? req.query?.assignment_id;
+  const assignmentId = integer(raw);
+  if (!id || (raw != null && !assignmentId)) return fail(res, 400, "ID invalid.");
   const c = await pool.connect();
   try {
     await c.query("BEGIN");
@@ -1167,18 +1182,32 @@ const startAttempt = asyncRoute(async (req, res) => {
       await c.query("ROLLBACK");
       return fail(res, 404, "Test indisponibil.");
     }
-    if (
-      (v.available_from && new Date(v.available_from) > new Date()) ||
-      (v.available_until && new Date(v.available_until) < new Date()) ||
-      !(await eligible(c, id, req.user.id))
-    ) {
-      await c.query("ROLLBACK");
-      return fail(res, 403, "Testul nu este disponibil pentru tine.");
-    }
     await c.query("SELECT pg_advisory_xact_lock($1,$2)", [id % 2147483647, req.user.id]);
+    const found = await c.query(
+      `SELECT a.* FROM professional_test_assignments a
+       WHERE a.version_id=$1 AND a.revoked_at IS NULL
+         AND ($3::bigint IS NULL OR a.id=$3)
+         AND (a.available_from IS NULL OR a.available_from<=now())
+         AND (NOT a.block_after_expiry OR a.deadline_at IS NULL OR a.deadline_at>now())
+         AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$2)
+           OR (a.target_type='GROUP' AND EXISTS(SELECT 1 FROM professional_test_group_members gm
+              WHERE gm.group_id=a.group_id AND gm.user_id=$2)))
+       ORDER BY a.id DESC FOR UPDATE OF a`,
+      [id, req.user.id, assignmentId],
+    );
+    if (!found.rowCount) {
+      await c.query("ROLLBACK");
+      return fail(res, 403, "Atribuirea nu este disponibilă pentru tine.");
+    }
+    if (!assignmentId && found.rowCount !== 1) {
+      await c.query("ROLLBACK");
+      return fail(res, 409, "Selectează atribuirea concretă a testului.");
+    }
+    const assignment = found.rows[0];
     const active = await c.query(
-      `SELECT * FROM professional_test_attempts WHERE version_id=$1 AND user_id_snapshot=$2 AND status='IN_PROGRESS' FOR UPDATE`,
-      [id, req.user.id],
+      `SELECT * FROM professional_test_attempts
+       WHERE assignment_id=$1 AND user_id_snapshot=$2 AND status='IN_PROGRESS' FOR UPDATE`,
+      [assignment.id, req.user.id],
     );
     if (active.rowCount) {
       if (new Date(active.rows[0].expires_at) > new Date()) {
@@ -1188,44 +1217,35 @@ const startAttempt = asyncRoute(async (req, res) => {
       await finalize(c, active.rows[0], "EXPIRED");
     }
     const count = await c.query(
-      "SELECT COUNT(*)::int AS n FROM professional_test_attempts WHERE version_id=$1 AND user_id_snapshot=$2",
-      [id, req.user.id],
+      `SELECT COUNT(*)::int AS n, COALESCE(MAX(attempt_number),0)::int AS last
+       FROM professional_test_attempts WHERE assignment_id=$1 AND user_id_snapshot=$2`,
+      [assignment.id, req.user.id],
     );
-    const retakePolicy = await c.query(
-      `
-      SELECT COALESCE(bool_or(a.allow_retake), false) AS allowed
-      FROM professional_test_assignments a
-      WHERE a.version_id=$1 AND a.revoked_at IS NULL
-        AND (a.available_from IS NULL OR a.available_from<=now())
-        AND (NOT a.block_after_expiry OR a.deadline_at IS NULL OR a.deadline_at>=now())
-        AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$2)
-          OR (a.target_type='GROUP' AND EXISTS (
-            SELECT 1 FROM professional_test_group_members gm
-            WHERE gm.group_id=a.group_id AND gm.user_id=$2)))
-    `,
-      [id, req.user.id],
-    );
-    if (count.rows[0].n > 0 && (v.allow_retake === false || !retakePolicy.rows[0].allowed)) {
+    if (count.rows[0].n > 0 && (v.allow_retake === false || !assignment.allow_retake)) {
       await c.query("COMMIT");
-      return fail(res, 409, "Reluarea acestui test nu este permisă.");
+      return fail(res, 409, "Reluarea acestei atribuiri nu este permisă.");
     }
     if (count.rows[0].n >= v.max_attempts) {
-      // Păstrăm finalizarea încercării expirate efectuată mai sus.
       await c.query("COMMIT");
-      return fail(res, 409, "Numărul maxim de încercări a fost atins.");
+      return fail(res, 409, "Numărul maxim de încercări pentru această atribuire a fost atins.");
     }
     const r = await c.query(
-      `INSERT INTO professional_test_attempts(version_id,user_id,user_id_snapshot,user_name_snapshot,attempt_number,expires_at) VALUES($1,$2,$2,$3,$4,LEAST(now()+($5::int * interval '1 minute'), COALESCE((SELECT MIN(a.deadline_at) FROM professional_test_assignments a WHERE a.version_id=$1 AND a.revoked_at IS NULL AND a.block_after_expiry AND a.deadline_at IS NOT NULL AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$2) OR (a.target_type='GROUP' AND EXISTS(SELECT 1 FROM professional_test_group_members gm WHERE gm.group_id=a.group_id AND gm.user_id=$2)))), 'infinity'::timestamptz))) RETURNING *`,
+      `INSERT INTO professional_test_attempts
+       (version_id,assignment_id,user_id,user_id_snapshot,user_name_snapshot,attempt_number,expires_at)
+       VALUES($1,$2,$3,$3,$4,$5,LEAST(now()+($6::int * interval '1 minute'),
+        COALESCE($7::timestamptz,'infinity'::timestamptz))) RETURNING *`,
       [
         id,
+        assignment.id,
         req.user.id,
         req.user.fullName || req.user.username,
-        count.rows[0].n + 1,
+        count.rows[0].last + 1,
         v.duration_minutes,
+        assignment.block_after_expiry ? assignment.deadline_at : null,
       ],
     );
     await c.query("COMMIT");
-    res.status(201).json({ attempt: r.rows[0], resumed: false });
+    return res.status(201).json({ attempt: r.rows[0], resumed: false });
   } catch (e) {
     await c.query("ROLLBACK");
     throw e;
@@ -1233,6 +1253,7 @@ const startAttempt = asyncRoute(async (req, res) => {
     c.release();
   }
 });
+
 async function finalize(c, a, status) {
   const qs = await c.query(
     "SELECT id,points FROM professional_test_questions WHERE version_id=$1",
@@ -1443,11 +1464,12 @@ const attemptReview = asyncRoute(async (req, res) => {
   if (!id) return fail(res, 400, "ID invalid.");
   await finalizeExpiredAttempt(id, req.user.id);
   const found = await pool.query(
-    `SELECT a.*,v.reveal_answers,v.available_until,v.show_grade,v.grading_mode,
+    `SELECT a.*,v.reveal_answers,COALESCE(pa.deadline_at,v.available_until) AS available_until,v.show_grade,v.grading_mode,
             v.show_explanations,t.title
      FROM professional_test_attempts a
      JOIN professional_test_versions v ON v.id=a.version_id
      JOIN professional_tests t ON t.id=v.test_id
+     LEFT JOIN professional_test_assignments pa ON pa.id=a.assignment_id
      WHERE a.id=$1 AND a.user_id_snapshot=$2`,
     [id, req.user.id],
   );
@@ -1499,6 +1521,7 @@ const attemptReview = asyncRoute(async (req, res) => {
     attempt: {
       id: a.id,
       version_id: a.version_id,
+      assignment_id: a.assignment_id,
       attempt_number: a.attempt_number,
       status: a.status,
       started_at: a.started_at,
@@ -1520,7 +1543,7 @@ const attemptReview = asyncRoute(async (req, res) => {
 
 const myResults = asyncRoute(async (req, res) => {
   const r = await pool.query(
-    `SELECT a.id,a.version_id,a.attempt_number,a.status,a.started_at,a.submitted_at,CASE WHEN a.submitted_at IS NOT NULL THEN GREATEST(0,FLOOR(EXTRACT(EPOCH FROM (a.submitted_at-a.started_at))))::int ELSE NULL END AS duration_seconds,a.percentage,a.grade,a.passed,t.title FROM professional_test_attempts a JOIN professional_test_versions v ON v.id=a.version_id JOIN professional_tests t ON t.id=v.test_id WHERE a.user_id_snapshot=$1 ORDER BY a.started_at DESC LIMIT 100`,
+    `SELECT a.id,a.version_id,a.assignment_id,a.attempt_number,a.status,a.started_at,a.submitted_at,CASE WHEN a.submitted_at IS NOT NULL THEN GREATEST(0,FLOOR(EXTRACT(EPOCH FROM (a.submitted_at-a.started_at))))::int ELSE NULL END AS duration_seconds,CASE WHEN v.show_grade AND v.grading_mode <> 'grade' THEN a.percentage END AS percentage,CASE WHEN v.show_grade AND v.grading_mode <> 'percent' THEN a.grade END AS grade,v.show_grade,v.grading_mode,CASE WHEN v.show_grade AND v.grading_mode <> 'percent' THEN v.max_grade END AS max_grade,a.passed,t.title FROM professional_test_attempts a JOIN professional_test_versions v ON v.id=a.version_id JOIN professional_tests t ON t.id=v.test_id WHERE a.user_id_snapshot=$1 ORDER BY a.started_at DESC LIMIT 100`,
     [req.user.id],
   );
   res.json({ results: r.rows });
@@ -1561,7 +1584,7 @@ const listVersionAssignments = asyncRoute(async (req, res) => {
     LEFT JOIN LATERAL (
       SELECT at.id, at.submitted_at, at.status, at.expires_at
       FROM professional_test_attempts at
-      WHERE at.version_id = a.version_id AND at.user_id_snapshot = u.id
+      WHERE at.assignment_id = a.id AND at.user_id_snapshot = u.id
       ORDER BY at.started_at DESC, at.id DESC LIMIT 1
     ) last_attempt ON true
     WHERE a.version_id = $1 AND a.revoked_at IS NULL
@@ -1667,7 +1690,7 @@ const managerResults = asyncRoute(async (req, res) => {
   if (!v) return fail(res, 404, "Versiune inexistentă.");
   if (!canManage(req, v)) return fail(res, 403, "Acces interzis.");
   const r = await pool.query(
-    `SELECT a.id, a.version_id, a.user_name_snapshot, a.attempt_number,
+    `SELECT a.id, a.version_id, a.assignment_id, a.user_name_snapshot, a.attempt_number,
             a.status, a.started_at, a.submitted_at,
             CASE WHEN a.submitted_at IS NOT NULL
               THEN GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (a.submitted_at-a.started_at))))::int
@@ -2004,7 +2027,55 @@ const savePreferences = asyncRoute(async (req, res) => {
   });
 });
 
+// Statistici complete, fără limitele listelor de administrare.
+const dashboardStats = asyncRoute(async (req, res) => {
+  if (!isManager(req)) return fail(res, 403, "Acces interzis.");
+  const result = await pool.query(
+    `
+    WITH scoped_tests AS (
+      SELECT id FROM professional_tests
+      WHERE archived_at IS NULL AND ($1 = 'ADMIN' OR created_by = $2)
+    ), scoped_attempts AS (
+      SELECT a.status, a.passed, a.started_at
+      FROM professional_test_attempts a
+      JOIN professional_test_versions v ON v.id = a.version_id
+      JOIN scoped_tests t ON t.id = v.test_id
+    )
+    SELECT
+      (SELECT COUNT(*)::int FROM scoped_tests) AS total_tests,
+      (SELECT COUNT(DISTINCT u.id)::int
+       FROM scoped_tests t
+       JOIN professional_test_versions v ON v.test_id=t.id
+       JOIN professional_test_assignments pa ON pa.version_id=v.id AND pa.revoked_at IS NULL
+       JOIN users u ON u.is_active=TRUE AND (
+         pa.target_type='ALL' OR (pa.target_type='USER' AND pa.user_id=u.id)
+         OR (pa.target_type='GROUP' AND EXISTS (
+           SELECT 1 FROM professional_test_group_members gm
+           WHERE gm.group_id=pa.group_id AND gm.user_id=u.id
+         ))
+       )) AS unique_recipients,
+      (SELECT COUNT(*)::int FROM scoped_tests t WHERE EXISTS (
+        SELECT 1 FROM professional_test_versions v WHERE v.test_id=t.id
+        AND v.status='PUBLISHED'
+        AND (v.available_from IS NULL OR v.available_from<=NOW())
+        AND (v.available_until IS NULL OR v.available_until>=NOW())
+      )) AS active_tests,
+      COUNT(*)::int AS total_attempts,
+      COUNT(*) FILTER (WHERE status IN ('SUBMITTED','EXPIRED'))::int AS completed,
+      COUNT(*) FILTER (WHERE status IN ('SUBMITTED','EXPIRED') AND passed IS TRUE)::int AS passed,
+      COUNT(*) FILTER (WHERE status IN ('SUBMITTED','EXPIRED') AND passed IS FALSE)::int AS failed
+    FROM scoped_attempts`,
+    [req.user.role, req.user.id],
+  );
+  const stats = result.rows[0];
+  const evaluated = stats.passed + stats.failed;
+  res.json({
+    stats: { ...stats, evaluated, pass_rate: evaluated ? (100 * stats.passed) / evaluated : null },
+  });
+});
+
 module.exports = {
+  dashboardStats,
   getPreferences,
   savePreferences,
   deleteTest,

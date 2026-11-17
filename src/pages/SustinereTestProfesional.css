@@ -1,5 +1,8 @@
 .st-page {
-  width: min(1120px, 100%);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
   margin: 0 auto;
   padding: 26px 20px 56px;
   color: #112747;
@@ -807,5 +810,276 @@
 @media (prefers-reduced-motion: reduce) {
   .st-review-question {
     animation: none;
+  }
+}
+
+/* BORDER – layout responsive pentru susținere și revizuire */
+.st-page,
+.st-page *,
+.st-page *::before,
+.st-page *::after {
+  box-sizing: border-box;
+}
+.st-page {
+  overflow-wrap: anywhere;
+}
+.st-page
+  :is(
+    .st-card,
+    .st-header,
+    .st-header > div,
+    .st-questions,
+    .st-options,
+    .st-option,
+    .st-review-hero,
+    .st-review-list,
+    .st-review-summary,
+    .st-review-question-head,
+    .st-review-options,
+    .st-review-option,
+    .st-review-notes
+  ) {
+  min-width: 0;
+  max-width: 100%;
+}
+.st-page :is(.st-questions, .st-options, .st-review-list, .st-review-options) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.st-page .st-option > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.st-page .st-option input {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+}
+.st-page .st-option {
+  align-items: flex-start;
+  min-height: 48px;
+  line-height: 1.5;
+}
+.st-page button:focus-visible,
+.st-page .st-option:focus-within {
+  outline: 2px solid #1674df;
+  outline-offset: 3px;
+}
+.st-taking-page {
+  padding: clamp(12px, 3vw, 28px) clamp(10px, 2.5vw, 24px) 32px;
+}
+.st-taking-page .st-back {
+  margin-bottom: 12px;
+  min-height: 44px;
+  padding: 0;
+}
+.st-taking-page .st-header {
+  display: block;
+  margin-bottom: 16px;
+}
+.st-taking-page .st-header h1 {
+  font-size: clamp(21px, 3vw, 30px);
+  line-height: 1.25;
+  margin: 6px 0;
+}
+.st-taking-page .st-header p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.st-taking-page .st-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.045em;
+}
+.st-exam-progress {
+  background: #fff;
+  border: 1px solid #dce7f5;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 12px;
+}
+.st-exam-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.st-exam-time,
+.st-exam-count {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.st-exam-time > span,
+.st-exam-count > span {
+  font-size: 12px;
+  color: #536a86;
+}
+.st-exam-count {
+  text-align: right;
+  margin-left: auto;
+}
+.st-exam-count strong {
+  font-size: 17px;
+}
+.st-taking-page .st-clock {
+  padding: 0;
+  background: transparent;
+  font-size: 23px;
+  font-variant-numeric: tabular-nums;
+  gap: 7px;
+}
+.st-taking-page .st-clock-urgent {
+  color: #ba3434;
+}
+.st-progress-track {
+  height: 7px;
+  background: #e8eef8;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.st-progress-track > div {
+  height: 100%;
+  background: #2875dc;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+.st-question-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+}
+.st-question-nav button {
+  min-height: 44px;
+  min-width: 0;
+  border: 1px solid #e0e7f2;
+  border-radius: 9px;
+  background: #f3f6fb;
+  color: #465e7e;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.st-question-nav button.is-answered {
+  background: #e6f6ed;
+  border-color: #aadcc0;
+  color: #137448;
+}
+.st-taking-page .st-questions {
+  gap: 12px;
+}
+.st-taking-page .st-exam-question {
+  padding: clamp(12px, 2.5vw, 22px);
+  border-radius: 16px;
+  scroll-margin-top: 100px;
+}
+.st-taking-page .st-question-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.st-taking-page .st-question-title span {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: normal;
+}
+.st-taking-page .st-question-title span:last-child {
+  color: #536a86;
+}
+.st-exam-question-text {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 10px 0 6px;
+  color: #112747;
+  overflow-wrap: anywhere;
+}
+.st-taking-page .st-hint {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+.st-taking-page .st-options {
+  margin-top: 12px;
+  gap: 8px;
+}
+.st-taking-page .st-option {
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 11px;
+}
+.st-taking-page .st-footer {
+  padding: 16px 0 0;
+  font-size: 13px;
+}
+.st-page .st-primary {
+  min-height: 44px;
+  font-weight: 700;
+}
+.st-page .st-primary svg,
+.st-page .st-back svg,
+.st-page .st-clock svg {
+  flex-shrink: 0;
+}
+.st-page .st-review-notes p > span {
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .st-taking-page .st-exam-progress {
+    padding: 12px;
+  }
+  .st-taking-page .st-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    text-align: center;
+    gap: 10px;
+  }
+  .st-taking-page .st-footer .st-primary {
+    width: 100%;
+  }
+  .st-page .st-review-option {
+    display: grid;
+    grid-template-columns: 19px minmax(0, 1fr);
+  }
+  .st-page .st-option-labels {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+  .st-page .st-option-labels:empty {
+    display: none;
+  }
+  .st-page .st-review-question-meta {
+    padding-left: 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .st-page .st-overview-item {
+    flex: 1 1 100px;
+    min-width: 0;
+  }
+}
+@media (max-width: 375px) {
+  .st-page .st-summary-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .st-page .st-confirm-modal {
+    padding: 22px 14px 16px;
+  }
+  .st-taking-page .st-clock {
+    font-size: 21px;
+  }
+  .st-taking-page .st-option {
+    padding: 11px 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-progress-track > div {
+    transition: none;
   }
 }

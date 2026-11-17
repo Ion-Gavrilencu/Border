@@ -166,7 +166,12 @@ export default function Atribuire({
   const startDate = toValidDate(form.availableFrom);
   const endDate = toValidDate(form.availableUntil);
 
-  const hasPeriod = Boolean(startDate && endDate && endDate.getTime() > startDate.getTime());
+  const hasPeriod = Boolean(
+    startDate &&
+    endDate &&
+    endDate.getTime() > startDate.getTime() &&
+    endDate.getTime() > Date.now(),
+  );
 
   const hasRecipients =
     type === "group"
@@ -558,7 +563,7 @@ export default function Atribuire({
           : !hasRecipients
             ? "Selectează destinatarii testului."
             : !hasPeriod
-              ? "Selectează o perioadă validă pentru atribuire."
+              ? "Selectează o perioadă validă, cu termenul final în viitor."
               : "Verifică informațiile atribuirii."}
       </div>
     </section>

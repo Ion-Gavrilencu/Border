@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ProfessionalTestEditor from "./ProfessionalTestEditor";
 import {
   createProfessionalTest,
+  getTestPreferences,
   getTestVersion,
   getTestQuestions,
   getEligibleTestUsers,
@@ -25,6 +26,53 @@ const localDateTime = (value) => {
   const pad = (n) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
+// Preferințele personale sunt valori inițiale, nu reguli globale.
+const newTestDefaults = (p = {}, now = new Date()) => {
+  const out = {};
+  const bounded = (v, min, max, int = false) => {
+    if (v == null || v === "" || typeof v === "boolean") return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= min && n <= max && (!int || Number.isInteger(n))
+      ? n
+      : undefined;
+  };
+  const numbers = [
+    ["duration", p.duration, 1, 480, true],
+    ["maxAttempts", p.attempts, 1, 100, true],
+    ["passThreshold", p.threshold, 0, 100, false],
+    ["maxGrade", p.maxGrade, 1, 100, false],
+  ];
+  for (const [key, raw, min, max, int] of numbers) {
+    const value = bounded(raw, min, max, int);
+    if (value !== undefined) out[key] = value;
+  }
+  const grading = { both: "grade-percent", grade: "grade", percent: "percent" }[p.grading];
+  const rounding = { one: "one-decimal", two: "two-decimals", integer: "integer" }[p.rounding];
+  if (["grade-percent", "grade", "percent"].includes(grading)) out.grading = grading;
+  if (["one-decimal", "two-decimals", "integer"].includes(rounding)) out.rounding = rounding;
+  for (const [target, source] of [
+    ["allowRetake", "allowRetake"],
+    ["showGrade", "showGrade"],
+    ["showCorrect", "showAnswers"],
+    ["showExplanations", "showExplanations"],
+    ["notifyOnAssignment", "notifyAssignment"],
+    ["sendReminder", "notifyExpiry"],
+  ]) {
+    if (typeof p[source] === "boolean") out[target] = p[source];
+  }
+  const hours = Number(p.expiryHours);
+  if ([24, 48, 72].includes(hours)) out.reminderHours = hours;
+  else if (p.expiryHours != null) out.reminderHours = 24;
+  const days = bounded(p.validity, 1, 30, true);
+  if (days !== undefined) {
+    const until = new Date(now);
+    until.setDate(until.getDate() + days);
+    out.availableFrom = localDateTime(now);
+    out.availableUntil = localDateTime(until);
+  }
+  return out;
+};
+
 const numericId = (id) => /^\d+$/.test(String(id)) && Number(id) > 0;
 const mapQuestion = (q) => ({
   id: Number(q.id),
@@ -185,7 +233,8 @@ export default function ProfessionalTestEditorPage() {
       await refreshGroups();
       if (isNew) {
         if (assignmentOnly) throw new Error("Selectează un test publicat pentru atribuire.");
-        setInitialData({});
+        const response = await getTestPreferences();
+        setInitialData(newTestDefaults(response?.preferences || {}));
         return;
       }
       if (!numericId(testId)) throw new Error("ID versiune invalid.");
@@ -204,7 +253,21 @@ export default function ProfessionalTestEditorPage() {
       }
       setReadOnly(!assignmentOnly && versionResponse.version.status === "PUBLISHED");
       setVersionForImport(Number(testId));
-      setInitialData(mapForm(versionResponse.version, questionsResponse.questions || []));
+      const mapped = mapForm(versionResponse.version, questionsResponse.questions || []);
+      if (assignmentOnly) {
+        const response = await getTestPreferences();
+        const prefs = newTestDefaults(response?.preferences || {});
+        for (const key of [
+          "notifyOnAssignment",
+          "sendReminder",
+          "reminderHours",
+          "availableFrom",
+          "availableUntil",
+        ]) {
+          if (prefs[key] !== undefined) mapped[key] = prefs[key];
+        }
+      }
+      setInitialData(mapped);
     } catch (e) {
       setError(errorMessage(e));
     }

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ListChecks,
   Layers3,
@@ -42,12 +42,28 @@ const assignmentCountOf = (item) => {
 };
 const titleOf = (item) => item.title ?? item.test_title ?? "Test fără titlu";
 const categoryOf = (item) => item.category_name ?? item.category ?? "General";
-const statusOf = (item) => {
-  const status = String(item.status ?? item.version_status ?? "").toUpperCase();
-  if (["PUBLISHED", "ACTIVE", "ACTIV"].includes(status)) return "active";
-  if (["SCHEDULED", "PROGRAMAT"].includes(status)) return "scheduled";
-  if (["COMPLETED", "FINISHED", "CLOSED", "FINALIZAT"].includes(status)) return "finished";
+const rawStatusOf = (item) => String(item.status ?? item.version_status ?? "").toUpperCase();
+const timestampOf = (value) => (value == null || value === "" ? null : Date.parse(value));
+const statusOf = (item, now = Date.now()) => {
+  const status = rawStatusOf(item);
   if (["DRAFT", "CIORNA", "CIORNĂ"].includes(status)) return "draft";
+  if (["COMPLETED", "FINISHED", "CLOSED", "FINALIZAT"].includes(status)) return "finished";
+  if (["PUBLISHED", "ACTIVE", "ACTIV", "SCHEDULED", "PROGRAMAT"].includes(status)) {
+    const from = timestampOf(
+      item.available_from ?? item.starts_at ?? item.start_at ?? item.start_date,
+    );
+    const to = timestampOf(item.available_until ?? item.ends_at ?? item.end_at ?? item.end_date);
+    if (
+      (from !== null && !Number.isFinite(from)) ||
+      (to !== null && !Number.isFinite(to)) ||
+      (from !== null && to !== null && to < from)
+    )
+      return "other";
+    if (to !== null && now >= to) return "finished";
+    if (from !== null && now < from) return "scheduled";
+    if (from === null && ["SCHEDULED", "PROGRAMAT"].includes(status)) return "scheduled";
+    return "active";
+  }
   return "other";
 };
 const stateLabels = {
@@ -95,7 +111,6 @@ const colorOf = (category) => {
 export default function ListaTeste({ ctx = {} }) {
   const {
     managed = [],
-    filteredTests,
     testSearch,
     setTestSearch,
     testStatus,
@@ -110,8 +125,12 @@ export default function ListaTeste({ ctx = {} }) {
     canDelete,
     setDeleteTarget,
     loading,
-    setShowCreate,
   } = ctx;
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [localSearch, setLocalSearch] = useState("");
   const [localStatus, setLocalStatus] = useState("all");
   const [localView, setLocalView] = useState("list");
@@ -145,28 +164,22 @@ export default function ListaTeste({ ctx = {} }) {
   const stats = useMemo(
     () => ({
       total: tests.length,
-      active: tests.filter((x) => statusOf(x) === "active").length,
-      scheduled: tests.filter((x) => statusOf(x) === "scheduled").length,
-      finished: tests.filter((x) => statusOf(x) === "finished").length,
+      active: tests.filter((x) => statusOf(x, now) === "active").length,
+      scheduled: tests.filter((x) => statusOf(x, now) === "scheduled").length,
+      finished: tests.filter((x) => statusOf(x, now) === "finished").length,
     }),
-    [managed],
+    [managed, now],
   );
   const filtered = useMemo(() => {
-    const now = Date.now();
     const days = period === "7" ? 7 : period === "30" ? 30 : period === "90" ? 90 : null;
     return tests
       .filter((item) => {
         const matchesSearch =
           !search ||
           text([titleOf(item), item.description, categoryOf(item)].join(" ")).includes(
-            text(search),
+            text(search.trim()),
           );
-        const matchesStatus =
-          status === "all" ||
-          status === "" ||
-          statusOf(item) === status ||
-          String(item.status ?? item.version_status ?? "").toUpperCase() ===
-            String(status).toUpperCase();
+        const matchesStatus = status === "all" || status === "" || statusOf(item, now) === status;
         const matchesCategory = category === "all" || String(categoryOf(item)) === category;
         const timestamp = new Date(dateOf(item) ?? "").getTime();
         const matchesPeriod =
@@ -180,7 +193,7 @@ export default function ListaTeste({ ctx = {} }) {
         const bTime = new Date(dateOf(b) ?? 0).getTime() || 0;
         return sort === "oldest" ? aTime - bTime : bTime - aTime;
       });
-  }, [managed, search, status, category, period, sort]);
+  }, [managed, search, status, category, period, sort, now]);
   const pageSize = 5;
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.max(1, Math.min(Number(page) || 1, pages));
@@ -204,7 +217,7 @@ export default function ListaTeste({ ctx = {} }) {
     (_, i) => Math.max(1, Math.min(safePage - 2, pages - 4)) + i,
   ).filter((p) => p <= pages);
   const renderRow = (item, index) => {
-    const state = statusOf(item);
+    const state = statusOf(item, now);
     const StateIcon = stateIcons[state];
     const categoryName = categoryOf(item);
     const CategoryIcon = iconOf(categoryName);
@@ -254,7 +267,7 @@ export default function ListaTeste({ ctx = {} }) {
           >
             <Eye size={19} />
           </button>
-          {canManage && (
+          {canManage && rawStatusOf(item) === "DRAFT" && (
             <button
               type="button"
               title="Editează"
@@ -352,9 +365,6 @@ export default function ListaTeste({ ctx = {} }) {
               <span>{label}</span>
               <strong>{value}</strong>
             </span>
-            <svg viewBox="0 0 78 40" className="lt-spark" aria-hidden="true">
-              <path d="M2 31 C13 17 20 37 33 20 S48 9 57 12 S70 3 76 4" />
-            </svg>
           </div>
         ))}
       </div>
@@ -449,8 +459,8 @@ export default function ListaTeste({ ctx = {} }) {
                   <span className={`lt-chip lt-tint-${colorOf(categoryOf(item))}`}>
                     {categoryOf(item)}
                   </span>
-                  <span className={`lt-state lt-state-${statusOf(item)}`}>
-                    {stateLabels[statusOf(item)]}
+                  <span className={`lt-state lt-state-${statusOf(item, now)}`}>
+                    {stateLabels[statusOf(item, now)]}
                   </span>
                 </div>
                 <h3>{titleOf(item)}</h3>

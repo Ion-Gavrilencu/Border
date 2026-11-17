@@ -82,6 +82,35 @@ const questionCountOf = (item) =>
 
 const durationOf = (item) => numberOrNull(item?.duration_minutes);
 
+const elapsedSecondsOf = (item) => {
+  const seconds = numberOrNull(item?.duration_seconds);
+  if (seconds !== null && seconds >= 0) return seconds;
+
+  const start = item?.started_at;
+  const end = dateOf(item);
+  if (start && end) {
+    const elapsed = (new Date(end).getTime() - new Date(start).getTime()) / 1000;
+    if (Number.isFinite(elapsed) && elapsed >= 0) return elapsed;
+  }
+
+  const minutes = numberOrNull(item?.elapsed_minutes ?? item?.time_spent_minutes);
+  return minutes !== null && minutes >= 0 ? minutes * 60 : null;
+};
+
+const formatElapsed = (seconds) => {
+  const total = Math.round(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remaining = total % 60;
+  return [
+    hours && `${hours} h`,
+    minutes && `${minutes} min`,
+    remaining || (!hours && !minutes) ? `${remaining} s` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+};
+
 const completedResult = (item) => {
   const status = getStatus(item);
 
@@ -115,26 +144,39 @@ export default function TestareUserViews({
       const versionId =
         typeof versionIdOf === "function" ? versionIdOf(item) : (item?.version_id ?? null);
 
+      const assignmentId = item?.assignment_id ?? null;
+      const sameAssignment = (result) =>
+        assignmentId != null && String(result?.assignment_id) === String(assignmentId);
       const finishedAttempts =
-        typeof finishedForVersion === "function" ? finishedForVersion(versionId) : [];
+        assignmentId == null
+          ? []
+          : typeof finishedForVersion === "function"
+            ? finishedForVersion(assignmentId)
+            : resultItems.filter((result) => sameAssignment(result) && completedResult(result));
 
       const done = Array.isArray(finishedAttempts) ? finishedAttempts : [];
 
       const maxAttempts = numberOrNull(item?.max_attempts ?? item?.allowed_attempts);
 
-      const exhausted = maxAttempts !== null && maxAttempts > 0 && done.length >= maxAttempts;
-
       const progress = String(item?.progress_status ?? item?.assignment_status ?? "").toUpperCase();
+      const active =
+        PROGRESS_STATUSES.has(progress) ||
+        resultItems.some(
+          (result) => sameAssignment(result) && PROGRESS_STATUSES.has(getStatus(result)),
+        );
+      const attemptsUsed = numberOrNull(item?.attempts_used);
+      const exhausted =
+        !active &&
+        maxAttempts !== null &&
+        maxAttempts > 0 &&
+        Math.max(done.length, attemptsUsed ?? 0) >= maxAttempts;
 
-      const state = exhausted
-        ? "finished"
-        : PROGRESS_STATUSES.has(progress)
-          ? "progress"
-          : "pending";
+      const state = exhausted ? "finished" : active ? "progress" : "pending";
 
       return {
         item,
         versionId,
+        assignmentId,
         done,
         exhausted,
         state,
@@ -171,9 +213,7 @@ export default function TestareUserViews({
 
   const grades = completed.map(scoreOf).filter((value) => value !== null);
 
-  const durations = completed
-    .map((item) => numberOrNull(item?.elapsed_minutes ?? item?.time_spent_minutes))
-    .filter((value) => value !== null && value >= 0);
+  const durations = completed.map(elapsedSecondsOf).filter((value) => value !== null && value >= 0);
 
   const stats = isResults
     ? [
@@ -206,9 +246,7 @@ export default function TestareUserViews({
         {
           icon: Clock3,
           value: durations.length
-            ? `${Math.round(
-                durations.reduce((sum, value) => sum + value, 0) / durations.length,
-              )} min`
+            ? formatElapsed(durations.reduce((sum, value) => sum + value, 0) / durations.length)
             : "—",
           label: "Timp mediu/test",
           tone: "purple",
@@ -331,170 +369,198 @@ export default function TestareUserViews({
             <span>Modifică termenul de căutare sau filtrul.</span>
           </div>
         ) : (
-          rows.map(({ item, versionId, done = [], exhausted = false, state }, index) => {
-            const isPassed = state === "passed";
-            const isFailed = state === "failed";
+          rows.map(
+            ({ item, versionId, assignmentId, done = [], exhausted = false, state }, index) => {
+              const isPassed = state === "passed";
+              const isFailed = state === "failed";
 
-            const label = isResults
-              ? isPassed
-                ? "Promovat"
-                : isFailed
-                  ? "Nepromovat"
-                  : "Finalizat"
-              : state === "finished"
-                ? "Finalizat"
-                : state === "progress"
-                  ? "În desfășurare"
-                  : "Neînceput";
+              const label = isResults
+                ? isPassed
+                  ? "Promovat"
+                  : isFailed
+                    ? "Nepromovat"
+                    : "Finalizat"
+                : state === "finished"
+                  ? "Finalizat"
+                  : state === "progress"
+                    ? "În desfășurare"
+                    : "Neînceput";
 
-            const grade = scoreOf(item);
-            const duration = durationOf(item);
-            const questionCount = questionCountOf(item);
+              const grade = scoreOf(item);
+              const duration = durationOf(item);
+              const questionCount = questionCountOf(item);
 
-            const available = dateLabel(item?.available_from ?? item?.starts_at ?? item?.start_at);
+              const available = dateLabel(
+                item?.available_from ?? item?.starts_at ?? item?.start_at,
+              );
 
-            const until = dateLabel(
-              item?.deadline_at ?? item?.available_until ?? item?.ends_at ?? item?.end_at,
-            );
+              const until = dateLabel(
+                item?.deadline_at ?? item?.available_until ?? item?.ends_at ?? item?.end_at,
+              );
 
-            const finishedDate = dateLabel(dateOf(item));
+              const finishedDate = dateLabel(dateOf(item));
 
-            const maxGrade = numberOrNull(item?.max_grade ?? item?.max_score);
+              const maxGrade = numberOrNull(item?.max_grade ?? item?.max_score);
 
-            return (
-              <article
-                key={`${mode}-${
-                  item?.attempt_id ?? item?.assignment_id ?? item?.id ?? index
-                }-${index}`}
-                className={`ptuv-card ptuv-${state}`}
-              >
-                <span className="ptuv-card-icon">
-                  <ClipboardList size={25} />
-                </span>
+              return (
+                <article
+                  key={`${mode}-${isResults ? (item?.attempt_id ?? item?.id ?? index) : (assignmentId ?? index)}`}
+                  className={`ptuv-card ptuv-${state}`}
+                >
+                  <span className="ptuv-card-icon">
+                    <ClipboardList size={25} />
+                  </span>
 
-                <div className="ptuv-card-main">
-                  <h3>{getTitle(item)}</h3>
+                  <div className="ptuv-card-main">
+                    <h3>{getTitle(item)}</h3>
 
-                  <div className="ptuv-chips">
-                    {item?.version_number != null && (
-                      <span>
-                        <Layers3 size={15} />
-                        Versiunea {item.version_number}
-                      </span>
-                    )}
+                    <div className="ptuv-chips">
+                      {item?.version_number != null && (
+                        <span>
+                          <Layers3 size={15} />
+                          Versiunea {item.version_number}
+                        </span>
+                      )}
 
-                    {duration !== null && (
-                      <span>
-                        <Clock3 size={15} />
-                        {duration} min
-                      </span>
-                    )}
+                      {!isResults && item?.assigned_at && (
+                        <span>
+                          <CalendarDays size={15} />
+                          Atribuit: {dateLabel(item.assigned_at)}
+                        </span>
+                      )}
 
-                    {questionCount !== null && (
-                      <span>
-                        <ListChecks size={15} />
-                        {formatQuestions(questionCount)}
-                      </span>
-                    )}
+                      {duration !== null && (
+                        <span>
+                          <Clock3 size={15} />
+                          {duration} min
+                        </span>
+                      )}
 
-                    {isResults
-                      ? finishedDate && (
-                          <span>
-                            <CalendarDays size={15} />
-                            Finalizat: {finishedDate}
-                          </span>
-                        )
-                      : (available || until) && (
-                          <span>
-                            <CalendarDays size={15} />
-                            Disponibil: {available ?? "—"} – {until ?? "—"}
-                          </span>
-                        )}
+                      {questionCount !== null && (
+                        <span>
+                          <ListChecks size={15} />
+                          {formatQuestions(questionCount)}
+                        </span>
+                      )}
+
+                      {isResults
+                        ? finishedDate && (
+                            <span>
+                              <CalendarDays size={15} />
+                              Finalizat: {finishedDate}
+                            </span>
+                          )
+                        : (available || until) && (
+                            <span>
+                              <CalendarDays size={15} />
+                              Disponibil: {available ?? "—"} – {until ?? "—"}
+                            </span>
+                          )}
+                    </div>
                   </div>
-                </div>
 
-                <div className={`ptuv-status ptuv-status-${state}`}>
-                  {isResults ? (
-                    isPassed ? (
+                  <div className={`ptuv-status ptuv-status-${state}`}>
+                    {isResults ? (
+                      isPassed ? (
+                        <CheckCircle2 size={18} />
+                      ) : isFailed ? (
+                        <XCircle size={18} />
+                      ) : (
+                        <ClipboardList size={18} />
+                      )
+                    ) : state === "finished" ? (
                       <CheckCircle2 size={18} />
-                    ) : isFailed ? (
-                      <XCircle size={18} />
+                    ) : state === "progress" ? (
+                      <Play size={16} />
                     ) : (
-                      <ClipboardList size={18} />
-                    )
-                  ) : state === "finished" ? (
-                    <CheckCircle2 size={18} />
-                  ) : state === "progress" ? (
-                    <Play size={16} />
-                  ) : (
-                    <Hourglass size={17} />
-                  )}
+                      <Hourglass size={17} />
+                    )}
 
-                  {label}
-                </div>
-
-                {isResults && (
-                  <div className="ptuv-grade">
-                    <small>Nota</small>
-
-                    <strong>
-                      {grade === null ? "—" : grade.toFixed(2)}
-
-                      {grade !== null && maxGrade !== null && <em> / {maxGrade}</em>}
-                    </strong>
+                    {label}
                   </div>
-                )}
 
-                <div className="ptuv-card-actions">
-                  {isResults ? (
-                    <button
-                      type="button"
-                      className="ptuv-btn ptuv-btn-outline"
-                      onClick={() => onOpenResult?.(item)}
-                    >
-                      <Eye size={18} />
-                      Vezi detaliile
-                      <ArrowRight size={16} />
-                    </button>
-                  ) : (
-                    <>
-                      {done.length > 0 && (
-                        <button
-                          type="button"
-                          className="ptuv-btn ptuv-btn-outline"
-                          onClick={() => onOpenResult?.(done[0])}
-                        >
-                          <Eye size={18} />
-                          Vezi rezultatul
-                        </button>
-                      )}
+                  {isResults && (
+                    <div className="ptuv-grade">
+                      <small>
+                        {item.show_grade === false
+                          ? "Rezultat ascuns"
+                          : item.grading_mode === "percent"
+                            ? "Procent"
+                            : "Nota"}
+                      </small>
 
-                      {!exhausted && (
-                        <button
-                          type="button"
-                          className="ptuv-btn ptuv-btn-primary"
-                          disabled={versionId == null || startingId != null}
-                          onClick={() => onStart?.(item)}
-                        >
-                          {state === "progress" ? <ArrowRight size={18} /> : <Play size={18} />}
+                      <strong>
+                        {item.show_grade === false
+                          ? "—"
+                          : item.grading_mode === "percent"
+                            ? numberOrNull(item.percentage) === null
+                              ? "—"
+                              : `${numberOrNull(item.percentage)}%`
+                            : grade === null
+                              ? "—"
+                              : grade.toFixed(2)}
 
-                          {startingId === String(versionId)
-                            ? "Se deschide..."
-                            : state === "progress"
-                              ? "Continuă testul"
-                              : "Începe testul"}
-                        </button>
-                      )}
-
-                      {exhausted && done.length === 0 && (
-                        <span className="ptuv-unavailable">Încercările au fost utilizate.</span>
-                      )}
-                    </>
+                        {item.show_grade !== false &&
+                          item.grading_mode !== "percent" &&
+                          grade !== null &&
+                          maxGrade !== null && <em> / {maxGrade}</em>}
+                      </strong>
+                    </div>
                   )}
-                </div>
-              </article>
-            );
-          })
+
+                  <div className="ptuv-card-actions">
+                    {isResults ? (
+                      <button
+                        type="button"
+                        className="ptuv-btn ptuv-btn-outline"
+                        onClick={() => onOpenResult?.(item)}
+                      >
+                        <Eye size={18} />
+                        Vezi detaliile
+                        <ArrowRight size={16} />
+                      </button>
+                    ) : (
+                      <>
+                        {done.length > 0 && (
+                          <button
+                            type="button"
+                            className="ptuv-btn ptuv-btn-outline"
+                            onClick={() => onOpenResult?.(done[0])}
+                          >
+                            <Eye size={18} />
+                            Vezi rezultatul
+                          </button>
+                        )}
+
+                        {!exhausted && (
+                          <button
+                            type="button"
+                            className="ptuv-btn ptuv-btn-primary"
+                            disabled={
+                              versionId == null || assignmentId == null || startingId != null
+                            }
+                            onClick={() => onStart?.(item)}
+                          >
+                            {state === "progress" ? <ArrowRight size={18} /> : <Play size={18} />}
+
+                            {startingId === String(assignmentId)
+                              ? "Se deschide..."
+                              : state === "progress"
+                                ? "Continuă testul"
+                                : "Începe testul"}
+                          </button>
+                        )}
+
+                        {exhausted && done.length === 0 && (
+                          <span className="ptuv-unavailable">Încercările au fost utilizate.</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </article>
+              );
+            },
+          )
         )}
       </div>
     </div>

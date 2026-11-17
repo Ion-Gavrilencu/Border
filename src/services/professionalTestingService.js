@@ -29,8 +29,13 @@ export const editTestQuestion = async (versionId, questionId, payload) =>
   (await api.put(`/testare/versiuni/${versionId}/intrebari/${questionId}`, payload)).data;
 export const deleteTestQuestion = async (versionId, questionId) =>
   (await api.delete(`/testare/versiuni/${versionId}/intrebari/${questionId}`)).data;
-export const startProfessionalTest = async (versionId) =>
-  (await api.post(`/testare/versiuni/${versionId}/incepe`)).data;
+export const startProfessionalTest = async (versionId, assignmentId) =>
+  (
+    await api.post(`/testare/versiuni/${encodeURIComponent(versionId)}/incepe`, {
+      assignment_id: assignmentId,
+    })
+  ).data;
+export const getDashboardStats = async () => (await api.get("/testare/dashboard/stats")).data;
 export const getProfessionalAttempt = async (attemptId) =>
   (await api.get(`/testare/incercari/${attemptId}`)).data;
 export const saveProfessionalAnswer = async (attemptId, payload) =>

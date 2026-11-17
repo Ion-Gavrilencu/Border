@@ -460,7 +460,7 @@ export default function SustinereTestProfesional() {
       ? "--:--"
       : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   return (
-    <section className="st-page">
+    <section className="st-page st-taking-page">
       <button className="st-back" onClick={() => navigate("/testare")}>
         <ArrowLeft size={17} /> Înapoi la teste
       </button>
@@ -473,19 +473,67 @@ export default function SustinereTestProfesional() {
             întrebări cu răspuns
           </p>
         </div>
-        <div className={`st-clock ${seconds < 60 ? "st-clock-urgent" : ""}`}>
-          <Clock3 size={19} /> {timeLabel}
+      </div>
+      <div className="st-exam-progress">
+        <div className="st-exam-progress-top">
+          <div className="st-exam-time">
+            <span>Timp rămas</span>
+            <div
+              className={`st-clock ${seconds !== null && seconds < 60 ? "st-clock-urgent" : ""}`}
+            >
+              <Clock3 size={19} /> {timeLabel}
+            </div>
+          </div>
+          <div className="st-exam-count">
+            <span>Progres</span>
+            <strong>
+              {answered} din {data.questions.length}
+            </strong>
+          </div>
         </div>
+        <div
+          className="st-progress-track"
+          role="progressbar"
+          aria-label="Întrebări cu răspuns"
+          aria-valuemin={0}
+          aria-valuemax={data.questions.length || 1}
+          aria-valuenow={answered}
+        >
+          <div
+            style={{
+              width: `${data.questions.length ? (answered / data.questions.length) * 100 : 0}%`,
+            }}
+          />
+        </div>
+        <nav className="st-question-nav" aria-label="Navigare între întrebări">
+          {data.questions.map((q, i) => {
+            const done = (answers[keyOf(q.id)] || []).length > 0;
+            return (
+              <button
+                type="button"
+                key={q.id}
+                className={done ? "is-answered" : ""}
+                aria-label={`Întrebarea ${i + 1}, ${done ? "cu răspuns" : "fără răspuns"}`}
+                onClick={() =>
+                  document.getElementById(`st-question-${q.id}`)?.scrollIntoView({ block: "start" })
+                }
+              >
+                {i + 1}
+              </button>
+            );
+          })}
+        </nav>
       </div>
       <div className="st-questions">
         {data.questions.map((q, i) => (
-          <article className="st-card" key={q.id}>
+          <article className="st-card st-exam-question" key={q.id} id={`st-question-${q.id}`}>
             <div className="st-question-title">
-              <h2>
-                {i + 1}. {q.question_text}
-              </h2>
+              <span>
+                Întrebarea {i + 1} din {data.questions.length}
+              </span>
               <span>{q.points} pct.</span>
             </div>
+            <h2 className="st-exam-question-text">{q.question_text}</h2>
             <p className="st-hint">
               {q.question_type === "MULTIPLE_CHOICE"
                 ? "Poți selecta mai multe răspunsuri."

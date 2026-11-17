@@ -22,10 +22,7 @@ import {
   BookTemplate,
 } from "lucide-react";
 import "./SetariTestare.css";
-import {
-  getTestPreferences,
-  saveTestPreferences,
-} from "../../services/professionalTestingService";
+import { getTestPreferences, saveTestPreferences } from "../../services/professionalTestingService";
 
 const STORAGE_KEY = "border:testare:ui-settings:v1";
 const defaults = {
@@ -48,6 +45,12 @@ const defaults = {
   authenticated: true,
   idleTimeout: "10",
   blockNavigation: false,
+};
+const normalizePreferences = (saved) => {
+  const next = { ...defaults, ...(saved || {}), authenticated: true };
+  if (!["24", "48", "72"].includes(String(next.expiryHours))) next.expiryHours = "24";
+  else next.expiryHours = String(next.expiryHours);
+  return next;
 };
 const sections = [
   { id: "general", label: "Generale", Icon: Settings },
@@ -76,11 +79,16 @@ function Sparkline({ color = "#2363ff" }) {
     </svg>
   );
 }
-function Switch({ checked, onChange, label }) {
+function Switch({ checked, onChange, label, disabled = false }) {
   return (
     <label className="pts-switch-row">
       <span>{label}</span>
-      <input type="checkbox" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
+      <input
+        type="checkbox"
+        checked={!!checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       <span className="pts-switch" aria-hidden="true" />
     </label>
   );
@@ -109,11 +117,15 @@ export default function SetariTestare({ ctx = {} }) {
   const [values, setValues] = useState(readSaved);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let active = true;
     getTestPreferences()
       .then((result) => {
-        if (active) setValues({ ...defaults, ...(result.preferences || {}) });
+        if (active) {
+          setValues(normalizePreferences(result.preferences));
+          setLoaded(true);
+        }
       })
       .catch(() => {
         if (active) setError("Nu s-au putut încărca preferințele din server.");
@@ -135,12 +147,13 @@ export default function SetariTestare({ ctx = {} }) {
     setSaved(false);
   };
   const save = async () => {
+    if (!loaded || busy) return;
     setBusy(true);
     setSaved(false);
     setError("");
     try {
-      const result = await saveTestPreferences(values);
-      setValues({ ...defaults, ...result.preferences });
+      const result = await saveTestPreferences(normalizePreferences(values));
+      setValues(normalizePreferences(result.preferences));
       setSaved(true);
     } catch (err) {
       setError(err.response?.data?.message || "Nu s-au putut salva preferințele pe server.");
@@ -148,11 +161,13 @@ export default function SetariTestare({ ctx = {} }) {
       setBusy(false);
     }
   };
-  const testCount = Array.isArray(ctx.managed) ? ctx.managed.length : 0;
-  const userCount = Array.isArray(ctx.assignmentRows)
-    ? new Set(ctx.assignmentRows.map((x) => x.user_id ?? x.userId).filter(Boolean)).size
-    : null;
-  const passRate = typeof ctx.reportPassRate === "number" ? ctx.reportPassRate : null;
+  const metrics = ctx.dashboardMetricsError ? null : ctx.dashboardMetrics;
+  const testCount = metrics?.total_tests ?? null;
+  const userCount = metrics?.unique_recipients ?? null;
+  const passRate =
+    typeof metrics?.pass_rate === "number" && Number.isFinite(metrics.pass_rate)
+      ? Math.round(metrics.pass_rate)
+      : null;
   const isGeneral = section === "general";
   return (
     <div className="pts-page">
@@ -183,7 +198,7 @@ export default function SetariTestare({ ctx = {} }) {
                 <p>Configurează preferințele interfeței modulului de testare</p>
               </div>
             </div>
-            <button className="pts-reset" type="button" onClick={reset}>
+            <button className="pts-reset" type="button" onClick={reset} disabled={busy || !loaded}>
               <RotateCcw size={18} /> Reset la valori implicite
             </button>
           </div>
@@ -191,7 +206,8 @@ export default function SetariTestare({ ctx = {} }) {
             <Info size={18} />
             <span>
               <strong>Preferințe personale:</strong> valorile se salvează în contul tău pe server.
-              Nu schimbă automat regulile testelor, permisiunile sau notificările efective.
+              Valorile compatibile sunt preluate la crearea unui test nou. Testele existente nu se
+              modifică. Opțiunile indisponibile sunt dezactivate.
             </span>
           </div>
           {isGeneral && (
@@ -201,10 +217,9 @@ export default function SetariTestare({ ctx = {} }) {
                   <Layers3 />
                 </span>
                 <div>
-                  <strong>{testCount}</strong>
+                  <strong>{testCount ?? "—"}</strong>
                   <span>Teste create</span>
                 </div>
-                <Sparkline />
               </div>
               <div className="pts-stat">
                 <span className="pts-stat-icon purple">
@@ -212,9 +227,8 @@ export default function SetariTestare({ ctx = {} }) {
                 </span>
                 <div>
                   <strong>{userCount ?? "—"}</strong>
-                  <span>Destinatari identificați</span>
+                  <span>Destinatari unici activi</span>
                 </div>
-                <Sparkline color="#9651ff" />
               </div>
               <div className="pts-stat">
                 <span className="pts-stat-icon green">
@@ -224,7 +238,6 @@ export default function SetariTestare({ ctx = {} }) {
                   <strong>{passRate == null ? "—" : `${passRate}%`}</strong>
                   <span>Rată de promovare</span>
                 </div>
-                <Sparkline color="#1abf55" />
               </div>
             </div>
           )}
@@ -306,9 +319,11 @@ export default function SetariTestare({ ctx = {} }) {
                   />
                   <div className="pts-control-row">
                     <span>
-                      Interval minim între încercări <Info size={14} />
+                      Interval minim între încercări (indisponibil) <Info size={14} />
                     </span>
                     <select
+                      disabled
+                      title="Necesită implementare pe server"
                       value={values.retryInterval}
                       onChange={(e) => update("retryInterval", e.target.value)}
                     >
@@ -359,16 +374,16 @@ export default function SetariTestare({ ctx = {} }) {
                         value={values.expiryHours}
                         onChange={(e) => update("expiryHours", e.target.value)}
                       >
-                        <option value="1">1 oră</option>
-                        <option value="12">12 ore</option>
                         <option value="24">24 ore</option>
                         <option value="48">48 ore</option>
+                        <option value="72">72 ore</option>
                       </select>
                     </div>
                   </div>
                   <Switch
-                    label="Notifică la publicarea unui test nou"
-                    checked={values.notifyPublish}
+                    disabled
+                    label="Notifică la publicare (indisponibil)"
+                    checked={false}
                     onChange={(v) => update("notifyPublish", v)}
                   />
                 </Panel>
@@ -406,12 +421,14 @@ export default function SetariTestare({ ctx = {} }) {
                 <Panel title="Securitate și acces" Icon={ShieldCheck}>
                   <Switch
                     label="Acces doar pentru utilizatorii autentificați"
-                    checked={values.authenticated}
+                    disabled
+                    checked={true}
                     onChange={(v) => update("authenticated", v)}
                   />
                   <div className="pts-control-row">
-                    <span>Limită de inactivitate în timpul testului</span>
+                    <span>Limită de inactivitate (indisponibilă)</span>
                     <select
+                      disabled
                       value={values.idleTimeout}
                       onChange={(e) => update("idleTimeout", e.target.value)}
                     >
@@ -422,8 +439,9 @@ export default function SetariTestare({ ctx = {} }) {
                     </select>
                   </div>
                   <Switch
-                    label="Blochează navigarea în alte pagini în timpul testului"
-                    checked={values.blockNavigation}
+                    disabled
+                    label="Blocare navigare (indisponibilă)"
+                    checked={false}
                     onChange={(v) => update("blockNavigation", v)}
                   />
                 </Panel>
@@ -496,7 +514,7 @@ export default function SetariTestare({ ctx = {} }) {
             existente.
           </span>
         </div>
-        <button className="pts-save" type="button" onClick={save} disabled={busy}>
+        <button className="pts-save" type="button" onClick={save} disabled={busy || !loaded}>
           <Save size={19} />
           {busy ? "Se procesează..." : saved ? "Salvat pe server" : "Salvează preferințele"}
         </button>

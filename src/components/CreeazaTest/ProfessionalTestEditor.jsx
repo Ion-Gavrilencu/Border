@@ -5,6 +5,11 @@ import Rezumat from "./Rezumat";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Clock3,
+  Target,
+  Settings2,
+  CalendarDays,
+  Circle,
   ArrowRight,
   Check,
   CheckCircle2,
@@ -411,110 +416,176 @@ export default function ProfessionalTestEditor({
   // Vizualizarea unei versiuni publicate nu montează formularele editabile.
   // Datele sunt doar afișate; nu există acțiuni de salvare, import sau publicare.
   if (readOnly) {
+    const formatDate = (value) => {
+      if (!value) return "—";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime())
+        ? "—"
+        : date.toLocaleString("ro-RO", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+    };
+    const grading = { "grade-percent": "Notă și procent", grade: "Notă", percent: "Procent" };
+    const rounding = {
+      "one-decimal": "O zecimală",
+      "two-decimals": "Două zecimale",
+      integer: "Număr întreg",
+    };
+    const yesNo = (value) => (value == null ? "—" : value ? "Da" : "Nu");
     const detailRows = [
       ["Categorie", form.category || "—"],
-      ["Durată", `${form.duration ?? "—"} minute`],
       ["Încercări permise", form.maxAttempts ?? "—"],
-      ["Prag promovare", `${form.passThreshold ?? "—"}%`],
       ["Nota maximă", form.maxGrade ?? "—"],
-      ["Mod evaluare", form.grading || "—"],
-      ["Rotunjire", form.rounding || "—"],
-      ["Reîncercare", form.allowRetake ? "Permisă" : "Nepermisă"],
-      ["Afișare notă", form.showGrade ? "Da" : "Nu"],
-      ["Explicații", form.showExplanations ? "Da" : "Nu"],
-      ["Amestecare întrebări", form.shuffleQuestions ? "Da" : "Nu"],
-      ["Amestecare răspunsuri", form.shuffleAnswers ? "Da" : "Nu"],
-      ["Disponibil de la", form.availableFrom || "—"],
-      ["Disponibil până la", form.availableUntil || "—"],
+      ["Mod evaluare", grading[form.grading] ?? form.grading ?? "—"],
+      ["Rotunjire", rounding[form.rounding] ?? form.rounding ?? "—"],
+      ["Reîncercare", form.allowRetake == null ? "—" : form.allowRetake ? "Permisă" : "Nepermisă"],
+      ["Afișare notă", yesNo(form.showGrade)],
+      ["Explicații", yesNo(form.showExplanations)],
+      ["Amestecare întrebări", yesNo(form.shuffleQuestions)],
+      ["Amestecare răspunsuri", yesNo(form.shuffleAnswers)],
+    ];
+    const metrics = [
+      ["Durată", form.duration == null ? "—" : `${form.duration} min`, Clock3],
+      ["Întrebări", form.questions.length, ClipboardList],
+      ["Promovare", form.passThreshold == null ? "—" : `${form.passThreshold}%`, Target],
     ];
     return (
-      <main className="pte-page">
-        <div className="pte-topline">
+      <main className="pte-page pte-readonly">
+        <div className="pte-ro-top">
           <button type="button" className="pte-link" onClick={() => onCancel?.()}>
-            <ArrowLeft size={17} /> Înapoi la Teste
+            <ArrowLeft size={18} /> Înapoi la Teste
           </button>
-          <span>BORDER / TESTARE PROFESIONALĂ</span>
+          <button
+            type="button"
+            className="pte-btn pte-btn-light"
+            onClick={() => onRefresh?.()}
+            disabled={!onRefresh}
+          >
+            <RefreshCw size={16} /> Actualizează
+          </button>
         </div>
-        <header className="pte-header">
-          <div className="pte-heading">
+        <header className="pte-ro-hero">
+          <div className="pte-ro-heading">
             <span className="pte-logo">
-              <FileText size={31} />
+              <FileText size={28} />
             </span>
             <div>
+              <span className="pte-ro-eyebrow">BORDER / TESTARE PROFESIONALĂ</span>
               <h1>{form.title || "Vizualizare test"}</h1>
-              <p>Versiune publicată · vizualizare doar în citire</p>
+              <p>{form.category || "Test profesional"} · Versiune publicată</p>
             </div>
           </div>
-          <button type="button" className="pte-btn pte-btn-light" onClick={() => onRefresh?.()}>
-            <RefreshCw size={17} /> Actualizează
-          </button>
-        </header>
-        <div className="pte-alert success" role="status">
-          <ShieldCheck size={18} /> Această versiune este publicată. Întrebările și regulile nu pot
-          fi modificate.
-        </div>
-        <div className="pte-layout">
-          <div className="pte-main">
-            <Card icon={FileText} title="Detalii test" subtitle="Informațiile versiunii publicate">
-              {form.description && <p>{form.description}</p>}
-              <div className="pte-info">
-                {detailRows.map(([label, value]) => (
-                  <div key={label}>
-                    <span>{label}:</span>
-                    <strong>{value}</strong>
-                  </div>
-                ))}
+          <div className="pte-ro-metrics">
+            {metrics.map(([label, value, Icon]) => (
+              <div className="pte-ro-metric" key={label}>
+                <Icon size={20} aria-hidden="true" />
+                <strong>{value}</strong>
+                <span>{label}</span>
               </div>
-            </Card>
-            <Card
-              icon={ClipboardList}
-              title={`Întrebări (${form.questions.length})`}
-              subtitle="Conținutul testului publicat"
-            >
-              {form.questions.length === 0 && <p>Nu există întrebări disponibile.</p>}
-              {form.questions.map((question, index) => (
-                <section
-                  key={question.id ?? index}
-                  style={{ padding: "16px 0", borderBottom: "1px solid #e7ecf7" }}
-                >
-                  <h3 style={{ margin: "0 0 10px", overflowWrap: "anywhere" }}>
-                    {index + 1}. {question.text}
-                  </h3>
-                  <p style={{ margin: "0 0 10px" }}>
-                    {questionType(question) === "multiple"
-                      ? "Răspuns multiplu"
-                      : questionType(question) === "truefalse"
-                        ? "Adevărat sau fals"
-                        : "Răspuns unic"}{" "}
-                    · {question.points} puncte
-                  </p>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {(question.answers || []).map((answer, answerIndex) => (
-                      <div
-                        key={answerIndex}
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: 10,
-                          border: "1px solid #e7ecf7",
-                          background: answer.correct ? "#eaf8ef" : "#f8faff",
-                          overflowWrap: "anywhere",
-                        }}
-                      >
-                        {answer.correct ? "✓ " : "○ "}
-                        {answer.text}
-                      </div>
-                    ))}
-                  </div>
-                  {question.explanation && (
-                    <p style={{ marginTop: 12 }}>Explicație: {question.explanation}</p>
-                  )}
-                </section>
-              ))}
-            </Card>
+            ))}
           </div>
+          <div className="pte-ro-notice" role="status">
+            <ShieldCheck size={19} />
+            <span>
+              Test publicat · Doar vizualizare. Întrebările și regulile nu pot fi modificate.
+            </span>
+          </div>
+        </header>
+        <div className="pte-ro-layout">
+          <Card
+            icon={Settings2}
+            title="Configurarea testului"
+            subtitle="Informațiile versiunii publicate"
+          >
+            {form.description && <p className="pte-ro-description">{form.description}</p>}
+            <dl className="pte-ro-details">
+              {detailRows.map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="pte-ro-period">
+              <h3>
+                <CalendarDays size={19} /> Perioada de disponibilitate
+              </h3>
+              <div>
+                <span>Început</span>
+                <strong>{formatDate(form.availableFrom)}</strong>
+              </div>
+              <div>
+                <span>Sfârșit</span>
+                <strong>{formatDate(form.availableUntil)}</strong>
+              </div>
+            </div>
+          </Card>
+          <section className="pte-ro-questions" aria-label="Întrebările testului">
+            <div className="pte-ro-section-heading">
+              <ClipboardList size={24} />
+              <div>
+                <h2>Întrebările testului</h2>
+                <p>Conținutul versiunii publicate</p>
+              </div>
+              <span>{form.questions.length}</span>
+            </div>
+            {!form.questions.length && (
+              <p className="pte-empty">Nu există întrebări disponibile.</p>
+            )}
+            {form.questions.map((question, index) => (
+              <article className="pte-ro-question" key={question.id ?? index}>
+                <div className="pte-ro-question-head">
+                  <span className="pte-ro-number">{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3>Întrebarea {index + 1}</h3>
+                    <p>
+                      {questionType(question) === "multiple"
+                        ? "Răspuns multiplu"
+                        : questionType(question) === "truefalse"
+                          ? "Adevărat sau fals"
+                          : "Răspuns unic"}
+                    </p>
+                  </div>
+                  <span className="pte-ro-points">
+                    {question.points ?? "—"} {Number(question.points) === 1 ? "punct" : "puncte"}
+                  </span>
+                </div>
+                <p className="pte-ro-question-text">{question.text}</p>
+                <ul className="pte-ro-answers">
+                  {(question.answers || []).map((answer, answerIndex) => (
+                    <li
+                      key={answerIndex}
+                      className={`pte-ro-answer${answer.correct ? " is-correct" : ""}`}
+                    >
+                      {answer.correct ? (
+                        <CheckCircle2 size={20} aria-hidden="true" />
+                      ) : (
+                        <Circle size={20} aria-hidden="true" />
+                      )}
+                      <span>{answer.text}</span>
+                      {answer.correct && <small>Corect</small>}
+                    </li>
+                  ))}
+                </ul>
+                {question.explanation && (
+                  <div className="pte-ro-explanation">
+                    <Lightbulb size={18} />
+                    <div>
+                      <strong>Explicație</strong>
+                      <p>{question.explanation}</p>
+                    </div>
+                  </div>
+                )}
+              </article>
+            ))}
+          </section>
         </div>
-        <footer className="pte-footer">
-          <button type="button" className="pte-btn pte-btn-light" onClick={() => onCancel?.()}>
+        <footer className="pte-ro-footer">
+          <button type="button" className="pte-btn" onClick={() => onCancel?.()}>
             <ArrowLeft size={18} /> Înapoi la Teste
           </button>
         </footer>

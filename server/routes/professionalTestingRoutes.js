@@ -50,6 +50,7 @@ router.delete("/teste/:testId", authorizeRoles("ADMIN"), c.deleteTest);
 
 // Administrarea testelor.
 router.use(authorizeRoles("ADMIN", "EDITOR"));
+router.get("/dashboard/stats", c.dashboardStats);
 router.get("/incercari/:attemptId/revizuire-manager", c.managerAttemptReview);
 router.get("/utilizatori-eligibili", c.eligibleUsers);
 router.get("/teste", c.listTests);

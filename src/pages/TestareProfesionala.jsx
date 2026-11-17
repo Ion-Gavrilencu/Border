@@ -43,6 +43,7 @@ import {
   getAssignedTests,
   getMyTestResults,
   getManagedTests,
+  getDashboardStats,
   startProfessionalTest,
   deleteProfessionalTest,
   getManagedTestResults,
@@ -67,23 +68,9 @@ const versionIdOf = (item) =>
   item?.latest_version?.id ??
   null;
 
-// Afișează o singură dată aceeași versiune, păstrând atribuirile în baza de date.
-// Versiunile diferite rămân intrări distincte.
-const groupAssigned = (items) => {
-  const seen = new Map();
-  for (const item of items) {
-    const versionId = versionIdOf(item);
-    const testId = item.test_id ?? item.professional_test_id ?? item.test?.id;
-    // Fără un ID sigur de versiune nu grupăm înregistrările.
-    const key =
-      versionId == null
-        ? `assignment:${item.assignment_id ?? item.id ?? seen.size}`
-        : `test:${testId ?? "unknown"}:version:${versionId}`;
-    if (!seen.has(key)) seen.set(key, { ...item, _assignmentCount: 1 });
-    else seen.get(key)._assignmentCount += 1;
-  }
-  return [...seen.values()];
-};
+// Fiecare atribuire rămâne o intrare independentă.
+const groupAssigned = (items) => items;
+const assignmentIdOf = (item) => item?.assignment_id ?? null;
 
 function TestareProfesionala() {
   const navigate = useNavigate();
@@ -116,6 +103,8 @@ function TestareProfesionala() {
   const [assigned, setAssigned] = useState([]);
   const [results, setResults] = useState([]);
   const [managed, setManaged] = useState([]);
+  const [dashboardMetrics, setDashboardMetrics] = useState(null);
+  const [dashboardMetricsError, setDashboardMetricsError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [startingId, setStartingId] = useState(null);
@@ -126,14 +115,22 @@ function TestareProfesionala() {
     setLoading(true);
     setError("");
     try {
-      const [a, r, m] = await Promise.all([
+      setDashboardMetricsError("");
+      const [a, r, m, statsResponse] = await Promise.all([
         getAssignedTests(),
         getMyTestResults(),
         canManage ? getManagedTests() : Promise.resolve({ tests: [] }),
+        canManage
+          ? getDashboardStats().catch((err) => {
+              setDashboardMetricsError(messageOf(err));
+              return null;
+            })
+          : Promise.resolve(null),
       ]);
       setAssigned(groupAssigned(rowsOf(a, "tests")));
       setResults(rowsOf(r, "results"));
       setManaged(rowsOf(m, "tests"));
+      setDashboardMetrics(statsResponse?.stats ?? null);
     } catch (err) {
       setError(messageOf(err));
     } finally {
@@ -156,10 +153,11 @@ function TestareProfesionala() {
 
   const openAssignedTest = async (item) => {
     const versionId = versionIdOf(item);
-    if (versionId == null || startingId != null) return;
-    setStartingId(String(versionId));
+    const assignmentId = assignmentIdOf(item);
+    if (versionId == null || assignmentId == null || startingId != null) return;
+    setStartingId(String(assignmentId));
     try {
-      const data = await startProfessionalTest(versionId);
+      const data = await startProfessionalTest(versionId, assignmentId);
       const attemptId = data?.attempt?.id;
       if (attemptId == null) throw new Error("Serverul nu a returnat ID-ul încercării.");
       navigate(`/testare/incercari/${encodeURIComponent(attemptId)}`);
@@ -182,11 +180,11 @@ function TestareProfesionala() {
     navigate(`/testare/incercari/${encodeURIComponent(attemptId)}/rezultat`);
   };
 
-  const finishedForVersion = (versionId) => {
-    if (versionId == null) return [];
+  const finishedForVersion = (assignmentId) => {
+    if (assignmentId == null) return [];
     return results.filter(
       (r) =>
-        String(versionIdOf(r)) === String(versionId) &&
+        String(r.assignment_id) === String(assignmentId) &&
         ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"].includes(
           String(r.status ?? r.attempt_status ?? "SUBMITTED").toUpperCase(),
         ),
@@ -403,9 +401,9 @@ function TestareProfesionala() {
     return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("ro-RO");
   };
   const filteredDashboardTests = managed.filter((item) =>
-    `${item.title ?? ""} ${item.description ?? ""}`
+    `${item.title ?? item.test_title ?? ""} ${item.description ?? ""} ${item.category_name ?? item.category ?? "General"}`
       .toLocaleLowerCase("ro")
-      .includes(dashboardSearch.toLocaleLowerCase("ro")),
+      .includes(dashboardSearch.trim().toLocaleLowerCase("ro")),
   );
   const dashboardPages = Math.max(1, Math.ceil(filteredDashboardTests.length / 4));
   const visibleDashboardTests = filteredDashboardTests.slice(
@@ -586,6 +584,8 @@ function TestareProfesionala() {
     publishedTests,
     draftTests,
     dashboardStats,
+    dashboardMetrics,
+    dashboardMetricsError,
     rowsOf,
     messageOf,
     versionIdOf,
@@ -670,7 +670,7 @@ function TestareProfesionala() {
             startingId={startingId}
             onStart={openAssignedTest}
             onOpenResult={openFinishedAttempt}
-            versionIdOf={versionIdOf}
+            versionIdOf={assignmentIdOf}
             finishedForVersion={finishedForVersion}
           />
         ) : loading ? (
@@ -697,7 +697,8 @@ function TestareProfesionala() {
           <div className="pt-list">
             {current.map((item, index) => {
               const versionId = versionIdOf(item);
-              const completedAttempts = tab === "assigned" ? finishedForVersion(versionId) : [];
+              const completedAttempts =
+                tab === "assigned" ? finishedForVersion(assignmentIdOf(item)) : [];
               const latestCompleted = completedAttempts[0];
               const maxAttempts = Number(item.max_attempts ?? item.allowed_attempts);
               const exhausted =
@@ -767,7 +768,9 @@ function TestareProfesionala() {
                             onClick={() => openAssignedTest(item)}
                           >
                             <ArrowRight size={17} />{" "}
-                            {startingId === String(versionId) ? "Se deschide..." : "Începe testul"}
+                            {startingId === String(assignmentIdOf(item))
+                              ? "Se deschide..."
+                              : "Începe testul"}
                           </button>
                         )}
                         {exhausted && (

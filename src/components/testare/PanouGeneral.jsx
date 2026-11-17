@@ -28,9 +28,16 @@ import {
 import "./PanouGeneral.css";
 
 const normalize = (value) => String(value ?? "").toLocaleLowerCase("ro-RO");
-const number = (value) => (Number.isFinite(Number(value)) ? Number(value) : null);
+const number = (value) =>
+  value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const dateOf = (item) =>
-  item?.updated_at ?? item?.created_at ?? item?.finished_at ?? item?.completed_at ?? null;
+  item?.updated_at ??
+  item?.submitted_at ??
+  item?.finished_at ??
+  item?.completed_at ??
+  item?.created_at ??
+  item?.started_at ??
+  null;
 const dateLabel = (value) => {
   if (!value) return "";
   const date = new Date(value);
@@ -47,8 +54,13 @@ const dateLabel = (value) => {
 const statusOf = (item) => normalize(item.status ?? item.version_status).toUpperCase();
 const statusMeta = (item) => {
   const s = statusOf(item);
-  if (["PUBLISHED", "ACTIVE", "ACTIV"].includes(s))
+  if (["PUBLISHED", "ACTIVE", "ACTIV"].includes(s)) {
+    if (item.available_until && Date.parse(item.available_until) < Date.now())
+      return { label: "Finalizat", cls: "finished", Icon: Check };
+    if (item.available_from && Date.parse(item.available_from) > Date.now())
+      return { label: "Programat", cls: "scheduled", Icon: CalendarDays };
     return { label: "Activ", cls: "active", Icon: Play };
+  }
   if (["SCHEDULED", "PROGRAMAT"].includes(s))
     return { label: "Programat", cls: "scheduled", Icon: CalendarDays };
   if (["FINISHED", "COMPLETED", "CLOSED", "FINALIZAT"].includes(s))
@@ -64,6 +76,13 @@ const percentOf = (item) => {
 export default function PanouGeneral({ ctx }) {
   const {
     canManage,
+    canDelete,
+    navigate,
+    setDeleteTarget,
+    setReportTest,
+    setReportPage,
+    dashboardMetrics,
+    dashboardMetricsError,
     setTab,
     dashboardSearch,
     setDashboardSearch,
@@ -137,35 +156,29 @@ export default function PanouGeneral({ ctx }) {
     if (ctx.attemptRowsComplete === true) return attemptsByVersion.get(String(id)) ?? 0;
     return "—";
   };
-  const activeCount = allTests.filter((item) => statusMeta(item).cls === "active").length;
-  const attemptsCount = ctx.attemptRowsComplete === true ? attemptRows.length : "—";
-  const rate =
-    knownPasses && Number.isFinite(Number(passRate))
-      ? Math.max(0, Math.min(100, Number(passRate)))
-      : null;
+  const metrics = dashboardMetrics;
+  const attemptsCount = metrics?.total_attempts ?? "—";
+  const chartRate = number(metrics?.pass_rate);
+  const rate = chartRate;
   const recent = [...(Array.isArray(results) ? results : [])]
-    .sort(
-      (a, b) =>
-        (new Date(dateOf(b) ?? 0).getTime() || 0) - (new Date(dateOf(a) ?? 0).getTime() || 0),
+    .filter((item) =>
+      ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"].includes(
+        String(item.status ?? "").toUpperCase(),
+      ),
     )
+    .sort((a, b) => (Date.parse(dateOf(b)) || 0) - (Date.parse(dateOf(a)) || 0))
     .slice(0, 4);
-  // Graficul reprezintă distribuția rezultatelor finalizate, nu doar un indicator de progres.
-  // Nu presupunem promovarea când API-ul nu oferă această informație.
-  const totalCompleted = Array.isArray(completedResults) ? completedResults.length : 0;
-  const passedCount = knownPasses
-    ? Math.min(totalCompleted, Array.isArray(passedResults) ? passedResults.length : 0)
-    : null;
-  const failedCount = passedCount == null ? null : Math.max(0, totalCompleted - passedCount);
-  const chartRate =
-    passedCount != null && totalCompleted > 0 ? (passedCount / totalCompleted) * 100 : null;
+  const totalCompleted = metrics?.completed ?? null;
+  const passedCount = metrics?.passed ?? null;
+  const failedCount = metrics?.failed ?? null;
   // Stil inline: evită suprascrierea gradientului de către alte fișiere CSS.
   const donutBackground =
     chartRate == null
       ? "#e3e8f7"
       : `conic-gradient(from -90deg, #08a349 0% ${chartRate}%, #e65d19 ${chartRate}% 100%)`;
   const stats = [
-    { label: "Teste totale", value: allTests.length, Icon: Layers3, theme: "blue" },
-    { label: "Teste active", value: activeCount, Icon: Users, theme: "violet" },
+    { label: "Teste totale", value: metrics?.total_tests ?? "—", Icon: Layers3, theme: "blue" },
+    { label: "Teste active", value: metrics?.active_tests ?? "—", Icon: Users, theme: "violet" },
     { label: "Încercări înregistrate", value: attemptsCount, Icon: ClipboardCheck, theme: "cyan" },
     {
       label: "Rată de promovare",
@@ -195,19 +208,15 @@ export default function PanouGeneral({ ctx }) {
               <span>{label}</span>
               <strong>{value}</strong>
             </div>
-            {theme === "purple" ? (
-              <span className="pt-stat-round-arrow">
-                <ArrowUpRight size={23} />
-              </span>
-            ) : (
-              <svg className="pt-stat-sparkline" viewBox="0 0 90 38" aria-hidden="true">
-                <path d="M2 29 C14 16 22 35 34 20 S52 7 60 12 S75 5 88 3" />
-              </svg>
-            )}
           </div>
         ))}
       </div>
 
+      {dashboardMetricsError && (
+        <p className="pt-dashboard-muted" role="alert">
+          Statisticile nu au putut fi încărcate: {dashboardMetricsError}
+        </p>
+      )}
       <div className="pt-dashboard-grid">
         <div className="pt-dashboard-main">
           <section className="pt-dashboard-card pt-dashboard-create">
@@ -403,8 +412,45 @@ export default function PanouGeneral({ ctx }) {
                                   }}
                                   disabled={versionIdOf(item) == null}
                                 >
-                                  <Pencil size={15} /> Editează
+                                  <Pencil size={15} />{" "}
+                                  {statusOf(item) === "DRAFT" ? "Editează" : "Vizualizează"}
                                 </button>
+                                {statusOf(item) === "PUBLISHED" && versionIdOf(item) != null && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuId(null);
+                                      navigate(
+                                        `/testare/${encodeURIComponent(versionIdOf(item))}/editare?mod=atribuire`,
+                                      );
+                                    }}
+                                  >
+                                    <Users size={15} /> Atribuie
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  disabled={versionIdOf(item) == null}
+                                  onClick={() => {
+                                    setMenuId(null);
+                                    setReportTest(String(versionIdOf(item)));
+                                    setReportPage(1);
+                                    setTab("reports");
+                                  }}
+                                >
+                                  <BarChart3 size={15} /> Rezultate
+                                </button>
+                                {canDelete && item.id != null && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMenuId(null);
+                                      setDeleteTarget({ id: item.id, title: item.title });
+                                    }}
+                                  >
+                                    Șterge testul
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -465,8 +511,8 @@ export default function PanouGeneral({ ctx }) {
           <section className="pt-dashboard-card pt-recent-card">
             <div className="pt-dashboard-section-title">
               <Clock3 className="pt-section-blue" size={25} />
-              <h2>Încercări recente</h2>
-              <button type="button" className="pt-aside-link" onClick={() => setTab("attempts")}>
+              <h2>Încercările mele recente</h2>
+              <button type="button" className="pt-aside-link" onClick={() => setTab("results")}>
                 Vezi toate <ArrowRight size={17} />
               </button>
             </div>
@@ -503,7 +549,7 @@ export default function PanouGeneral({ ctx }) {
                   </span>
                   {score != null && (
                     <span
-                      className={`pt-score-pill ${score >= 80 ? "pt-score-good" : score >= 70 ? "pt-score-mid" : "pt-score-low"}`}
+                      className={`pt-score-pill ${item.passed === true ? "pt-score-good" : item.passed === false ? "pt-score-low" : "pt-score-mid"}`}
                     >
                       {Math.round(score)}%
                     </span>
@@ -558,17 +604,17 @@ export default function PanouGeneral({ ctx }) {
                 </p>
                 <p>
                   <span className="pt-legend-dot pt-dot-purple" />
-                  Finalizate <strong>{totalCompleted}</strong>
+                  Finalizate <strong>{totalCompleted ?? "—"}</strong>
                 </p>
                 <p className="pt-legend-total">
                   <span className="pt-legend-dot pt-dot-slate" />
-                  Total rezultate <strong>{results.length}</strong>
+                  Total rezultate <strong>{totalCompleted ?? "—"}</strong>
                 </p>
               </div>
             </div>
-            {!knownPasses && (
+            {chartRate == null && (
               <p className="pt-dashboard-muted">
-                Rata de promovare va apărea când API-ul va furniza rezultate explicite de promovare.
+                Rata de promovare este disponibilă după evaluarea rezultatelor.
               </p>
             )}
           </section>
