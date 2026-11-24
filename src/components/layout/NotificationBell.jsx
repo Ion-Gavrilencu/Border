@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   Bell,
+  Search,
+  Check,
+  ChevronDown,
   ClipboardCheck,
   Newspaper,
   Clock3,
@@ -79,6 +82,57 @@ function NotificationBell() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [expanded, setExpanded] = useState({});
+  const [visibleLimit, setVisibleLimit] = useState(15);
+  const [panelRight, setPanelRight] = useState(16);
+  const normalize = (value) =>
+    String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const visibleNotifications = notifications
+    .filter(
+      (item) =>
+        (filter !== "unread" || !item.is_read) &&
+        (category === "all" ||
+          (category === "documents"
+            ? !["test", "stire"].includes(item.type)
+            : item.type === category)) &&
+        normalize(`${item.title ?? ""} ${item.message ?? ""}`).includes(normalize(query.trim())),
+    )
+    .sort((a, b) => (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0));
+  const dayGroup = (value) => {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return "Anterior";
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    return date.toDateString() === today.toDateString()
+      ? "Astăzi"
+      : date.toDateString() === yesterday.toDateString()
+        ? "Ieri"
+        : "Anterior";
+  };
+  useEffect(() => {
+    setVisibleLimit(15);
+  }, [filter, category, query]);
+  useEffect(() => {
+    if (!open) return;
+    const position = () =>
+      setPanelRight(
+        Math.max(
+          12,
+          window.innerWidth -
+            (containerRef.current?.getBoundingClientRect().right ?? window.innerWidth),
+        ),
+      );
+    position();
+    window.addEventListener("resize", position);
+    return () => window.removeEventListener("resize", position);
+  }, [open]);
 
   const [selectedAttachments, setSelectedAttachments] = useState([]);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
@@ -178,6 +232,19 @@ function NotificationBell() {
     );
 
     setUnreadCount((current) => Math.max(0, current - 1));
+  };
+
+  const markSingleRead = async (item) => {
+    if (busy || item.is_read) return;
+    setBusy(true);
+    setError("");
+    try {
+      await markRead(item.id);
+    } catch {
+      setError("Notificarea nu a putut fi marcată ca citită.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   // Deschide o filă nouă imediat, în urma clicului.
@@ -473,7 +540,12 @@ function NotificationBell() {
 
       {open &&
         createPortal(
-          <section ref={panelRef} className="notification-panel" aria-label="Lista notificărilor">
+          <section
+            ref={panelRef}
+            className="notification-panel"
+            style={{ "--notification-right": `${panelRight}px` }}
+            aria-label="Lista notificărilor"
+          >
             <div className="notification-panel-header">
               <div className="notification-panel-heading">
                 <strong>{showAttachmentPicker ? "Alege documentul" : "Notificări"}</strong>
@@ -525,6 +597,56 @@ function NotificationBell() {
               </div>
             </div>
 
+            {!showAttachmentPicker && (
+              <div className="notification-toolbar">
+                <div className="notification-tabs" role="group" aria-label="Starea notificărilor">
+                  <button
+                    type="button"
+                    aria-pressed={filter === "all"}
+                    onClick={() => setFilter("all")}
+                  >
+                    Toate
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={filter === "unread"}
+                    onClick={() => setFilter("unread")}
+                  >
+                    Necitite <span>{unreadCount}</span>
+                  </button>
+                </div>
+                <div className="notification-search-row">
+                  <label className="notification-search">
+                    <Search size={16} />
+                    <input
+                      aria-label="Caută în notificările încărcate"
+                      placeholder="Caută notificări..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        aria-label="Șterge căutarea"
+                        onClick={() => setQuery("")}
+                      >
+                        <X size={15} />
+                      </button>
+                    )}
+                  </label>
+                  <select
+                    aria-label="Categorie"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option value="all">Categorii</option>
+                    <option value="test">Teste</option>
+                    <option value="documents">Documente</option>
+                    <option value="stire">Noutăți</option>
+                  </select>
+                </div>
+              </div>
+            )}
             {error && (
               <p className="notification-error" role="alert">
                 {error}
@@ -551,63 +673,114 @@ function NotificationBell() {
               </div>
             ) : loading ? (
               <p className="notification-empty">Se încarcă notificările...</p>
-            ) : notifications.length === 0 ? (
+            ) : visibleNotifications.length === 0 ? (
               <div className="notification-empty">
                 <Bell size={26} />
-                <p>Nu există notificări.</p>
+                <p>
+                  {notifications.length
+                    ? "Nicio notificare pentru filtrele selectate."
+                    : "Nu există notificări."}
+                </p>
               </div>
             ) : (
               <div className="notification-list">
-                {notifications.map((item) => (
+                {visibleNotifications.slice(0, visibleLimit).map((item, index) => (
+                  <div key={item.id}>
+                    {(index === 0 ||
+                      dayGroup(item.created_at) !==
+                        dayGroup(visibleNotifications[index - 1].created_at)) && (
+                      <div className="notification-day">{dayGroup(item.created_at)}</div>
+                    )}
+                    <div
+                      className={`notification-card ${item.is_read ? "" : "notification-card--unread"}`}
+                    >
+                      <button
+                        type="button"
+                        key={item.id}
+                        className={`notification-item ${item.is_read ? "" : "notification-item--unread"}`}
+                        onClick={() => handleOpenNotification(item)}
+                        disabled={busy}
+                      >
+                        <span
+                          className={`notification-item-icon ${item.type === "test" ? "notification-item-icon--test" : item.type === "stire" ? "notification-item-icon--news" : "notification-item-icon--document"}`}
+                          aria-hidden="true"
+                        >
+                          {item.type === "test" ? (
+                            <ClipboardCheck size={17} />
+                          ) : item.type === "stire" ? (
+                            <Newspaper size={17} />
+                          ) : (
+                            <FileText size={17} />
+                          )}
+                        </span>
+                        <span className="notification-item-content">
+                          <span className="notification-item-heading">
+                            <span className="notification-item-title">{item.title}</span>
+                            {!item.is_read && (
+                              <span className="notification-unread-dot" aria-label="Necitită" />
+                            )}
+                          </span>
+                          {item.message && (
+                            <span
+                              className={`notification-item-message ${expanded[item.id] ? "is-expanded" : ""}`}
+                            >
+                              {item.message}
+                            </span>
+                          )}
+                          {item.type === "test" && (
+                            <span style={{ color: "#1666b1", fontSize: 12, fontWeight: 700 }}>
+                              Accesează testul →
+                            </span>
+                          )}
+                          <time
+                            className="notification-item-time"
+                            dateTime={item.created_at || undefined}
+                          >
+                            <Clock3 size={12} aria-hidden="true" />
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString("ro-RO", {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                })
+                              : ""}
+                          </time>
+                        </span>
+                      </button>
+                      <div className="notification-card-actions">
+                        {item.message && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpanded((old) => ({ ...old, [item.id]: !old[item.id] }))
+                            }
+                            aria-expanded={!!expanded[item.id]}
+                          >
+                            <ChevronDown size={14} />{" "}
+                            {expanded[item.id] ? "Restrânge" : "Mesaj complet"}
+                          </button>
+                        )}
+                        {!item.is_read && (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => markSingleRead(item)}
+                          >
+                            <Check size={14} /> Marchează citită
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {visibleNotifications.length > visibleLimit && (
                   <button
                     type="button"
-                    key={item.id}
-                    className={`notification-item ${item.is_read ? "" : "notification-item--unread"}`}
-                    onClick={() => handleOpenNotification(item)}
-                    disabled={busy}
+                    className="notification-more"
+                    onClick={() => setVisibleLimit((n) => n + 15)}
                   >
-                    <span
-                      className={`notification-item-icon ${item.type === "test" ? "notification-item-icon--test" : item.type === "stire" ? "notification-item-icon--news" : "notification-item-icon--document"}`}
-                      aria-hidden="true"
-                    >
-                      {item.type === "test" ? (
-                        <ClipboardCheck size={17} />
-                      ) : item.type === "stire" ? (
-                        <Newspaper size={17} />
-                      ) : (
-                        <FileText size={17} />
-                      )}
-                    </span>
-                    <span className="notification-item-content">
-                      <span className="notification-item-heading">
-                        <span className="notification-item-title">{item.title}</span>
-                        {!item.is_read && (
-                          <span className="notification-unread-dot" aria-label="Necitită" />
-                        )}
-                      </span>
-                      {item.message && (
-                        <span className="notification-item-message">{item.message}</span>
-                      )}
-                      {item.type === "test" && (
-                        <span style={{ color: "#1666b1", fontSize: 12, fontWeight: 700 }}>
-                          Accesează testul →
-                        </span>
-                      )}
-                      <time
-                        className="notification-item-time"
-                        dateTime={item.created_at || undefined}
-                      >
-                        <Clock3 size={12} aria-hidden="true" />
-                        {item.created_at
-                          ? new Date(item.created_at).toLocaleString("ro-RO", {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })
-                          : ""}
-                      </time>
-                    </span>
+                    Afișează mai multe
                   </button>
-                ))}
+                )}
               </div>
             )}
 
@@ -615,7 +788,7 @@ function NotificationBell() {
               <span className="notification-footer-label">
                 {showAttachmentPicker
                   ? "Selectează un document"
-                  : `${notifications.length} ${notifications.length === 1 ? "notificare" : "notificări"}`}
+                  : `${Math.min(visibleLimit, visibleNotifications.length)} din ${visibleNotifications.length} afișate`}
               </span>
               <button
                 type="button"

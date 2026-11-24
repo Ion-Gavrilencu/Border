@@ -1,115 +1,155 @@
 const pool = require("../config/database");
 
-// Obține notificările utilizatorului autentificat.
+const fields = "id, title, message, type, link, is_read, created_at";
+const validId = (id) =>
+  typeof id === "string" && /^[1-9]\d{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n;
+function integer(value, fallback, min, max) {
+  if (value === undefined) return fallback;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n >= min && n <= max ? n : null;
+}
+function failure(res, label, error) {
+  console.error(label, error);
+  return res.status(500).json({ message: "Operațiunea asupra notificărilor nu a reușit." });
+}
+
 const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
-
+    const { q = "", type = "", status = "all" } = req.query;
+    const page = integer(req.query.page, 1, 1, 100000);
+    const limit = integer(req.query.limit, 50, 1, 100);
+    if (
+      !page ||
+      !limit ||
+      typeof q !== "string" ||
+      q.length > 120 ||
+      typeof type !== "string" ||
+      type.length > 80 ||
+      !["all", "read", "unread"].includes(status)
+    ) {
+      return res.status(400).json({ message: "Filtrele sau paginarea sunt invalide." });
+    }
+    const params = [req.user.id];
+    const where = ["user_id = $1"];
+    if (status !== "all") {
+      params.push(status === "read");
+      where.push(`is_read = $${params.length}`);
+    }
+    if (type.trim()) {
+      params.push(type.trim().toLowerCase());
+      where.push(`LOWER(type) = $${params.length}`);
+    }
+    if (q.trim()) {
+      params.push("%" + q.trim().replace(/[!%_]/g, (c) => "!" + c) + "%");
+      where.push(
+        `(unaccent(COALESCE(title, '')) ILIKE unaccent($${params.length}) ESCAPE '!' OR unaccent(COALESCE(message, '')) ILIKE unaccent($${params.length}) ESCAPE '!')`,
+      );
+    }
+    const predicate = where.join(" AND ");
+    // One statement: list and counters share the same database snapshot.
     const result = await pool.query(
-      `SELECT
-         id,
-         title,
-         message,
-         type,
-         link,
-         is_read,
-         created_at
-       FROM notifications
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      [userId],
+      `
+      WITH filtered AS (
+        SELECT ${fields} FROM notifications WHERE ${predicate}
+      ), page_rows AS (
+        SELECT * FROM filtered ORDER BY created_at DESC NULLS LAST, id DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      )
+      SELECT COALESCE((SELECT json_agg(p ORDER BY p.created_at DESC NULLS LAST, p.id DESC) FROM page_rows p), '[]'::json) AS notifications,
+        (SELECT COUNT(*)::integer FROM filtered) AS total,
+        (SELECT COUNT(*)::integer FROM notifications WHERE user_id = $1 AND is_read = FALSE) AS unread_count
+    `,
+      [...params, limit, (page - 1) * limit],
     );
-
-    const countResult = await pool.query(
-      `SELECT COUNT(*)::INTEGER AS unread_count
-       FROM notifications
-       WHERE user_id = $1
-         AND is_read = FALSE`,
-      [userId],
-    );
-
+    const row = result.rows[0];
     return res.json({
-      notifications: result.rows,
-      unreadCount: countResult.rows[0].unread_count,
+      notifications: row.notifications,
+      unreadCount: row.unread_count,
+      pagination: {
+        page,
+        limit,
+        total: row.total,
+        totalPages: Math.ceil(row.total / limit),
+        hasMore: page * limit < row.total,
+      },
     });
   } catch (error) {
-    console.error("GET NOTIFICATIONS ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-au putut încărca notificările.",
-    });
+    return failure(res, "GET NOTIFICATIONS ERROR:", error);
   }
 };
 
-// Marchează o notificare ca citită.
-const markNotificationRead = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    if (!/^\d+$/.test(id)) {
-      return res.status(400).json({
-        message: "Identificatorul notificării este invalid.",
+function setRead(value) {
+  return async (req, res) => {
+    try {
+      if (!validId(req.params.id))
+        return res.status(400).json({ message: "Identificatorul notificării este invalid." });
+      const result = await pool.query(
+        "UPDATE notifications SET is_read = $3 WHERE id = $1 AND user_id = $2 RETURNING id, is_read",
+        [req.params.id, req.user.id, value],
+      );
+      if (!result.rowCount)
+        return res.status(404).json({ message: "Notificarea nu a fost găsită." });
+      return res.json({
+        message: value
+          ? "Notificarea a fost marcată ca citită."
+          : "Notificarea a fost marcată ca necitită.",
+        notification: result.rows[0],
       });
+    } catch (error) {
+      return failure(res, "SET NOTIFICATION READ ERROR:", error);
     }
-
-    const result = await pool.query(
-      `UPDATE notifications
-       SET is_read = TRUE
-       WHERE id = $1
-         AND user_id = $2
-       RETURNING id, is_read`,
-      [id, userId],
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        message: "Notificarea nu a fost găsită.",
-      });
-    }
-
-    return res.json({
-      message: "Notificarea a fost marcată ca citită.",
-      notification: result.rows[0],
-    });
-  } catch (error) {
-    console.error("MARK NOTIFICATION READ ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-a putut actualiza notificarea.",
-    });
-  }
-};
-
-// Marchează toate notificările ca citite.
+  };
+}
+const markNotificationRead = setRead(true);
+const markNotificationUnread = setRead(false);
 const markAllNotificationsRead = async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const result = await pool.query(
-      `UPDATE notifications
-       SET is_read = TRUE
-       WHERE user_id = $1
-         AND is_read = FALSE`,
-      [userId],
+      "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE",
+      [req.user.id],
     );
-
     return res.json({
       message: "Toate notificările au fost marcate ca citite.",
       updatedCount: result.rowCount,
     });
   } catch (error) {
-    console.error("MARK ALL NOTIFICATIONS ERROR:", error);
-
-    return res.status(500).json({
-      message: "Nu s-au putut actualiza notificările.",
-    });
+    return failure(res, "MARK ALL NOTIFICATIONS ERROR:", error);
   }
 };
-
+const deleteNotification = async (req, res) => {
+  try {
+    if (!validId(req.params.id))
+      return res.status(400).json({ message: "Identificatorul notificării este invalid." });
+    const result = await pool.query(
+      "DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id",
+      [req.params.id, req.user.id],
+    );
+    if (!result.rowCount) return res.status(404).json({ message: "Notificarea nu a fost găsită." });
+    return res.json({ message: "Notificarea a fost ștearsă.", deletedId: result.rows[0].id });
+  } catch (error) {
+    return failure(res, "DELETE NOTIFICATION ERROR:", error);
+  }
+};
+const deleteReadNotifications = async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM notifications WHERE user_id = $1 AND is_read = TRUE",
+      [req.user.id],
+    );
+    return res.json({
+      message: "Notificările citite au fost șterse.",
+      deletedCount: result.rowCount,
+    });
+  } catch (error) {
+    return failure(res, "DELETE READ NOTIFICATIONS ERROR:", error);
+  }
+};
 module.exports = {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  markNotificationUnread,
+  deleteNotification,
+  deleteReadNotifications,
 };
