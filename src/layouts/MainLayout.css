@@ -974,7 +974,6 @@
     transform: rotate(360deg);
   }
 }
- 
 
 /* ============================================
    BORDER — CĂUTARE GLOBALĂ RESPONSIVE
@@ -1077,4 +1076,190 @@
   -webkit-appearance: none;
   appearance: none;
   display: none;
+}
+
+/* BORDER — rezultate căutare: finisaj responsive, izolat de restul layoutului */
+.topbar-search .search-results {
+  border-radius: 16px;
+  padding: 6px;
+  max-height: min(560px, 70dvh);
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c4d2e4 transparent;
+}
+.topbar-search .search-result-item {
+  min-width: 0;
+  min-height: 64px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+}
+.topbar-search .search-result-item:hover,
+.topbar-search .search-result-item.is-active {
+  background: #edf5ff;
+  border-color: #d5e6fb;
+}
+.topbar-search .search-result-icon {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+.topbar-search .search-result-content {
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 5px;
+  align-self: center;
+}
+.topbar-search .search-result-content strong {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.topbar-search .search-result-content span {
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.topbar-search .search-result-arrow {
+  flex: none;
+  align-self: center;
+}
+.topbar-search .search-clear:focus-visible {
+  outline: 2px solid #4599ef;
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .topbar-search input {
+    font-size: 16px;
+  }
+  .topbar-search .search-results {
+    left: 12px;
+    right: 12px;
+    max-height: min(65dvh, 540px);
+  }
+  .topbar-search .search-result-item {
+    padding: 10px 8px;
+    gap: 9px;
+  }
+  .topbar-search .search-result-content strong {
+    font-size: 13px;
+  }
+  .topbar-search .search-result-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-search .search-result-item {
+    transition: none;
+  }
+  .topbar-search .search-spinner {
+    animation: none;
+  }
+}
+
+/* BORDER — căutare globală: filtre și metadate */
+.topbar-search .border-search-tools {
+  position: sticky;
+  top: -6px;
+  z-index: 3;
+  background: #fff;
+  padding: 8px 6px;
+  border-bottom: 1px solid #e9eef5;
+}
+.topbar-search .border-search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.topbar-search .border-search-filters button {
+  border: 1px solid #e0e8f2;
+  border-radius: 9px;
+  background: #f5f8fc;
+  color: #405b7a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  cursor: pointer;
+  min-height: 36px;
+}
+.topbar-search .border-search-filters button[aria-pressed="true"] {
+  background: #1458b5;
+  color: white;
+  border-color: #1458b5;
+}
+.topbar-search .border-search-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #64748b;
+  font-size: 12px;
+  padding-top: 10px;
+}
+.topbar-search :is(.border-search-summary button, .border-search-retry) {
+  border: 0;
+  background: transparent;
+  color: #1458b5;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px;
+}
+.topbar-search .border-search-recent {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  background: white;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  color: #142c48;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.topbar-search .border-search-recent:hover {
+  background: #edf5ff;
+}
+.topbar-search .search-result-content .border-search-number {
+  color: #1458b5;
+  font-weight: 750;
+}
+.topbar-search mark {
+  background: #fff0ad;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+.topbar-search .border-search-footer {
+  border-top: 1px solid #e9eef5;
+  color: #64748b;
+  padding: 10px 8px 5px;
+  font-size: 11px;
+}
+.topbar-search .search-results button:focus-visible {
+  outline: 2px solid #4599ef;
+  outline-offset: -2px;
+}
+@media (max-width: 600px) {
+  .topbar-search .border-search-filters button {
+    min-height: 44px;
+    padding: 7px 9px;
+  }
+  .topbar-search .border-search-footer {
+    display: none;
+  }
 }

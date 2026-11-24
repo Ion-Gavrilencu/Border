@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authStore";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Toaster, toast } from "sonner";
 import {
@@ -26,15 +26,73 @@ import { sendMonitoringHeartbeat, recordMonitoringPageView } from "../services/m
 import NotificationBell from "../components/layout/NotificationBell";
 import "./MainLayout.css";
 
+const SEARCH_CATEGORIES = [
+  ["all", "Toate"],
+  ["legislatie", "Legislație"],
+  ["telegrama", "Telegrame"],
+  ["ordin", "Ordine"],
+  ["informatie", "Informații"],
+];
+const normalizeSearch = (value) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLocaleLowerCase("ro");
+const searchCategory = (item) => {
+  const type = String(item.type ?? "").toLowerCase();
+  return ["informatii", "informatii_utile", "informatii-utile"].includes(type)
+    ? "informatie"
+    : type;
+};
+const documentNumber = (item) => item.number ?? item.document_number ?? item.nr ?? item.numar ?? "";
+const tokensOf = (term) => normalizeSearch(term).match(/[\p{L}\p{N}]+/gu) ?? [];
+function relevance(item, term) {
+  const q = normalizeSearch(term.trim());
+  const title = normalizeSearch(item.title);
+  const number = normalizeSearch(documentNumber(item));
+  const tokens = tokensOf(q);
+  const words = tokensOf(`${title} ${number}`);
+  if (number && number === q) return 1000;
+  if (/^\d+$/.test(q) && number && tokensOf(number)[0] === q) return 900;
+  if (title === q) return 800;
+  if (tokens.length && tokens.every((token) => words.includes(token))) return 500;
+  if (title.includes(q)) return 200;
+  return tokens.filter((token) => words.includes(token)).length * 20;
+}
+function Highlight({ value, query }) {
+  const source = String(value ?? "");
+  const tokens = new Set(tokensOf(query));
+  return source
+    .split(/([\p{L}\p{N}\p{M}]+)/gu)
+    .map((part, index) =>
+      tokens.has(normalizeSearch(part)) ? <mark key={index}>{part}</mark> : part,
+    );
+}
+
 function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeSearchIndex, setActiveSearchIndex] = useState(0);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
   const [searchTerm, setSearchTerm] = useState("");
   const MAX_SEARCH_LENGTH = 120;
   const [searchResults, setSearchResults] = useState([]);
+  const [searchCategoryFilter, setSearchCategoryFilter] = useState("all");
+  const [searchRetry, setSearchRetry] = useState(0);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const visibleSearchResults = useMemo(
+    () =>
+      searchResults
+        .filter(
+          (item) => searchCategoryFilter === "all" || searchCategory(item) === searchCategoryFilter,
+        )
+        .sort(
+          (a, b) =>
+            (b.relevance ?? relevance(b, searchTerm)) - (a.relevance ?? relevance(a, searchTerm)),
+        ),
+    [searchResults, searchCategoryFilter, searchTerm],
+  );
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -42,6 +100,26 @@ function MainLayout() {
   const searchRef = useRef(null);
   const searchInputRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    setRecentSearches([]);
+    setSearchTerm("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setSearchCategoryFilter("all");
+  }, [user?.id]);
+
+  useEffect(() => {
+    setActiveSearchIndex(-1);
+  }, [searchCategoryFilter, searchResults]);
+
+  useEffect(() => {
+    if (showSearchResults && activeSearchIndex >= 0) {
+      document
+        .getElementById(`border-search-option-${activeSearchIndex}`)
+        ?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeSearchIndex, showSearchResults]);
 
   // Actualizează prezența doar cât timp utilizatorul este autentificat.
   useEffect(() => {
@@ -116,9 +194,8 @@ function MainLayout() {
 
   useEffect(() => {
     const value = searchTerm.trim();
-    if (!value) {
+    if (!value || !user?.id) {
       setSearchResults([]);
-      setShowSearchResults(false);
       setSearchLoading(false);
       setSearchError(false);
       return;
@@ -126,16 +203,33 @@ function MainLayout() {
     const controller = new AbortController();
     setSearchLoading(true);
     setSearchError(false);
-    setActiveSearchIndex(0);
-    setShowSearchResults(true);
+    setActiveSearchIndex(-1);
+    setSearchResults([]);
     const timer = setTimeout(async () => {
       try {
-        const response = await api.get(`/search?q=${encodeURIComponent(value)}`, {
-          signal: controller.signal,
-        });
-        setSearchResults(response.data.results || []);
+        const response = await api.get(
+          `/search?q=${encodeURIComponent(value)}&type=${encodeURIComponent(searchCategoryFilter)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+        if (controller.signal.aborted) return;
+        const rows = response.data?.results;
+        if (!Array.isArray(rows)) throw new Error("Răspuns invalid la căutare.");
+        setSearchResults(
+          rows.filter(
+            (item) =>
+              item?.id != null &&
+              SEARCH_CATEGORIES.some(([key]) => key !== "all" && key === searchCategory(item)),
+          ),
+        );
       } catch (error) {
-        if (error.code === "ERR_CANCELED" || error.name === "CanceledError") return;
+        if (
+          controller.signal.aborted ||
+          error.code === "ERR_CANCELED" ||
+          error.name === "CanceledError"
+        )
+          return;
         console.error("Eroare la căutare:", error);
         setSearchResults([]);
         setSearchError(true);
@@ -147,7 +241,7 @@ function MainLayout() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [searchTerm]);
+  }, [searchTerm, searchRetry, searchCategoryFilter, user?.id]);
 
   const handleLogout = async () => {
     try {
@@ -175,10 +269,16 @@ function MainLayout() {
       toast.error("Categoria rezultatului nu este recunoscută.");
       return;
     }
+    const term = searchTerm.trim();
+    if (term)
+      setRecentSearches((old) =>
+        [term, ...old.filter((x) => normalizeSearch(x) !== normalizeSearch(term))].slice(0, 6),
+      );
     setSearchTerm("");
     setSearchResults([]);
     setShowSearchResults(false);
-    setActiveSearchIndex(0);
+    setActiveSearchIndex(-1);
+    setSearchCategoryFilter("all");
     // Parametrul open este deja interpretat de InformatiiUtile.
     // Alte pagini pot adopta același contract fără modificarea backendului.
     navigate(`${destination}?open=${encodeURIComponent(String(item.id))}`, {
@@ -191,6 +291,7 @@ function MainLayout() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         searchInputRef.current?.focus();
+        setShowSearchResults(true);
       }
     };
     document.addEventListener("keydown", onShortcut);
@@ -306,37 +407,59 @@ function MainLayout() {
               maxLength={MAX_SEARCH_LENGTH}
               role="combobox"
               aria-expanded={showSearchResults}
-              aria-controls="border-global-search-results"
+              aria-controls={showSearchResults ? "border-global-search-results" : undefined}
+              aria-activedescendant={
+                showSearchResults &&
+                !searchLoading &&
+                activeSearchIndex >= 0 &&
+                visibleSearchResults[activeSearchIndex]
+                  ? `border-search-option-${activeSearchIndex}`
+                  : undefined
+              }
               aria-autocomplete="list"
               aria-label="Caută în documente"
               placeholder="Caută în BORDER..."
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setSearchLoading(Boolean(event.target.value.trim()));
+                setSearchResults([]);
+                setSearchError(false);
+                setShowSearchResults(true);
+              }}
               onFocus={() => {
-                if (searchTerm.trim()) setShowSearchResults(true);
+                setShowSearchResults(true);
               }}
               onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
                 if (event.key === "Escape") {
                   setShowSearchResults(false);
                   event.currentTarget.blur();
-                } else if (event.key === "ArrowDown" && searchResults.length) {
+                } else if (
+                  ["ArrowDown", "ArrowUp"].includes(event.key) &&
+                  !searchLoading &&
+                  visibleSearchResults.length
+                ) {
                   event.preventDefault();
                   setShowSearchResults(true);
-                  setActiveSearchIndex((index) => (index + 1) % searchResults.length);
-                } else if (event.key === "ArrowUp" && searchResults.length) {
-                  event.preventDefault();
-                  setShowSearchResults(true);
-                  setActiveSearchIndex(
-                    (index) => (index - 1 + searchResults.length) % searchResults.length,
+                  const count = visibleSearchResults.length;
+                  setActiveSearchIndex((index) =>
+                    event.key === "ArrowDown"
+                      ? (index + 1) % count
+                      : index < 0
+                        ? count - 1
+                        : (index - 1 + count) % count,
                   );
                 } else if (
                   event.key === "Enter" &&
                   showSearchResults &&
                   !searchLoading &&
-                  searchResults.length
+                  visibleSearchResults.length
                 ) {
                   event.preventDefault();
-                  handleSearchResultClick(searchResults[activeSearchIndex] || searchResults[0]);
+                  handleSearchResultClick(
+                    visibleSearchResults[activeSearchIndex] || visibleSearchResults[0],
+                  );
                 }
               }}
             />
@@ -348,7 +471,8 @@ function MainLayout() {
                 onClick={() => {
                   setSearchTerm("");
                   setSearchResults([]);
-                  setShowSearchResults(false);
+                  setShowSearchResults(true);
+                  setSearchCategoryFilter("all");
                   searchInputRef.current?.focus();
                 }}
               >
@@ -357,61 +481,143 @@ function MainLayout() {
             )}
             {showSearchResults && (
               <motion.div
-                id="border-global-search-results"
-                role="listbox"
-                aria-label="Rezultatele căutării"
+                aria-label="Panou de căutare"
                 className="search-results"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                {searchLoading ? (
-                  <div className="search-message">
-                    <LoaderCircle size={16} className="search-spinner" /> Se caută...
+                <div className="border-search-tools">
+                  <div
+                    className="border-search-filters"
+                    role="group"
+                    aria-label="Categorii de căutare"
+                  >
+                    {SEARCH_CATEGORIES.map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={searchCategoryFilter === key}
+                        onClick={() => setSearchCategoryFilter(key)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                ) : searchError ? (
-                  <div className="search-message">Căutarea nu este disponibilă momentan.</div>
-                ) : searchResults.length === 0 ? (
-                  <div className="search-message">Nu au fost găsite rezultate.</div>
-                ) : (
-                  searchResults.map((item, index) => (
-                    <button
-                      type="button"
-                      key={`${item.type}-${item.id}`}
-                      role="option"
-                      aria-selected={index === activeSearchIndex}
-                      className={`search-result-item ${index === activeSearchIndex ? "is-active" : ""}`}
-                      onMouseEnter={() => setActiveSearchIndex(index)}
-                      onClick={() => handleSearchResultClick(item)}
-                    >
-                      <div className="search-result-icon">
-                        {item.type === "telegrama" ? (
-                          <Megaphone size={17} />
-                        ) : item.type === "ordin" ? (
-                          <FileText size={17} />
-                        ) : item.type === "legislatie" ? (
-                          <Scale size={17} />
-                        ) : (
-                          <Info size={17} />
-                        )}
-                      </div>
-                      <div className="search-result-content">
-                        <strong>{item.title}</strong>
-                        <span>
-                          {item.type === "telegrama"
-                            ? "Telegramă"
-                            : item.type === "ordin"
-                              ? "Ordin intern"
-                              : item.type === "legislatie"
-                                ? "Act legislativ"
-                                : "Informație utilă"}
-                        </span>
-                      </div>
-                      <ArrowUpRight size={16} className="search-result-arrow" />
-                    </button>
-                  ))
-                )}
+                  <div className="border-search-summary" aria-live="polite">
+                    {!searchTerm.trim()
+                      ? "Căutări recente"
+                      : searchLoading
+                        ? "Se caută…"
+                        : searchError
+                          ? "Căutare indisponibilă"
+                          : `${visibleSearchResults.length} rezultate afișate`}
+                    {!searchTerm.trim() && recentSearches.length > 0 && (
+                      <button type="button" onClick={() => setRecentSearches([])}>
+                        Șterge istoricul
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {!searchTerm.trim() &&
+                  (recentSearches.length ? (
+                    recentSearches.map((term) => (
+                      <button
+                        type="button"
+                        className="border-search-recent"
+                        key={term}
+                        onClick={() => {
+                          setSearchTerm(term);
+                          setSearchLoading(true);
+                          setSearchCategoryFilter("all");
+                          searchInputRef.current?.focus();
+                        }}
+                      >
+                        {term}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="search-message">Caută după titlu, număr sau cuvinte-cheie.</div>
+                  ))}
+                {searchTerm.trim() &&
+                  (searchLoading ? (
+                    <div className="search-message">
+                      <LoaderCircle size={16} className="search-spinner" /> Se caută...
+                    </div>
+                  ) : searchError ? (
+                    <div className="search-message">
+                      Căutarea nu este disponibilă momentan.{" "}
+                      <button
+                        type="button"
+                        className="border-search-retry"
+                        onClick={() => setSearchRetry((n) => n + 1)}
+                      >
+                        Reîncearcă
+                      </button>
+                    </div>
+                  ) : !visibleSearchResults.length ? (
+                    <div className="search-message">
+                      Nu au fost găsite rezultate. Încearcă alt termen sau altă categorie.
+                    </div>
+                  ) : null)}
+                <div
+                  id="border-global-search-results"
+                  role="listbox"
+                  aria-label="Rezultatele căutării"
+                >
+                  {!searchLoading &&
+                    !searchError &&
+                    searchTerm.trim() &&
+                    visibleSearchResults.map((item, index) => (
+                      <button
+                        type="button"
+                        id={`border-search-option-${index}`}
+                        key={`${item.type}-${item.id}`}
+                        role="option"
+                        aria-selected={index === activeSearchIndex}
+                        className={`search-result-item ${index === activeSearchIndex ? "is-active" : ""}`}
+                        onMouseEnter={() => setActiveSearchIndex(index)}
+                        onClick={() => handleSearchResultClick(item)}
+                      >
+                        <div className="search-result-icon">
+                          {searchCategory(item) === "telegrama" ? (
+                            <Megaphone size={17} />
+                          ) : searchCategory(item) === "ordin" ? (
+                            <FileText size={17} />
+                          ) : searchCategory(item) === "legislatie" ? (
+                            <Scale size={17} />
+                          ) : (
+                            <Info size={17} />
+                          )}
+                        </div>
+                        <div className="search-result-content">
+                          {documentNumber(item) !== "" && (
+                            <span className="border-search-number">
+                              <Highlight value={documentNumber(item)} query={searchTerm} />
+                            </span>
+                          )}
+                          <strong>
+                            <Highlight value={item.title} query={searchTerm} />
+                          </strong>
+                          {item.approximate_match && <span>Potrivire aproximativă</span>}
+                          <span>
+                            {searchCategory(item) === "telegrama"
+                              ? "Telegramă"
+                              : searchCategory(item) === "ordin"
+                                ? "Ordin intern"
+                                : searchCategory(item) === "legislatie"
+                                  ? "Act legislativ"
+                                  : "Informație utilă"}
+                          </span>
+                        </div>
+                        <ArrowUpRight size={16} className="search-result-arrow" />
+                      </button>
+                    ))}
+                </div>
+                <div className="border-search-footer">
+                  ↑ ↓ Navigare · Enter Deschide · Esc Închide
+                </div>
               </motion.div>
             )}
           </div>
