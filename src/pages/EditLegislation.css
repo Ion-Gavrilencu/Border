@@ -1,19 +1,28 @@
+/* BORDER — Editare telegramă | responsive */
 .edit-legislation-page {
   width: 100%;
   max-width: 1100px;
+  min-width: 0;
   margin: 0 auto;
   padding: 28px 32px;
   box-sizing: border-box;
 }
-
+.edit-legislation-page,
+.edit-legislation-page * {
+  box-sizing: border-box;
+}
 .edit-legislation-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
+  width: 100%;
+  min-width: 0;
   margin-bottom: 24px;
 }
-
+.edit-legislation-header > div {
+  min-width: 0;
+}
 .edit-legislation-label {
   display: inline-block;
   margin-bottom: 8px;
@@ -22,38 +31,48 @@
   font-weight: 700;
   letter-spacing: 0.8px;
 }
-
 .edit-legislation-header h1 {
   margin: 0;
   color: #0b2947;
   font-size: 27px;
   font-weight: 750;
+  line-height: 1.25;
 }
-
 .edit-legislation-header p {
   margin: 7px 0 0;
   color: #7589a1;
   font-size: 14px;
+  line-height: 1.5;
 }
-
 .edit-legislation-back-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  flex: 0 0 auto;
+  min-height: 44px;
   padding: 11px 16px;
   border: 1px solid #d7e2ee;
   border-radius: 9px;
   background: #fff;
   color: #173b5e;
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
-
 .edit-legislation-back-button:hover {
   background: #f1f6fb;
+  border-color: #b8cce4;
 }
-
+.edit-legislation-back-button:focus-visible,
+.edit-legislation-page button:focus-visible {
+  outline: 3px solid #8bbcf6;
+  outline-offset: 2px;
+}
 .edit-legislation-error {
   margin-bottom: 18px;
   padding: 13px 16px;
@@ -62,52 +81,51 @@
   background: #fff2f1;
   color: #c52d38;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
-
 .edit-legislation-form {
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   background: #fff;
   border: 1px solid #dce6f0;
   border-radius: 15px;
   box-shadow: 0 8px 28px rgba(20, 50, 80, 0.04);
 }
-
 .edit-legislation-form-header {
   padding: 21px 25px;
   border-bottom: 1px solid #e7edf4;
   background: #fbfcfe;
 }
-
 .edit-legislation-form-header h2 {
   margin: 0;
   color: #123453;
   font-size: 17px;
+  line-height: 1.35;
 }
-
 .edit-legislation-form-header p {
   margin: 6px 0 0;
   color: #8495aa;
   font-size: 12px;
+  line-height: 1.5;
 }
-
 .edit-legislation-form-body {
+  min-width: 0;
   padding: 25px;
 }
-
 .edit-legislation-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
+  gap: 18px;
+  min-width: 0;
 }
-
 .edit-legislation-full {
   grid-column: 1 / -1;
 }
-
 .edit-legislation-form-group {
   min-width: 0;
+  margin-bottom: 0;
 }
-
 .edit-legislation-form-group label {
   display: block;
   margin-bottom: 8px;
@@ -115,140 +133,143 @@
   font-size: 12px;
   font-weight: 650;
 }
-
 .edit-legislation-form-group input {
-  box-sizing: border-box;
+  display: block;
   width: 100%;
+  min-width: 0;
   height: 44px;
   padding: 0 13px;
   border: 1px solid #d6e1ed;
   border-radius: 9px;
   background: #fff;
   color: #153a5c;
+  font: inherit;
   font-size: 13px;
   outline: none;
 }
-
 .edit-legislation-form-group input:focus {
   border-color: #2874b8;
   box-shadow: 0 0 0 3px rgba(40, 116, 184, 0.1);
 }
-
 .edit-legislation-form-group input::placeholder {
   color: #9aacbf;
 }
-
-.edit-legislation-section {
-  margin-top: 27px;
-  padding-top: 24px;
-  border-top: 1px solid #edf1f6;
+.edit-legislation-form-group input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
-
+.edit-legislation-section {
+  min-width: 0;
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e5ebf2;
+}
 .edit-legislation-section h3 {
   margin: 0 0 15px;
-  color: #163a5a;
-  font-size: 14px;
+  color: #103758;
+  font-size: 15px;
   font-weight: 700;
 }
-
+.edit-legislation-section-description {
+  margin: -5px 0 18px;
+  color: #8092a6;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .edit-legislation-empty {
   margin: 0;
   padding: 18px;
-  border: 1px dashed #d9e4ef;
+  border: 1px dashed #d7e2ed;
   border-radius: 10px;
-  color: #899bb0;
+  background: #f8fafc;
+  color: #8a9caf;
   font-size: 13px;
   text-align: center;
 }
-
 .edit-legislation-attachments {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  min-width: 0;
 }
-
 .edit-legislation-attachment {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 12px 14px;
-  border: 1px solid #e0e8f1;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e2eaf2;
   border-radius: 10px;
-  background: #fafcff;
+  background: #f9fbfd;
 }
-
 .edit-legislation-attachment-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
   border-radius: 9px;
-  background: #e9f2fc;
-  color: #2673b6;
+  background: #e8f1fb;
+  color: #2470b1;
 }
-
 .edit-legislation-attachment-name {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
 }
-
 .edit-legislation-attachment-name strong {
+  display: block;
   overflow: hidden;
-  color: #173a5b;
+  color: #173b5a;
   font-size: 12px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .edit-legislation-attachment-name span {
-  color: #8b9db1;
+  color: #90a2b4;
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 600;
 }
-
 .edit-legislation-attachment-actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
-
 .edit-legislation-attachment-actions button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 33px;
-  height: 33px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
   background: transparent;
-  color: #66839f;
+  color: #55728f;
   cursor: pointer;
 }
-
 .edit-legislation-attachment-actions button:hover {
-  background: #eaf2fc;
-  color: #1763a6;
+  background: #e9f1fa;
 }
-
 .edit-legislation-attachment-actions .edit-legislation-attachment-delete {
-  color: #d94b54;
+  color: #d34c56;
 }
-
 .edit-legislation-attachment-actions .edit-legislation-attachment-delete:hover {
   background: #fff0f1;
 }
-
+.edit-legislation-attachment-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .edit-legislation-upload {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 9px;
+  min-width: 0;
   padding: 25px;
   border: 1.5px dashed #b9cee4;
   border-radius: 12px;
@@ -256,33 +277,29 @@
   color: #2571b1;
   text-align: center;
 }
-
 .edit-legislation-upload strong {
   color: #173e60;
   font-size: 13px;
 }
-
 .edit-legislation-upload p {
   margin: 0;
   color: #7d90a5;
   font-size: 12px;
 }
-
 .edit-legislation-upload input {
   max-width: 100%;
   font-size: 12px;
 }
-
 .edit-legislation-upload small {
   color: #91a2b6;
   font-size: 11px;
 }
-
 .edit-legislation-selected-file {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   margin-top: 9px;
   padding: 10px 13px;
   border: 1px solid #dfe8f2;
@@ -291,27 +308,25 @@
   color: #234764;
   font-size: 12px;
 }
-
 .edit-legislation-selected-file span {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-
 .edit-legislation-selected-file button {
   display: flex;
   align-items: center;
   gap: 5px;
-  border: none;
+  flex: 0 0 auto;
+  border: 0;
   background: transparent;
   color: #d34a54;
   font-size: 12px;
   cursor: pointer;
 }
-
 .edit-legislation-link {
   margin-top: 20px;
+  min-width: 0;
 }
-
 .edit-legislation-actions {
   display: flex;
   align-items: center;
@@ -321,7 +336,6 @@
   border-top: 1px solid #e7edf4;
   background: #fbfcfe;
 }
-
 .edit-legislation-cancel-button,
 .edit-legislation-save-button {
   display: inline-flex;
@@ -331,37 +345,32 @@
   min-height: 42px;
   padding: 0 18px;
   border-radius: 9px;
+  font: inherit;
   font-size: 13px;
   font-weight: 650;
   cursor: pointer;
 }
-
 .edit-legislation-cancel-button {
   border: 1px solid #d5e0ec;
   background: #fff;
   color: #244764;
 }
-
 .edit-legislation-cancel-button:hover {
   background: #f1f6fb;
 }
-
 .edit-legislation-save-button {
   border: 1px solid #123a61;
   background: #123a61;
   color: #fff;
 }
-
 .edit-legislation-save-button:hover:not(:disabled) {
   background: #19517e;
 }
-
 .edit-legislation-save-button:disabled,
 .edit-legislation-cancel-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
 .edit-legislation-loading {
   display: flex;
   align-items: center;
@@ -370,242 +379,290 @@
   color: #748ba2;
   font-size: 14px;
 }
-
+@media (max-width: 900px) {
+  .edit-legislation-page {
+    padding: 24px 20px;
+  }
+}
 @media (max-width: 700px) {
   .edit-legislation-page {
+    width: 100%;
+    max-width: 100%;
     padding: 18px 12px;
   }
-
-  .edit-legislation-header {
-    flex-direction: column;
-  }
-
-  .edit-legislation-header h1 {
-    font-size: 23px;
-  }
-
-  .edit-legislation-back-button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .edit-legislation-form-body {
-    padding: 18px;
-  }
-
-  .edit-legislation-fields {
-    grid-template-columns: 1fr;
-  }
-
-  .edit-legislation-full {
-    grid-column: 1;
-  }
-
-  .edit-legislation-form-header {
-    padding: 18px;
-  }
-
-  .edit-legislation-actions {
-    flex-direction: column-reverse;
-    padding: 16px 18px;
-  }
-
-  .edit-legislation-cancel-button,
-  .edit-legislation-save-button {
-    width: 100%;
-  }
-}
-
-/* Câmpurile principale */
-
-.edit-legislation-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.edit-legislation-fields .edit-legislation-form-group {
-  margin-bottom: 0;
-}
-
-.edit-legislation-full {
-  grid-column: 1 / -1;
-}
-
-/* Secțiuni */
-
-.edit-legislation-section {
-  margin-top: 26px;
-  padding-top: 24px;
-  border-top: 1px solid #e5ebf2;
-}
-
-.edit-legislation-section h3 {
-  margin: 0 0 15px;
-  color: #103758;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.edit-legislation-section-description {
-  margin: -5px 0 18px;
-  color: #8092a6;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-/* Atașamente existente */
-
-.edit-legislation-empty {
-  padding: 18px;
-  border: 1px dashed #d7e2ed;
-  border-radius: 10px;
-  color: #8a9caf;
-  background: #f8fafc;
-  font-size: 13px;
-}
-
-.edit-legislation-attachments {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.edit-legislation-attachment {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid #e2eaf2;
-  border-radius: 10px;
-  background: #f9fbfd;
-}
-
-.edit-legislation-attachment-icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 42px;
-  height: 42px;
-  border-radius: 9px;
-  background: #e8f1fb;
-  color: #2470b1;
-}
-
-.edit-legislation-attachment-name {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.edit-legislation-attachment-name strong {
-  overflow: hidden;
-  color: #173b5a;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.edit-legislation-attachment-name span {
-  color: #90a2b4;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.edit-legislation-attachment-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.edit-legislation-attachment-actions button {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #55728f;
-  cursor: pointer;
-}
-
-.edit-legislation-attachment-actions button:hover {
-  background: #e9f1fa;
-}
-
-.edit-legislation-attachment-actions .edit-legislation-attachment-delete {
-  color: #d34c56;
-}
-
-.edit-legislation-attachment-actions .edit-legislation-attachment-delete:hover {
-  background: #fff0f1;
-}
-
-.edit-legislation-attachment-actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Butoane */
-
-.edit-legislation-back-button,
-.edit-legislation-save-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-/* Responsive */
-
-@media (max-width: 700px) {
-  .edit-legislation-fields {
-    grid-template-columns: 1fr;
-  }
-
-  .edit-legislation-full {
-    grid-column: auto;
-  }
-
-  .edit-legislation-section {
-    margin-top: 20px;
-    padding-top: 20px;
-  }
-}
-
-
-/* BORDER — Buton Înapoi pe toată lățimea mobilului */
-
-@media (max-width: 700px) {
-  .edit-telegram-header,
-  .edit-order-header,
-  .edit-legislation-header {
-    display: flex;
-    flex-direction: column;
+  .edit-legislation-page .edit-legislation-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
+    justify-content: stretch;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+  .edit-legislation-page .edit-legislation-header > div {
     width: 100%;
     min-width: 0;
   }
-
-  .edit-telegram-back-button,
-  .edit-order-back-button,
-  .edit-legislation-back-button {
+  .edit-legislation-page .edit-legislation-header h1 {
+    font-size: clamp(22px, 5vw, 27px);
+  }
+  .edit-legislation-page .edit-legislation-back-button {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    grid-column: 1 / -1;
+    justify-self: stretch;
     align-self: stretch;
-
     width: 100%;
     max-width: none;
     min-width: 0;
-    box-sizing: border-box;
-
     min-height: 48px;
-    padding: 12px 16px;
     margin: 0;
-
-    flex: 0 0 auto;
+    padding: 12px 16px;
+    flex: none;
+    text-align: center;
   }
+  .edit-legislation-page .edit-legislation-form {
+    width: 100%;
+  }
+  .edit-legislation-page .edit-legislation-form-header {
+    padding: 18px;
+  }
+  .edit-legislation-page .edit-legislation-form-body {
+    padding: 18px;
+  }
+  .edit-legislation-page .edit-legislation-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .edit-legislation-page .edit-legislation-full {
+    grid-column: 1 / -1;
+  }
+  .edit-legislation-page .edit-legislation-section {
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+  .edit-legislation-page .edit-legislation-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    padding: 16px 18px;
+  }
+  .edit-legislation-page .edit-legislation-cancel-button,
+  .edit-legislation-page .edit-legislation-save-button {
+    width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .edit-legislation-page {
+    padding: 16px 10px;
+  }
+  .edit-legislation-page .edit-legislation-form-header,
+  .edit-legislation-page .edit-legislation-form-body {
+    padding: 15px;
+  }
+  .edit-legislation-page .edit-legislation-actions {
+    padding: 15px;
+  }
+  .edit-legislation-page .edit-legislation-attachment {
+    gap: 8px;
+    padding: 9px;
+  }
+  .edit-legislation-page .edit-legislation-attachment-icon {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* BORDER: layout isolated from EditPagesModern.css. */
+.edit-legislation-page.edit-legislation-v2 {
+  max-width: 1240px;
+  padding: clamp(14px, 2.3vw, 32px);
+  min-width: 0;
+}
+.edit-legislation-v2 .edit-legislation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+}
+.edit-legislation-v2 .edit-legislation-form .edit-legislation-form-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+}
+.edit-legislation-v2
+  .edit-legislation-form-body
+  > :is(.edit-legislation-details, .edit-legislation-section) {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  border: 1px solid #dce6f0;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 4px 16px #163e6808;
+}
+.edit-legislation-v2 .edit-legislation-form-body > .edit-legislation-new {
+  grid-column: 1 / -1;
+}
+.edit-legislation-v2 .edit-legislation-details .edit-legislation-form-header {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.edit-legislation-v2 .edit-legislation-form-body .edit-legislation-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.edit-legislation-v2 .edit-legislation-fields .edit-legislation-full {
+  grid-column: 1 / -1;
+}
+.edit-legislation-v2 .edit-legislation-form-group input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 46px;
+}
+.edit-legislation-v2 .edit-legislation-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.edit-legislation-v2 .edit-legislation-section-heading h3 {
+  margin: 0;
+}
+.edit-legislation-v2 .edit-legislation-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #eaf3ff;
+  color: #165eb4;
+  font-size: 12px;
+  font-weight: 700;
+}
+.edit-legislation-v2 .edit-legislation-section .edit-legislation-section-description {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.edit-legislation-v2 .edit-legislation-attachments {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.edit-legislation-v2 .edit-legislation-attachment-name strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+.edit-legislation-v2 .edit-legislation-attachment-actions button {
+  width: 38px;
+  height: 38px;
+}
+.edit-legislation-v2 .edit-legislation-form .edit-legislation-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 0;
+  border: 1px solid #dce6f0;
+  border-radius: 14px;
+  background: #fff;
+}
+.edit-legislation-v2
+  .edit-legislation-actions
+  :is(.edit-legislation-cancel-button, .edit-legislation-save-button) {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 145px;
+  min-height: 46px;
+  padding: 0 22px;
+}
+.edit-legislation-v2 .edit-legislation-actions .edit-legislation-save-button {
+  min-width: 220px;
+  background: #0867d9;
+  border-color: #0867d9;
+  color: white;
+}
+.edit-legislation-v2 .edit-legislation-new {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .edit-legislation-v2 .edit-legislation-form-body .edit-legislation-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 850px) {
+  .edit-legislation-v2 .edit-legislation-form .edit-legislation-form-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .edit-legislation-v2
+    .edit-legislation-form-body
+    > :is(.edit-legislation-details, .edit-legislation-section) {
+    padding: 16px;
+  }
+}
+@media (max-width: 600px) {
+  .edit-legislation-v2 .edit-legislation-form .edit-legislation-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    padding: 12px;
+  }
+  .edit-legislation-v2
+    .edit-legislation-actions
+    :is(.edit-legislation-cancel-button, .edit-legislation-save-button) {
+    width: 100%;
+    min-width: 0;
+  }
+  .edit-legislation-v2 .edit-legislation-attachment {
+    flex-wrap: wrap;
+  }
+  .edit-legislation-v2 .edit-legislation-attachment-name {
+    flex-basis: calc(100% - 60px);
+  }
+  .edit-legislation-v2 .edit-legislation-attachment-actions {
+    margin-left: auto;
+  }
+}
+
+.edit-legislation-v2 .edit-legislation-status {
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eaf2fc;
+  color: #254e78;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.edit-legislation-v2 button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.edit-legislation-v2 .edit-legislation-error button {
+  padding: 9px 14px;
+  border: 1px solid #e0b8b8;
+  border-radius: 8px;
+  background: white;
+  color: #a52d37;
+  cursor: pointer;
 }

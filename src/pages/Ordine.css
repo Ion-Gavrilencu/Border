@@ -557,7 +557,6 @@
   outline: 2px solid #0875ed;
   outline-offset: 3px;
 }
-
 /* Ordine interne: design unificat cu Telegrame și Dashboard.
    Stiluri izolate în .ordine-page; nu afectează layout-ul global. */
 .ordine-page {
@@ -618,7 +617,6 @@
 .ordine-page button:disabled {
   cursor: not-allowed;
 }
-
 /* Tabletă / desktop îngust: adaptare la spațiul rămas după sidebar. */
 @media (max-width: 1250px) {
   .ordine-page {
@@ -671,7 +669,6 @@
     justify-content: center;
   }
 }
-
 /* Telefon: carduri verticale, acțiuni accesibile, fără overflow. */
 @media (max-width: 720px) {
   .ordine-page {
@@ -908,7 +905,6 @@
     transition: none;
   }
 }
-
 /* BORDER — listă compactă uniformă pe desktop; cardurile mobile rămân intacte. */
 @media (min-width: 721px) {
   .ordine-page .ordine-documents:not(.is-grid) {
@@ -1042,7 +1038,6 @@
     padding-top: 7px;
   }
 }
-
 /* FIX FINAL: actiunile au coloane proprii; fara pozitionare absoluta pe desktop. */
 @media (min-width: 721px) {
   .ordine-page .ordine-documents:not(.is-grid) .ordine-document {
@@ -1113,7 +1108,6 @@
     border-top: 1px solid #e4edf9;
   }
 }
-
 /* Aliniere finala desktop: fiecare actiune are o coloana constanta.
    Nu afecteaza cardurile mobile sau vizualizarea grid. */
 @media (min-width: 1301px) {
@@ -1233,5 +1227,132 @@
     margin: 0;
     padding: 8px 0 0;
     border-top: 1px solid #e4edf9;
+  }
+}
+/* Registru V2: căutare permanentă, filtre și acțiuni accesibile. */
+.ordine-page .ordine-extra-filters {
+  margin: 0 0 16px;
+  gap: 10px;
+}
+.ordine-page .ordine-search {
+  min-height: 48px;
+}
+.ordine-page .ordine-search:focus-within {
+  border-color: #1674df;
+  box-shadow: 0 0 0 3px #1674df18;
+}
+.ordine-page .ordine-search input {
+  font-size: 16px;
+}
+.ordine-page .ordine-advanced-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid #dce7f5;
+  background: white;
+  border-radius: 14px;
+  margin-bottom: 14px;
+}
+.ordine-page .ordine-advanced-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+.ordine-page .ordine-advanced-filters input,
+.ordine-page .ordine-advanced-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #d7e7fb;
+  border-radius: 9px;
+  padding: 8px;
+  background: white;
+  color: #08245f;
+}
+.ordine-page .ordine-filter-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #466c9e;
+}
+.ordine-page .ordine-filter-summary button {
+  border: 0;
+  background: transparent;
+  color: #005ecb;
+  padding: 8px;
+}
+.ordine-page .ordine-list-toolbar {
+  scroll-margin-top: 95px;
+}
+.ordine-page .ordine-document:has(.ordine-popover) {
+  position: relative;
+  z-index: 15;
+  overflow: visible;
+}
+.ordine-page .ordine-popover {
+  width: min(230px, 75vw);
+  min-width: 0;
+  z-index: 30;
+}
+.ordine-page .ordine-popover button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+}
+.ordine-page .ordine-document-title .ordine-spin {
+  vertical-align: middle;
+  margin-left: 8px;
+}
+.ordine-page button:disabled {
+  opacity: 0.6;
+}
+@media (max-width: 1000px) {
+  .ordine-page .ordine-advanced-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .ordine-page .ordine-extra-filters {
+    flex-wrap: wrap;
+  }
+  .ordine-page .ordine-extra-filters .ordine-refresh {
+    width: 100%;
+    justify-content: center;
+  }
+  .ordine-page .ordine-advanced-filters {
+    padding: 12px;
+  }
+  .ordine-page .ordine-page-size {
+    display: flex;
+  }
+  .ordine-page .ordine-document-title {
+    padding-right: 78px;
+  }
+  .ordine-page .ordine-document-tools .ordine-star,
+  .ordine-page .ordine-document-tools .ordine-more {
+    width: 38px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 380px) {
+  .ordine-page .ordine-advanced-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ordine-page *,
+  .ordine-page *::before,
+  .ordine-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

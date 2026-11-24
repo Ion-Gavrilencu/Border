@@ -1356,3 +1356,164 @@
     border-top: 1px solid #e4edf9;
   }
 }
+
+/* Registru V2: căutare permanentă, filtre și acțiuni accesibile. */
+.telegrame-page .telegrame-extra-filters {
+  margin: 0 0 16px;
+  gap: 10px;
+}
+.telegrame-page .telegrame-search {
+  min-height: 48px;
+}
+.telegrame-page .telegrame-search:focus-within {
+  border-color: #1674df;
+  box-shadow: 0 0 0 3px #1674df18;
+}
+.telegrame-page .telegrame-search input {
+  font-size: 16px;
+}
+.telegrame-page .telegrame-advanced-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid #dce7f5;
+  background: white;
+  border-radius: 14px;
+  margin-bottom: 14px;
+}
+.telegrame-page .telegrame-advanced-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+.telegrame-page .telegrame-advanced-filters input,
+.telegrame-page .telegrame-advanced-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #d7e7fb;
+  border-radius: 9px;
+  padding: 8px;
+  background: white;
+  color: #08245f;
+}
+.telegrame-page .telegrame-filter-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #466c9e;
+}
+.telegrame-page .telegrame-filter-summary button {
+  border: 0;
+  background: transparent;
+  color: #005ecb;
+  padding: 8px;
+}
+.telegrame-page .telegrame-list-toolbar {
+  scroll-margin-top: 95px;
+}
+.telegrame-page .telegrame-document:has(.telegrame-popover) {
+  position: relative;
+  z-index: 15;
+  overflow: visible;
+}
+.telegrame-page .telegrame-popover {
+  width: min(230px, 75vw);
+  min-width: 0;
+  z-index: 30;
+}
+.telegrame-page .telegrame-popover button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+}
+.telegrame-page .telegrame-document-title .telegrame-spin {
+  vertical-align: middle;
+  margin-left: 8px;
+}
+.telegrame-page button:disabled {
+  opacity: 0.6;
+}
+@media (max-width: 1000px) {
+  .telegrame-page .telegrame-advanced-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .telegrame-page .telegrame-extra-filters {
+    flex-wrap: wrap;
+  }
+  .telegrame-page .telegrame-extra-filters .telegrame-refresh {
+    width: 100%;
+    justify-content: center;
+  }
+  .telegrame-page .telegrame-advanced-filters {
+    padding: 12px;
+  }
+  .telegrame-page .telegrame-page-size {
+    display: flex;
+  }
+  .telegrame-page .telegrame-document-title {
+    padding-right: 78px;
+  }
+  .telegrame-page .telegrame-document-tools .telegrame-star,
+  .telegrame-page .telegrame-document-tools .telegrame-more {
+    width: 38px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 380px) {
+  .telegrame-page .telegrame-advanced-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .telegrame-page *,
+  .telegrame-page *::before,
+  .telegrame-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .telegrame-page .telegrame-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .telegrame-page .telegrame-tabs > button {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+  .telegrame-page .telegrame-document-footer {
+    flex-wrap: wrap;
+  }
+  .telegrame-page .telegrame-search {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+  .telegrame-page .telegrame-page-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .telegrame-page .telegrame-document-tools {
+    gap: 0;
+  }
+  .telegrame-page .telegrame-document-title {
+    padding-right: 80px;
+  }
+  .telegrame-page .telegrame-hero-art {
+    pointer-events: none;
+  }
+}

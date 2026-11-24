@@ -1,27 +1,26 @@
-/* BORDER — Editare informații utile, aspect unificat cu Acte normative */
+/* BORDER — Editare telegramă | responsive */
 .edit-informatii-page {
-  --edit-blue: #0869f5;
-  --edit-navy: #092768;
-  --edit-muted: #6880aa;
-  --edit-border: #d8e6fb;
   width: 100%;
   max-width: 1100px;
+  min-width: 0;
   margin: 0 auto;
   padding: 28px 32px;
   box-sizing: border-box;
-  min-width: 0;
 }
-.edit-informatii-page *,
-.edit-informatii-page *::before,
-.edit-informatii-page *::after {
+.edit-informatii-page,
+.edit-informatii-page * {
   box-sizing: border-box;
 }
 .edit-informatii-header {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
   margin-bottom: 24px;
+}
+.edit-informatii-header > div {
   min-width: 0;
 }
 .edit-informatii-label {
@@ -37,35 +36,44 @@
   color: #0b2947;
   font-size: 27px;
   font-weight: 750;
+  line-height: 1.25;
 }
 .edit-informatii-header p {
   margin: 7px 0 0;
   color: #7589a1;
   font-size: 14px;
+  line-height: 1.5;
 }
-.edit-informatii-page .edit-informatii-back {
+.edit-informatii-back-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  align-self: flex-start;
-  min-height: 42px;
+  flex: 0 0 auto;
+  min-height: 44px;
   padding: 11px 16px;
   border: 1px solid #d7e2ee;
   border-radius: 9px;
   background: #fff;
   color: #173b5e;
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
-.edit-informatii-back:hover {
+.edit-informatii-back-button:hover {
   background: #f1f6fb;
+  border-color: #b8cce4;
 }
-.edit-informatii-message {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.edit-informatii-back-button:focus-visible,
+.edit-informatii-page button:focus-visible {
+  outline: 3px solid #8bbcf6;
+  outline-offset: 2px;
+}
+.edit-informatii-error {
   margin-bottom: 18px;
   padding: 13px 16px;
   border: 1px solid #f0c7c4;
@@ -73,22 +81,18 @@
   background: #fff2f1;
   color: #c52d38;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
-.edit-informatii-message.success {
-  border-color: #b8e5cc;
-  background: #f0fff6;
-  color: #167343;
-}
-.edit-informatii-page .edit-informatii-form {
+.edit-informatii-form {
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   background: #fff;
   border: 1px solid #dce6f0;
   border-radius: 15px;
   box-shadow: 0 8px 28px rgba(20, 50, 80, 0.04);
-  min-width: 0;
 }
-.edit-informatii-page .edit-informatii-form-header {
-  display: block;
+.edit-informatii-form-header {
   padding: 21px 25px;
   border-bottom: 1px solid #e7edf4;
   background: #fbfcfe;
@@ -97,40 +101,30 @@
   margin: 0;
   color: #123453;
   font-size: 17px;
+  line-height: 1.35;
 }
 .edit-informatii-form-header p {
   margin: 6px 0 0;
   color: #8495aa;
   font-size: 12px;
+  line-height: 1.5;
 }
-.edit-informatii-page .edit-informatii-form-body {
+.edit-informatii-form-body {
+  min-width: 0;
   padding: 25px;
-  min-width: 0;
 }
-.edit-informatii-main-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
-}
-.edit-informatii-fields,
-.edit-informatii-existing-section {
-  min-width: 0;
-  padding: 18px;
-  border: 1px solid #e2eaf2;
-  border-radius: 12px;
-  background: #fff;
-}
-.edit-informatii-fields-grid {
+.edit-informatii-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
+  min-width: 0;
 }
 .edit-informatii-full {
   grid-column: 1 / -1;
 }
 .edit-informatii-form-group {
   min-width: 0;
+  margin-bottom: 0;
 }
 .edit-informatii-form-group label {
   display: block;
@@ -139,23 +133,12 @@
   font-size: 12px;
   font-weight: 650;
 }
-.edit-informatii-field {
-  position: relative;
-  min-width: 0;
-}
-.edit-informatii-field-icon {
-  position: absolute;
-  left: 13px;
-  top: 13px;
-  color: #6885b4;
-  pointer-events: none;
-}
-.edit-informatii-page .edit-informatii-form-group input,
-.edit-informatii-page .edit-informatii-form-group textarea {
+.edit-informatii-form-group input {
   display: block;
   width: 100%;
   min-width: 0;
-  padding: 12px 12px 12px 40px;
+  height: 44px;
+  padding: 0 13px;
   border: 1px solid #d6e1ed;
   border-radius: 9px;
   background: #fff;
@@ -164,20 +147,22 @@
   font-size: 13px;
   outline: none;
 }
-.edit-informatii-page .edit-informatii-form-group input {
-  min-height: 44px;
-}
-.edit-informatii-page .edit-informatii-form-group textarea {
-  min-height: 135px;
-  resize: vertical;
-}
-.edit-informatii-form-group input:focus,
-.edit-informatii-form-group textarea:focus {
+.edit-informatii-form-group input:focus {
   border-color: #2874b8;
   box-shadow: 0 0 0 3px rgba(40, 116, 184, 0.1);
 }
-.edit-informatii-required {
-  color: #fa3056;
+.edit-informatii-form-group input::placeholder {
+  color: #9aacbf;
+}
+.edit-informatii-form-group input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.edit-informatii-section {
+  min-width: 0;
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e5ebf2;
 }
 .edit-informatii-section h3 {
   margin: 0 0 15px;
@@ -185,19 +170,27 @@
   font-size: 15px;
   font-weight: 700;
 }
+.edit-informatii-section-description {
+  margin: -5px 0 18px;
+  color: #8092a6;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .edit-informatii-empty {
   margin: 0;
   padding: 18px;
   border: 1px dashed #d7e2ed;
   border-radius: 10px;
-  color: #8a9caf;
   background: #f8fafc;
+  color: #8a9caf;
   font-size: 13px;
+  text-align: center;
 }
-.edit-informatii-attachments-list {
+.edit-informatii-attachments {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  min-width: 0;
 }
 .edit-informatii-attachment {
   display: flex;
@@ -213,6 +206,7 @@
   display: grid;
   place-items: center;
   flex: 0 0 42px;
+  width: 42px;
   height: 42px;
   border-radius: 9px;
   background: #e8f1fb;
@@ -220,69 +214,130 @@
 }
 .edit-informatii-attachment-name {
   display: flex;
-  flex: 1 1 0;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
 }
 .edit-informatii-attachment-name strong {
+  display: block;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: #173b5a;
   font-size: 12px;
   font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .edit-informatii-attachment-name span {
   color: #90a2b4;
   font-size: 10px;
   font-weight: 600;
 }
-.edit-informatii-open {
+.edit-informatii-attachment-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+}
+.edit-informatii-attachment-actions button {
   display: grid;
   place-items: center;
-  flex: 0 0 34px;
+  width: 34px;
   height: 34px;
+  padding: 0;
   border: 0;
   border-radius: 7px;
   background: transparent;
   color: #55728f;
   cursor: pointer;
 }
-.edit-informatii-open:hover {
+.edit-informatii-attachment-actions button:hover {
   background: #e9f1fa;
 }
-.edit-informatii-replacement-note {
-  margin: 12px 0 0;
-  color: #6880aa;
+.edit-informatii-attachment-actions .edit-informatii-attachment-delete {
+  color: #d34c56;
+}
+.edit-informatii-attachment-actions .edit-informatii-attachment-delete:hover {
+  background: #fff0f1;
+}
+.edit-informatii-attachment-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.edit-informatii-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 25px;
+  border: 1.5px dashed #b9cee4;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #2571b1;
+  text-align: center;
+}
+.edit-informatii-upload strong {
+  color: #173e60;
+  font-size: 13px;
+}
+.edit-informatii-upload p {
+  margin: 0;
+  color: #7d90a5;
   font-size: 12px;
-  line-height: 1.55;
+}
+.edit-informatii-upload input {
+  max-width: 100%;
+  font-size: 12px;
+}
+.edit-informatii-upload small {
+  color: #91a2b6;
+  font-size: 11px;
+}
+.edit-informatii-selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 9px;
+  padding: 10px 13px;
+  border: 1px solid #dfe8f2;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #234764;
+  font-size: 12px;
+}
+.edit-informatii-selected-file span {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
-.edit-informatii-upload-section {
-  margin-top: 26px;
-  padding: 20px;
-  border: 1px solid #e2eaf2;
-  border-radius: 12px;
+.edit-informatii-selected-file button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #d34a54;
+  font-size: 12px;
+  cursor: pointer;
+}
+.edit-informatii-link {
+  margin-top: 20px;
   min-width: 0;
 }
-.edit-informatii-section-description {
-  margin: -5px 0 18px;
-  color: #8092a6;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.edit-informatii-page .edit-informatii-actions {
+.edit-informatii-actions {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   padding: 18px 25px;
   border-top: 1px solid #e7edf4;
   background: #fbfcfe;
 }
-.edit-informatii-page .edit-informatii-cancel-button,
-.edit-informatii-page .edit-informatii-save-button {
+.edit-informatii-cancel-button,
+.edit-informatii-save-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -290,16 +345,20 @@
   min-height: 42px;
   padding: 0 18px;
   border-radius: 9px;
+  font: inherit;
   font-size: 13px;
   font-weight: 650;
   cursor: pointer;
 }
-.edit-informatii-page .edit-informatii-cancel-button {
+.edit-informatii-cancel-button {
   border: 1px solid #d5e0ec;
   background: #fff;
   color: #244764;
 }
-.edit-informatii-page .edit-informatii-save-button {
+.edit-informatii-cancel-button:hover {
+  background: #f1f6fb;
+}
+.edit-informatii-save-button {
   border: 1px solid #123a61;
   background: #123a61;
   color: #fff;
@@ -307,46 +366,62 @@
 .edit-informatii-save-button:hover:not(:disabled) {
   background: #19517e;
 }
-.edit-informatii-page button:disabled {
+.edit-informatii-save-button:disabled,
+.edit-informatii-cancel-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 .edit-informatii-loading {
-  min-height: 230px;
-  display: grid;
-  place-content: center;
-  color: #6880aa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  color: #748ba2;
+  font-size: 14px;
 }
-.edit-informatii-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid #d8e6fb;
-  border-top-color: #0869f5;
-  border-radius: 50%;
-  animation: edit-spin 0.7s linear infinite;
-  margin: 0 auto 12px;
-}
-@keyframes edit-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (max-width: 850px) {
-  .edit-informatii-main-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 900px) {
+  .edit-informatii-page {
+    padding: 24px 20px;
   }
 }
 @media (max-width: 700px) {
   .edit-informatii-page {
+    width: 100%;
+    max-width: 100%;
     padding: 18px 12px;
   }
-  .edit-informatii-header h1 {
-    font-size: 23px;
+  .edit-informatii-page .edit-informatii-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 24px;
   }
-  .edit-informatii-page .edit-informatii-back {
+  .edit-informatii-page .edit-informatii-header > div {
+    width: 100%;
+    min-width: 0;
+  }
+  .edit-informatii-page .edit-informatii-header h1 {
+    font-size: clamp(22px, 5vw, 27px);
+  }
+  .edit-informatii-page .edit-informatii-back-button {
+    display: flex;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    align-self: stretch;
     width: 100%;
     max-width: none;
-    align-self: stretch;
+    min-width: 0;
+    min-height: 48px;
+    margin: 0;
+    padding: 12px 16px;
+    flex: none;
+    text-align: center;
+  }
+  .edit-informatii-page .edit-informatii-form {
+    width: 100%;
   }
   .edit-informatii-page .edit-informatii-form-header {
     padding: 18px;
@@ -354,26 +429,260 @@
   .edit-informatii-page .edit-informatii-form-body {
     padding: 18px;
   }
-  .edit-informatii-fields-grid {
-    grid-template-columns: 1fr;
+  .edit-informatii-page .edit-informatii-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
   }
-  .edit-informatii-full {
-    grid-column: auto;
+  .edit-informatii-page .edit-informatii-full {
+    grid-column: 1 / -1;
   }
-  .edit-informatii-fields,
-  .edit-informatii-existing-section {
-    padding: 14px;
-  }
-  .edit-informatii-upload-section {
-    padding: 14px;
-    margin-top: 18px;
+  .edit-informatii-page .edit-informatii-section {
+    margin-top: 20px;
+    padding-top: 20px;
   }
   .edit-informatii-page .edit-informatii-actions {
     flex-direction: column-reverse;
+    align-items: stretch;
     padding: 16px 18px;
   }
   .edit-informatii-page .edit-informatii-cancel-button,
   .edit-informatii-page .edit-informatii-save-button {
     width: 100%;
   }
+}
+@media (max-width: 380px) {
+  .edit-informatii-page {
+    padding: 16px 10px;
+  }
+  .edit-informatii-page .edit-informatii-form-header,
+  .edit-informatii-page .edit-informatii-form-body {
+    padding: 15px;
+  }
+  .edit-informatii-page .edit-informatii-actions {
+    padding: 15px;
+  }
+  .edit-informatii-page .edit-informatii-attachment {
+    gap: 8px;
+    padding: 9px;
+  }
+  .edit-informatii-page .edit-informatii-attachment-icon {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* BORDER: layout isolated from EditPagesModern.css. */
+.edit-informatii-page.edit-informatii-v2 {
+  max-width: 1240px;
+  padding: clamp(14px, 2.3vw, 32px);
+  min-width: 0;
+}
+.edit-informatii-v2 .edit-informatii-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+}
+.edit-informatii-v2 .edit-informatii-form .edit-informatii-form-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+}
+.edit-informatii-v2
+  .edit-informatii-form-body
+  > :is(.edit-informatii-details, .edit-informatii-section) {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  border: 1px solid #dce6f0;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 4px 16px #163e6808;
+}
+.edit-informatii-v2 .edit-informatii-form-body > .edit-informatii-new {
+  grid-column: 1 / -1;
+}
+.edit-informatii-v2 .edit-informatii-details .edit-informatii-form-header {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.edit-informatii-v2 .edit-informatii-form-body .edit-informatii-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.edit-informatii-v2 .edit-informatii-fields .edit-informatii-full {
+  grid-column: 1 / -1;
+}
+.edit-informatii-v2 .edit-informatii-form-group input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 46px;
+}
+.edit-informatii-v2 .edit-informatii-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.edit-informatii-v2 .edit-informatii-section-heading h3 {
+  margin: 0;
+}
+.edit-informatii-v2 .edit-informatii-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #eaf3ff;
+  color: #165eb4;
+  font-size: 12px;
+  font-weight: 700;
+}
+.edit-informatii-v2 .edit-informatii-section .edit-informatii-section-description {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.edit-informatii-v2 .edit-informatii-attachments {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.edit-informatii-v2 .edit-informatii-attachment-name strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+.edit-informatii-v2 .edit-informatii-attachment-actions button {
+  width: 38px;
+  height: 38px;
+}
+.edit-informatii-v2 .edit-informatii-form .edit-informatii-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 0;
+  border: 1px solid #dce6f0;
+  border-radius: 14px;
+  background: #fff;
+}
+.edit-informatii-v2
+  .edit-informatii-actions
+  :is(.edit-informatii-cancel-button, .edit-informatii-save-button) {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 145px;
+  min-height: 46px;
+  padding: 0 22px;
+}
+.edit-informatii-v2 .edit-informatii-actions .edit-informatii-save-button {
+  min-width: 220px;
+  background: #0867d9;
+  border-color: #0867d9;
+  color: white;
+}
+.edit-informatii-v2 .edit-informatii-new {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .edit-informatii-v2 .edit-informatii-form-body .edit-informatii-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 850px) {
+  .edit-informatii-v2 .edit-informatii-form .edit-informatii-form-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .edit-informatii-v2
+    .edit-informatii-form-body
+    > :is(.edit-informatii-details, .edit-informatii-section) {
+    padding: 16px;
+  }
+}
+@media (max-width: 600px) {
+  .edit-informatii-v2 .edit-informatii-form .edit-informatii-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    padding: 12px;
+  }
+  .edit-informatii-v2
+    .edit-informatii-actions
+    :is(.edit-informatii-cancel-button, .edit-informatii-save-button) {
+    width: 100%;
+    min-width: 0;
+  }
+  .edit-informatii-v2 .edit-informatii-attachment {
+    flex-wrap: wrap;
+  }
+  .edit-informatii-v2 .edit-informatii-attachment-name {
+    flex-basis: calc(100% - 60px);
+  }
+  .edit-informatii-v2 .edit-informatii-attachment-actions {
+    margin-left: auto;
+  }
+}
+
+.edit-informatii-v2 .edit-informatii-status {
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eaf2fc;
+  color: #254e78;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.edit-informatii-v2 button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.edit-informatii-v2 .edit-informatii-error button {
+  padding: 9px 14px;
+  border: 1px solid #e0b8b8;
+  border-radius: 8px;
+  background: white;
+  color: #a52d37;
+  cursor: pointer;
+}
+
+.edit-informatii-v2 .edit-informatii-form-group textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 110px;
+  resize: vertical;
+  padding: 12px 13px;
+  border: 1px solid #d6e1ed;
+  border-radius: 9px;
+  background: #fff;
+  color: #153a5c;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.edit-informatii-v2 .edit-informatii-form-group textarea:focus {
+  border-color: #2874b8;
+  box-shadow: 0 0 0 3px rgba(40, 116, 184, 0.1);
 }

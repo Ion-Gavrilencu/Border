@@ -1084,3 +1084,163 @@
     justify-content: space-between;
   }
 }
+
+/* Registru V2 — căutare, filtre și accesibilitate */
+.legislatie-page .legislatie-searchbar {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin: 0 0 14px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.legislatie-searchbar > label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 240px;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--leg-border);
+  border-radius: 12px;
+  padding: 0 13px;
+  color: #52739d;
+  min-height: 46px;
+}
+.legislatie-searchbar input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--leg-navy);
+  outline: none;
+}
+.legislatie-searchbar label:focus-within {
+  outline: 2px solid #81b8ff;
+  outline-offset: 2px;
+}
+.legislatie-searchbar button,
+.legislatie-active-filters button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--leg-border);
+  border-radius: 10px;
+  background: #fff;
+  color: #0759b5;
+  padding: 10px 14px;
+  font-weight: 650;
+}
+.legislatie-searchbar label button {
+  border: 0;
+  padding: 6px;
+}
+.legislatie-filter-panel input[type="date"] {
+  font: inherit;
+  min-height: 42px;
+  max-width: 100%;
+  border: 1px solid var(--leg-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--leg-navy);
+  padding: 7px;
+}
+.legislatie-filter-panel label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.legislatie-active-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  color: #526b8e;
+  font-size: 13px;
+}
+.legislatie-page .legislatie-menu {
+  min-width: 190px;
+  z-index: 20;
+}
+.legislatie-page .legislatie-card-top-actions .legislatie-menu button {
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  justify-content: flex-start;
+  padding: 9px 10px;
+  white-space: normal;
+  gap: 8px;
+}
+.legislatie-page .legislatie-card:has(.legislatie-menu) {
+  z-index: 25;
+}
+.legislatie-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.legislatie-spin {
+  display: inline-block;
+  vertical-align: middle;
+  animation: legislatie-spin 1s linear infinite;
+}
+@keyframes legislatie-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 768px) {
+  .legislatie-page .legislatie-tabs {
+    flex-wrap: wrap;
+  }
+  .legislatie-page .legislatie-tab-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1 1 100%;
+  }
+  .legislatie-page .legislatie-filter-button {
+    width: 100%;
+    font-size: 13px;
+    gap: 8px;
+    min-height: 44px;
+  }
+  .legislatie-page .legislatie-searchbar > label,
+  .legislatie-page .legislatie-searchbar > button {
+    flex: 1 1 100%;
+  }
+  .legislatie-page .legislatie-filter-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .legislatie-page .legislatie-filter-panel label {
+    justify-content: space-between;
+  }
+  .legislatie-page .legislatie-toolbar-controls,
+  .legislatie-page .legislatie-page-buttons,
+  .legislatie-page .legislatie-card-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .legislatie-page .legislatie-card-top-actions > button,
+  .legislatie-page .legislatie-menu-wrap > button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .legislatie-page .legislatie-card-main {
+    padding: 44px 0 12px;
+  }
+  .legislatie-page .legislatie-hero-art {
+    pointer-events: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .legislatie-spin {
+    animation: none;
+  }
+}

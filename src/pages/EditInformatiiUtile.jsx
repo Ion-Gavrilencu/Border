@@ -1,333 +1,163 @@
-import { useEffect, useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-import {
-  AlertCircle,
-  ArrowLeft,
-  BookOpen,
-  CheckCircle2,
-  FilePenLine,
-  FileText,
-  FolderOpen,
-  Paperclip,
-  Link2,
-  Image as ImageIcon,
-  ExternalLink,
-  Save,
-} from "lucide-react";
-
+import { ArrowLeft, FileText, Image, Link2, ExternalLink, Save } from "lucide-react";
+import { toast } from "sonner";
+import Swal from "sweetalert2";
 import api from "../services/api";
-
 import { useAuth } from "../context/authStore";
-
 import DocumentUploader from "../components/DocumentUploader";
-
 import "./EditPagesModern.css";
 import "./EditInformatiiUtile.css";
-
-const getFileCategory = (file) => {
-  const type = file.type || "";
-
-  const name = file.name || "";
-
-  if (type.startsWith("image/")) return "image";
-
-  if (type.startsWith("video/")) return "video";
-
-  if (type === "application/pdf") return "pdf";
-
+const getCategory = (file) => {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("video/")) return "video";
+  if (file.type === "application/pdf") return "pdf";
   if (
-    /\.(doc|docx)$/i.test(name) ||
-    type.includes("wordprocessingml") ||
-    type === "application/msword"
+    /\.docx?$/i.test(file.name) ||
+    file.type.includes("wordprocessingml") ||
+    file.type === "application/msword"
   )
     return "word";
-
   return "other";
 };
-
-const errorText = (error, fallback) => error.response?.data?.message || fallback;
-
+const isImage = (item) => item.file_category === "image" || item.mime_type?.startsWith("image/");
+const isLink = (item) => item.attachment_type === "link";
 function EditInformatiiUtile() {
   const { id } = useParams();
-
   const navigate = useNavigate();
-
   const { user } = useAuth();
-
-  const [loading, setLoading] = useState(true);
-
-  const [saving, setSaving] = useState(false);
-
-  const [message, setMessage] = useState("");
-
-  const [messageType, setMessageType] = useState("error");
-
+  const canEdit = user?.role === "EDITOR" || user?.role === "ADMIN";
+  const canDelete = user?.role === "ADMIN";
   const [formData, setFormData] = useState({
     title: "",
-
     category: "",
-
     content: "",
   });
-
-  const [existingAttachments, setExistingAttachments] = useState([]);
-
+  const [attachments, setAttachments] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
-
   const [linkUrl, setLinkUrl] = useState("");
-
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [openingId, setOpeningId] = useState(null);
+  const [progress, setProgress] = useState("");
+  const [needsReload, setNeedsReload] = useState(false);
+  const baseline = useRef(null);
+  const mutation = useRef(false);
+  const opening = useRef(false);
+  const dirty =
+    baseline.current !== null &&
+    (JSON.stringify(formData) !== baseline.current ||
+      selectedFiles.length > 0 ||
+      linkUrl.trim() !== "");
+  const busy = saving;
+  const goBack = () => navigate("/informatii-utile");
+  const reportError = (message) => {
+    setError(message);
+    toast.error(message);
+  };
+  const requestBack = async () => {
+    if (mutation.current) return;
+    if (dirty) {
+      const result = await Swal.fire({
+        title: "Modificări nesalvate",
+        text: "Dorești să renunți la modificările nesalvate?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Renunță",
+        cancelButtonText: "Continuă editarea",
+      });
+      if (!result.isConfirmed) return;
+    }
+    goBack();
+  };
+  useEffect(() => {
+    if (!dirty && !saving) return;
+    const warn = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, saving]);
   useEffect(() => {
     let active = true;
-
-    const loadInfo = async () => {
-      setLoading(true);
-
-      setMessage("");
-
+    const controller = new AbortController();
+    baseline.current = null;
+    setNeedsReload(false);
+    setSelectedFiles([]);
+    setLinkUrl("");
+    const loadData = async () => {
       try {
-        const [infoResponse, attachmentResponse] = await Promise.all([
-          api.get(`/informatii-utile/${id}`),
-
-          api.get(`/attachments/informatii_utile/${id}`),
+        setLoading(true);
+        setLoadFailed(false);
+        setError("");
+        const [infoResponse, attachmentsResponse] = await Promise.all([
+          api.get(`/informatii-utile/${id}`, { signal: controller.signal }),
+          api.get(`/attachments/informatii_utile/${id}`, { signal: controller.signal }),
         ]);
-
         if (!active) return;
-
         const info = infoResponse.data.informatie;
-
-        if (!info) throw new Error("Informația utilă nu a fost găsită.");
-
-        setFormData({
+        if (!info) throw new Error("Informația nu a fost găsită.");
+        const loaded = {
           title: info.title || "",
-
           category: info.category || "",
-
           content: info.content || "",
-        });
-
-        setExistingAttachments(attachmentResponse.data.attachments || []);
-      } catch (error) {
+        };
+        baseline.current = JSON.stringify(loaded);
+        setFormData(loaded);
+        setAttachments(attachmentsResponse.data.attachments || []);
+      } catch (err) {
+        console.error("Eroare încărcare informație:", err);
         if (active) {
-          console.error("Eroare la încărcarea informației:", error);
-
-          setMessage(errorText(error, error.message || "Informația nu a putut fi încărcată."));
+          setLoadFailed(true);
+          reportError(err.response?.data?.message || "Informația nu a putut fi încărcată.");
         }
       } finally {
         if (active) setLoading(false);
       }
     };
-
-    loadInfo();
-
+    loadData();
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [id]);
-
+  }, [id, reload]);
   const handleChange = (event) => {
     const { name, value } = event.target;
-
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+    }));
   };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (saving) return;
-
-    const title = formData.title.trim();
-
-    const content = formData.content.trim();
-
-    const url = linkUrl.trim();
-
-    const hasReplacement = selectedFiles.length > 0 || Boolean(url);
-
-    if (!title) {
-      setMessageType("error");
-
-      setMessage("Titlul informației este obligatoriu.");
-
-      return;
-    }
-
-    if (!content && !hasReplacement && existingAttachments.length === 0) {
-      setMessageType("error");
-
-      setMessage("Adaugă un conținut, un fișier sau un link.");
-
-      return;
-    }
-
-    if (url) {
-      try {
-        const parsed = new URL(url);
-
-        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
-      } catch {
-        setMessageType("error");
-
-        setMessage("Introdu un link valid, care începe cu https:// sau http://.");
-
-        return;
-      }
-    }
-
-    // Înlocuirea materialelor existente necesită permisiuni ADMIN în backend.
-
-    if (hasReplacement && existingAttachments.length > 0 && user?.role !== "ADMIN") {
-      setMessageType("error");
-
-      setMessage(
-        "Înlocuirea atașamentelor existente necesită rolul ADMIN. " +
-          "Poți modifica doar textul sau solicita administratorului înlocuirea materialelor.",
-      );
-
-      return;
-    }
-
-    setSaving(true);
-
-    setMessage("");
-
-    const newAttachmentIds = [];
-
-    try {
-      // Încărcăm materialele noi înainte de a le șterge pe cele vechi.
-
-      if (hasReplacement) {
-        for (const file of selectedFiles) {
-          const data = new FormData();
-
-          data.append("file", file);
-
-          data.append("entityType", "informatii_utile");
-
-          data.append("entityId", String(id));
-
-          data.append("fileCategory", getFileCategory(file));
-
-          const response = await api.post("/attachments/upload", data);
-
-          if (response.data?.attachment?.id) {
-            newAttachmentIds.push(response.data.attachment.id);
-          }
-        }
-
-        if (url) {
-          const response = await api.post("/attachments/link", {
-            entityType: "informatii_utile",
-
-            entityId: id,
-
-            name: title,
-
-            url,
-          });
-
-          if (response.data?.attachment?.id) {
-            newAttachmentIds.push(response.data.attachment.id);
-          }
-        }
-      }
-
-      await api.patch(`/informatii-utile/${id}`, {
-        title,
-
-        category: formData.category.trim(),
-
-        content,
-      });
-
-      if (hasReplacement) {
-        const deletionFailures = [];
-
-        for (const old of existingAttachments) {
-          try {
-            await api.delete(`/attachments/${old.id}`);
-          } catch (error) {
-            console.error("Nu s-a putut șterge atașamentul vechi:", old.id, error);
-
-            deletionFailures.push(old.name || `#${old.id}`);
-          }
-        }
-
-        if (deletionFailures.length) {
-          const response = await api.get(`/attachments/informatii_utile/${id}`);
-
-          setExistingAttachments(response.data.attachments || []);
-
-          setSelectedFiles([]);
-
-          setLinkUrl("");
-
-          setMessageType("error");
-
-          setMessage(
-            "Materialele noi au fost salvate, dar unele atașamente vechi " +
-              "nu au putut fi șterse: " +
-              deletionFailures.join(", ") +
-              ". Verifică permisiunile și încearcă să le ștergi separat.",
-          );
-
-          return;
-        }
-      }
-
-      navigate("/informatii-utile");
-    } catch (error) {
-      console.error("Eroare la actualizarea informației:", error);
-
-      const cleanupFailures = [];
-
-      // La eșec curățăm doar atașamentele create în această încercare.
-
-      for (const newId of newAttachmentIds) {
-        try {
-          await api.delete(`/attachments/${newId}`);
-        } catch (cleanupError) {
-          console.error("Curățare atașament nou eșuată:", newId, cleanupError);
-
-          cleanupFailures.push(newId);
-        }
-      }
-
-      setMessageType("error");
-
-      setMessage(
-        errorText(error, "Modificările nu au putut fi salvate.") +
-          (cleanupFailures.length
-            ? " Unele materiale noi au rămas încărcate; verifică atașamentele înainte de o nouă încercare."
-            : " Materialele vechi au fost păstrate."),
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleOpenAttachment = async (attachment) => {
-    if (attachment.attachment_type === "link") {
+    if (isLink(attachment)) {
       try {
         const url = new URL(attachment.url);
         if (!["http:", "https:"].includes(url.protocol)) throw new Error("Link invalid");
         window.open(url.href, "_blank", "noopener,noreferrer");
       } catch {
-        setMessageType("error");
-        setMessage("Linkul atașamentului nu este valid.");
+        reportError("Adresa linkului nu este validă.");
       }
       return;
     }
-
+    if (opening.current) return;
+    opening.current = true;
+    setOpeningId(attachment.id);
+    // Fișierele private se descarcă prin instanța Axios autentificată.
+    // URL-ul blob este temporar și nu expune tokenul în adresă.
     const tab = window.open("", "_blank");
     try {
+      if (tab) tab.opener = null;
       const response = await api.get(`/attachments/file/${attachment.id}`, {
         responseType: "blob",
       });
       const mime =
         response.headers?.["content-type"] || response.data.type || "application/octet-stream";
-      const objectUrl = URL.createObjectURL(new Blob([response.data], { type: mime }));
+      const blob = new Blob([response.data], { type: mime });
+      const objectUrl = URL.createObjectURL(blob);
       if (tab && !tab.closed) {
         tab.location.href = objectUrl;
       } else {
@@ -340,205 +170,369 @@ function EditInformatiiUtile() {
         link.remove();
       }
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-    } catch (error) {
+    } catch (err) {
       if (tab && !tab.closed) tab.close();
-      setMessageType("error");
-      setMessage(errorText(error, "Fișierul nu a putut fi deschis."));
+      reportError(err.response?.data?.message || "Fișierul nu a putut fi deschis.");
+    } finally {
+      opening.current = false;
+      setOpeningId(null);
     }
   };
-
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!canEdit || mutation.current || loadFailed || needsReload || !dirty) return;
+    const title = formData.title.trim();
+    const content = formData.content.trim();
+    const url = linkUrl.trim();
+    const replacing = selectedFiles.length > 0 || Boolean(url);
+    const oldAttachments = [...attachments];
+    if (!title) {
+      reportError("Titlul informației este obligatoriu.");
+      return;
+    }
+    if (!content && !replacing && !oldAttachments.length) {
+      reportError("Adaugă un conținut, un fișier sau un link.");
+      return;
+    }
+    if (url) {
+      try {
+        if (!["http:", "https:"].includes(new URL(url).protocol)) throw new Error();
+      } catch {
+        reportError("Introdu un link HTTP sau HTTPS valid.");
+        return;
+      }
+    }
+    if (replacing && oldAttachments.length && !canDelete) {
+      reportError("Doar administratorul poate înlocui atașamentele existente.");
+      return;
+    }
+    mutation.current = true;
+    setSaving(true);
+    setError("");
+    const newIds = [];
+    let committed = false;
+    let uploadAttempted = false;
+    try {
+      if (replacing && oldAttachments.length) {
+        const confirmation = await Swal.fire({
+          title: "Înlocuiești materialele existente?",
+          text: "Materialele vechi vor fi șterse după încărcarea celor noi și salvarea informației.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Înlocuiește",
+          cancelButtonText: "Anulează",
+        });
+        if (!confirmation.isConfirmed) return;
+      }
+      if (replacing) {
+        let n = 0;
+        for (const file of selectedFiles) {
+          setProgress(`Fișier ${++n} din ${selectedFiles.length}: ${file.name}`);
+          const data = new FormData();
+          data.append("file", file);
+          data.append("entityType", "informatii_utile");
+          data.append("entityId", String(id));
+          data.append("fileCategory", getCategory(file));
+          uploadAttempted = true;
+          const response = await api.post("/attachments/upload", data);
+          if (response.data?.attachment?.id != null) newIds.push(response.data.attachment.id);
+          else throw new Error("Serverul nu a confirmat identificatorul noului atașament.");
+        }
+        if (url) {
+          setProgress("Se salvează linkul...");
+          uploadAttempted = true;
+          const response = await api.post("/attachments/link", {
+            entityType: "informatii_utile",
+            entityId: id,
+            name: title,
+            url,
+          });
+          if (response.data?.attachment?.id != null) newIds.push(response.data.attachment.id);
+          else throw new Error("Serverul nu a confirmat identificatorul noului link.");
+        }
+      }
+      setProgress("Se salvează datele informației...");
+      await api.patch(`/informatii-utile/${id}`, {
+        title,
+        category: formData.category.trim(),
+        content,
+      });
+      committed = true;
+      baseline.current = JSON.stringify(formData);
+      setSelectedFiles([]);
+      setLinkUrl("");
+      const failures = [];
+      if (replacing) {
+        let n = 0;
+        for (const old of oldAttachments) {
+          setProgress(`Se înlocuiește materialul ${++n} din ${oldAttachments.length}...`);
+          try {
+            await api.delete(`/attachments/${old.id}`);
+          } catch {
+            failures.push(old.original_name || old.name || `#${old.id}`);
+          }
+        }
+      }
+      if (failures.length) {
+        setNeedsReload(true);
+        try {
+          const response = await api.get(`/attachments/informatii_utile/${id}`);
+          setAttachments(response.data.attachments || []);
+        } catch {
+          toast.warning("Lista materialelor nu a putut fi actualizată.");
+        }
+        reportError(
+          `Datele și materialele noi au fost salvate. Unele materiale vechi nu au putut fi șterse: ${failures.join(", ")}. Verifică lista înainte de alte modificări.`,
+        );
+        return;
+      }
+      toast.success("Modificările informației au fost salvate.");
+      goBack();
+    } catch (err) {
+      console.error("Eroare modificare informație:", err);
+      if (!committed && canDelete) {
+        for (const newId of newIds) {
+          try {
+            await api.delete(`/attachments/${newId}`);
+          } catch {
+            /* Actualizarea listei va arăta materialele rămase. */
+          }
+        }
+      }
+      if (uploadAttempted || committed) {
+        setNeedsReload(true);
+        try {
+          const response = await api.get(`/attachments/informatii_utile/${id}`);
+          setAttachments(response.data.attachments || []);
+        } catch {
+          toast.warning("Lista materialelor nu a putut fi actualizată.");
+        }
+        reportError(
+          (err.response?.data?.message || err.message || "Salvarea nu a reușit.") +
+            " Verifică materialele și reîncarcă formularul înainte de o nouă încercare.",
+        );
+      } else reportError(err.response?.data?.message || "Informația nu a putut fi modificată.");
+    } finally {
+      mutation.current = false;
+      setSaving(false);
+      setProgress("");
+    }
+  };
   if (loading) {
     return (
-      <main className="edit-informatii-page">
-        <div className="edit-informatii-loading" role="status">
-          <div className="edit-informatii-spinner" aria-hidden="true" />
-
-          <span>Se încarcă informația...</span>
-        </div>
-      </main>
+      <div className="edit-informatii-page edit-informatii-v2">
+        <div className="edit-informatii-loading">Se încarcă informația...</div>
+      </div>
     );
   }
-
   return (
-    <main className="edit-informatii-page">
+    <div className="edit-informatii-page edit-informatii-v2">
       <header className="edit-informatii-header">
         <div>
           <span className="edit-informatii-label">CENTRU DE RESURSE</span>
           <h1>Editează informația utilă</h1>
-          <p>Modifică datele informației și documentele atașate.</p>
+          <p>Modifică informațiile și documentele atașate.</p>
         </div>
         <button
           type="button"
-          className="edit-informatii-back"
-          onClick={() => navigate("/informatii-utile")}
-          disabled={saving}
+          className="edit-informatii-back-button"
+          disabled={busy}
+          onClick={requestBack}
         >
-          <ArrowLeft size={17} /> Înapoi la listă
+          <ArrowLeft size={17} />
+          Înapoi
         </button>
       </header>
-
-      {message && (
-        <div className={`edit-informatii-message ${messageType}`} role="status">
-          {messageType === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-          <span>{message}</span>
+      {error && (
+        <div className="edit-informatii-error" role="alert">
+          {error}
         </div>
       )}
-
-      <form className="edit-informatii-form" onSubmit={handleSubmit}>
-        <div className="edit-informatii-form-header">
-          <h2>Datele informației utile</h2>
-          <p>Actualizează informațiile și gestionează atașamentele.</p>
+      {loadFailed ? (
+        <div className="edit-informatii-error">
+          <button type="button" onClick={() => setReload((n) => n + 1)}>
+            Încearcă din nou
+          </button>
         </div>
-
-        <div className="edit-informatii-form-body">
-          <div className="edit-informatii-main-grid">
-            <section className="edit-informatii-fields" aria-label="Date informație">
-              <div className="edit-informatii-fields-grid">
+      ) : (
+        <form className="edit-informatii-form" onSubmit={handleSubmit}>
+          <div className="edit-informatii-form-body">
+            <section className="edit-informatii-details">
+              <div className="edit-informatii-form-header">
+                <h2>Datele informației utile</h2>
+                <p>Actualizează informațiile și gestionează atașamentele.</p>
+              </div>
+              <div className="edit-informatii-fields">
                 <div className="edit-informatii-form-group">
-                  <label htmlFor="edit-info-title">
-                    Titlu <span className="edit-informatii-required">*</span>
-                  </label>
-                  <div className="edit-informatii-field">
-                    <FileText className="edit-informatii-field-icon" size={17} />
-                    <input
-                      id="edit-info-title"
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      placeholder="Introduceți titlul informației"
-                      required
-                      disabled={saving}
-                    />
-                  </div>
+                  <label htmlFor="info-title">Titlul informației</label>
+                  <input
+                    id="info-title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    disabled={!canEdit || busy || needsReload}
+                    placeholder="Titlul informației"
+                  />
                 </div>
                 <div className="edit-informatii-form-group">
-                  <label htmlFor="edit-info-category">Categorie</label>
-                  <div className="edit-informatii-field">
-                    <FolderOpen className="edit-informatii-field-icon" size={17} />
-                    <input
-                      id="edit-info-category"
-                      type="text"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      placeholder="Ex.: Proceduri, Contacte, General"
-                      disabled={saving}
-                    />
-                  </div>
+                  <label htmlFor="info-category">Categorie</label>
+                  <input
+                    id="info-category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    disabled={!canEdit || busy || needsReload}
+                    placeholder="Ex.: Proceduri, Contacte, General"
+                  />
                 </div>
                 <div className="edit-informatii-form-group edit-informatii-full">
-                  <label htmlFor="edit-info-content">Conținut</label>
-                  <div className="edit-informatii-field">
-                    <FileText className="edit-informatii-field-icon" size={17} />
-                    <textarea
-                      id="edit-info-content"
-                      name="content"
-                      value={formData.content}
-                      onChange={handleChange}
-                      rows={5}
-                      placeholder="Introduceți conținutul informației..."
-                      disabled={saving}
-                    />
-                  </div>
+                  <label htmlFor="info-content">Conținut</label>
+                  <textarea
+                    id="info-content"
+                    name="content"
+                    value={formData.content}
+                    onChange={handleChange}
+                    rows={4}
+                    disabled={!canEdit || busy || needsReload}
+                    placeholder="Introduceți conținutul informației..."
+                  />
                 </div>
               </div>
             </section>
-
-            <section
-              className="edit-informatii-section edit-informatii-existing-section"
-              aria-label="Materiale existente"
-            >
-              <h3>Documente și linkuri existente</h3>
-              {existingAttachments.length === 0 ? (
+            <section className="edit-informatii-section edit-informatii-existing">
+              <div className="edit-informatii-section-heading">
+                <h3>Documente și linkuri existente</h3>
+                <span className="edit-informatii-count">{attachments.length}</span>
+              </div>
+              <p className="edit-informatii-section-description">
+                Materialele deja salvate pentru această informație.
+              </p>
+              {attachments.length === 0 ? (
                 <p className="edit-informatii-empty">Nu există documente atașate.</p>
               ) : (
-                <div className="edit-informatii-attachments-list">
-                  {existingAttachments.map((item) => {
-                    const isLink = item.attachment_type === "link";
-                    const isImage =
-                      item.file_category === "image" || item.mime_type?.startsWith("image/");
-                    const Icon = isLink ? Link2 : isImage ? ImageIcon : FileText;
+                <div className="edit-informatii-attachments">
+                  {attachments.map((attachment) => {
+                    const Icon = isLink(attachment)
+                      ? Link2
+                      : isImage(attachment)
+                        ? Image
+                        : FileText;
                     return (
-                      <div className="edit-informatii-attachment" key={item.id}>
-                        <span className="edit-informatii-attachment-icon">
+                      <div key={attachment.id} className="edit-informatii-attachment">
+                        <div className="edit-informatii-attachment-icon">
                           <Icon size={19} />
-                        </span>
-                        <div className="edit-informatii-attachment-name">
-                          <strong
-                            title={item.original_name || item.file_name || item.name || item.url}
-                          >
-                            {item.original_name ||
-                              item.file_name ||
-                              item.name ||
-                              item.url ||
-                              "Document"}
-                          </strong>
-                          <span>{isLink ? "LINK" : isImage ? "FOTOGRAFIE" : "DOCUMENT"}</span>
                         </div>
-                        <button
-                          type="button"
-                          className="edit-informatii-open"
-                          title="Deschide"
-                          aria-label="Deschide atașamentul"
-                          onClick={() => handleOpenAttachment(item)}
-                        >
-                          <ExternalLink size={17} />
-                        </button>
+                        <div className="edit-informatii-attachment-name">
+                          <strong>
+                            {attachment.original_name ||
+                              attachment.file_name ||
+                              attachment.name ||
+                              (isLink(attachment) ? attachment.url : "Document")}
+                          </strong>
+                          <span>
+                            {isLink(attachment)
+                              ? "LINK"
+                              : isImage(attachment)
+                                ? "FOTOGRAFIE"
+                                : "DOCUMENT"}
+                          </span>
+                        </div>
+                        <div className="edit-informatii-attachment-actions">
+                          <button
+                            type="button"
+                            title="Deschide"
+                            aria-label="Deschide atașamentul"
+                            disabled={openingId !== null || busy}
+                            onClick={() => handleOpenAttachment(attachment)}
+                          >
+                            <ExternalLink size={17} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               )}
-              {existingAttachments.length > 0 && (
-                <p className="edit-informatii-replacement-note">
-                  {user?.role === "ADMIN"
-                    ? "Materialele noi vor înlocui toate materialele existente. Dacă nu adaugi nimic, acestea se păstrează."
-                    : "Doar administratorul poate înlocui materialele existente. Modificarea textului nu le afectează."}
-                </p>
-              )}
             </section>
+            {canEdit && (
+              <section className="edit-informatii-section edit-informatii-new">
+                <h3>Adaugă documente, fotografii sau link</h3>
+                <p className="edit-informatii-section-description">
+                  {attachments.length
+                    ? "Materialele noi vor înlocui materialele existente. Dacă nu adaugi nimic, acestea se păstrează."
+                    : "Încarcă fișiere noi sau adaugă un link extern."}
+                </p>
+                {attachments.length > 0 && !canDelete && (
+                  <p className="edit-informatii-section-description">
+                    Doar administratorul poate înlocui materialele existente.
+                  </p>
+                )}
+                <DocumentUploader
+                  files={selectedFiles}
+                  onFilesChange={setSelectedFiles}
+                  linkUrl={linkUrl}
+                  onLinkChange={setLinkUrl}
+                  disabled={busy || needsReload || (attachments.length > 0 && !canDelete)}
+                  allowMixed
+                  onError={(message) => {
+                    if (message) reportError(message);
+                  }}
+                  variant="telegram"
+                />
+              </section>
+            )}
           </div>
-
-          <section className="edit-informatii-section edit-informatii-upload-section">
-            <h3>Adaugă documente, fotografii sau link</h3>
-            <p className="edit-informatii-section-description">
-              Încarcă fișiere noi sau adaugă un link extern. Materialele noi vor înlocui materialele
-              existente.
-            </p>
-            <DocumentUploader
-              files={selectedFiles}
-              onFilesChange={setSelectedFiles}
-              linkUrl={linkUrl}
-              onLinkChange={setLinkUrl}
-              disabled={saving}
-              allowMixed
-              variant="telegram"
-              onError={(error) => {
-                if (!error) return;
-                setMessageType("error");
-                setMessage(error);
-              }}
-            />
-          </section>
-        </div>
-
-        <div className="edit-informatii-actions">
-          <button
-            type="button"
-            className="edit-informatii-cancel-button"
-            onClick={() => navigate("/informatii-utile")}
-            disabled={saving}
-          >
-            Anulează
-          </button>
-          <button type="submit" className="edit-informatii-save-button" disabled={saving}>
-            <Save size={17} /> {saving ? "Se salvează..." : "Salvează modificările"}
-          </button>
-        </div>
-      </form>
-    </main>
+          {needsReload && (
+            <div className="edit-informatii-error">
+              <button
+                type="button"
+                onClick={async () => {
+                  const result = await Swal.fire({
+                    title: "Reîncarci formularul?",
+                    text: "Modificările locale nesalvate vor fi pierdute.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Reîncarcă",
+                    cancelButtonText: "Anulează",
+                  });
+                  if (result.isConfirmed) setReload((n) => n + 1);
+                }}
+              >
+                Reîncarcă formularul
+              </button>
+            </div>
+          )}
+          <div className="edit-informatii-status" role="status" aria-live="polite">
+            {saving
+              ? progress
+              : dirty
+                ? "Ai modificări nesalvate."
+                : "Nu există modificări nesalvate."}
+          </div>
+          <div className="edit-informatii-actions">
+            <button
+              type="button"
+              className="edit-informatii-cancel-button"
+              onClick={requestBack}
+              disabled={busy}
+            >
+              Anulează
+            </button>
+            {canEdit && (
+              <button
+                type="submit"
+                className="edit-informatii-save-button"
+                disabled={busy || !dirty || needsReload}
+              >
+                <Save size={17} />
+                {saving ? "Se salvează..." : "Salvează modificările"}
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
-
 export default EditInformatiiUtile;
