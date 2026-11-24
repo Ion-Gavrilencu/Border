@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ListChecks,
   Layers3,
@@ -26,6 +26,7 @@ import {
   ArrowUpDown,
   Trash2,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import "./ListaTeste.css";
 
 const text = (value) => String(value ?? "").toLocaleLowerCase("ro-RO");
@@ -138,6 +139,58 @@ export default function ListaTeste({ ctx = {} }) {
   const [category, setCategory] = useState("all");
   const [period, setPeriod] = useState("all");
   const [menuId, setMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+  const menuTrigger = useRef(null);
+  const menuPanel = useRef(null);
+  const closeMenu = () => setMenuId(null);
+  const toggleMenu = (event, id) => {
+    if (menuId === id) {
+      closeMenu();
+      return;
+    }
+    const trigger = event.currentTarget;
+    const rect = trigger.getBoundingClientRect();
+    const width = Math.min(216, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    const above = window.innerHeight - rect.bottom < 130 && rect.top > 130;
+    menuTrigger.current = trigger;
+    setMenuPosition({
+      width,
+      left,
+      ...(above ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+    });
+    setMenuId(id);
+  };
+  useEffect(() => {
+    if (menuId === null) return;
+    const outside = (event) => {
+      if (
+        !menuPanel.current?.contains(event.target) &&
+        !menuTrigger.current?.contains(event.target)
+      )
+        setMenuId(null);
+    };
+    const escape = (event) => {
+      if (event.key === "Escape") {
+        setMenuId(null);
+        menuTrigger.current?.focus();
+      }
+    };
+    const dismiss = () => setMenuId(null);
+    const scroll = (event) => {
+      if (!menuPanel.current?.contains(event.target)) dismiss();
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    window.addEventListener("resize", dismiss);
+    window.addEventListener("scroll", scroll, true);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+      window.removeEventListener("resize", dismiss);
+      window.removeEventListener("scroll", scroll, true);
+    };
+  }, [menuId]);
   const [sort, setSort] = useState("newest");
   const search = testSearch ?? localSearch;
   const status = testStatus ?? localStatus;
@@ -194,6 +247,9 @@ export default function ListaTeste({ ctx = {} }) {
         return sort === "oldest" ? aTime - bTime : bTime - aTime;
       });
   }, [managed, search, status, category, period, sort, now]);
+  useEffect(() => {
+    setMenuId(null);
+  }, [search, status, category, period, sort, page, view, managed]);
   const pageSize = 5;
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.max(1, Math.min(Number(page) || 1, pages));
@@ -285,36 +341,44 @@ export default function ListaTeste({ ctx = {} }) {
                 title="Mai multe acțiuni"
                 aria-label={`Mai multe acțiuni pentru ${titleOf(item)}`}
                 aria-expanded={menuId === id}
-                onClick={() => setMenuId(menuId === id ? null : id)}
+                onClick={(event) => toggleMenu(event, id)}
               >
                 <MoreHorizontal size={21} />
               </button>
-              {menuId === id && (
-                <div className="lt-menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuId(null);
-                      open(item);
-                    }}
-                    disabled={!canOpen(item)}
+              {menuId === id &&
+                menuPosition &&
+                createPortal(
+                  <div
+                    className="lt-menu lt-menu-portal"
+                    ref={menuPanel}
+                    style={menuPosition}
+                    aria-label="Acțiuni test"
                   >
-                    Deschide testul
-                  </button>
-                  {canDelete && typeof setDeleteTarget === "function" && (
                     <button
                       type="button"
-                      className="lt-danger"
                       onClick={() => {
                         setMenuId(null);
-                        setDeleteTarget(item);
+                        open(item);
                       }}
+                      disabled={!canOpen(item)}
                     >
-                      <Trash2 size={15} /> Șterge testul
+                      <Eye size={17} /> <span>Deschide testul</span>
                     </button>
-                  )}
-                </div>
-              )}
+                    {canDelete && typeof setDeleteTarget === "function" && (
+                      <button
+                        type="button"
+                        className="lt-danger"
+                        onClick={() => {
+                          setMenuId(null);
+                          setDeleteTarget(item);
+                        }}
+                      >
+                        <Trash2 size={17} /> <span>Șterge testul</span>
+                      </button>
+                    )}
+                  </div>,
+                  document.body,
+                )}
             </div>
           )}
         </div>

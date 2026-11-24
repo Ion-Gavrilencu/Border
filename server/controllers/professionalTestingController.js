@@ -1350,7 +1350,13 @@ const attemptData = asyncRoute(async (req, res) => {
   if (!id) return fail(res, 400, "ID invalid.");
   const a = await finalizeExpiredAttempt(id, req.user.id);
   if (!a) return fail(res, 404, "Încercare inexistentă.");
-  if (a.status !== "IN_PROGRESS") return fail(res, 409, "Încercarea este încheiată.");
+  if (a.status !== "IN_PROGRESS") {
+    return res.json({
+      attempt: { id: a.id, status: a.status },
+      questions: [],
+      answers: [],
+    });
+  }
   const questions = await orderedAttemptQuestions(pool, a);
   const saved = await pool.query(
     "SELECT question_id,selected_option_ids FROM professional_test_attempt_answers WHERE attempt_id=$1",
@@ -1916,21 +1922,25 @@ const deleteTest = asyncRoute(async (req, res) => {
       return fail(res, 404, "Testul nu exista.");
     }
 
-    // Nu distruge istoricul evaluărilor. Testele susținute pot fi doar arhivate.
-    const history = await client.query(
-      `SELECT EXISTS(SELECT 1 FROM professional_test_attempts a
-       JOIN professional_test_versions v ON v.id=a.version_id
-       WHERE v.test_id=$1) AS has_history`,
+    // Ștergerea definitivă este permisă administratorului inclusiv pentru
+    // testele cu istoric. Interfața existentă cere confirmarea operațiunii.
+    // Blocăm atribuirile și încercările înainte de ștergerea răspunsurilor.
+    await client.query(
+      `SELECT id FROM professional_test_assignments
+       WHERE version_id IN (SELECT id FROM professional_test_versions WHERE test_id=$1)
+       ORDER BY id FOR UPDATE`,
       [testId],
     );
-    if (history.rows[0].has_history) {
-      await client.query("ROLLBACK");
-      return fail(
-        res,
-        409,
-        "Testul are încercări înregistrate și nu poate fi șters definitiv. Arhivează-l pentru a păstra istoricul.",
-      );
-    }
+    await client.query(
+      `SELECT id FROM professional_test_versions WHERE test_id=$1 ORDER BY id FOR UPDATE`,
+      [testId],
+    );
+    await client.query(
+      `SELECT id FROM professional_test_attempts
+       WHERE version_id IN (SELECT id FROM professional_test_versions WHERE test_id=$1)
+       ORDER BY id FOR UPDATE`,
+      [testId],
+    );
 
     // Ordinea respecta dependentele dintre cele noua tabele ale modulului.
     // Grupele si membrii grupelor nu sunt sterse: pot fi folosite de alte teste.

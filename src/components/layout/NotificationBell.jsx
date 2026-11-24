@@ -303,7 +303,17 @@ function NotificationBell() {
     if (item.type === "test") {
       if (tab && !tab.closed) tab.close();
       // Testele sunt pagini React, nu documente cu atașamente.
-      navigate("/testare");
+      const params = new URLSearchParams({ tab: "assigned" });
+      if (isSafeInternalPath(item.link)) {
+        const url = new URL(item.link, window.location.origin);
+        if (url.origin === window.location.origin && url.pathname === "/testare") {
+          for (const name of ["versiune", "atribuire"]) {
+            const value = url.searchParams.get(name);
+            if (/^[1-9]\d*$/.test(value || "")) params.set(name, value);
+          }
+        }
+      }
+      navigate(`/testare?${params.toString()}`);
       return false;
     }
     const config = MODULES[item.type];
@@ -577,6 +587,11 @@ function NotificationBell() {
                       </span>
                       {item.message && (
                         <span className="notification-item-message">{item.message}</span>
+                      )}
+                      {item.type === "test" && (
+                        <span style={{ color: "#1666b1", fontSize: 12, fontWeight: 700 }}>
+                          Accesează testul →
+                        </span>
                       )}
                       <time
                         className="notification-item-time"

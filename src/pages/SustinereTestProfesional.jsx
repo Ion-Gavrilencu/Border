@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Clock3,
   Send,
@@ -42,6 +43,7 @@ export default function SustinereTestProfesional() {
   const [data, setData] = useState(null);
   const [review, setReview] = useState(null);
   const [answers, setAnswers] = useState({});
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [savingQuestion, setSavingQuestion] = useState(null);
   const [seconds, setSeconds] = useState(null);
@@ -66,12 +68,17 @@ export default function SustinereTestProfesional() {
     setError("");
     setShowFinalizeModal(false);
     setAnswers({});
+    setCurrentQuestion(0);
     setSeconds(null);
     pending.current = Promise.resolve();
     (async () => {
       try {
         const payload = await getProfessionalAttempt(attemptId);
         if (!active.current) return;
+        if (payload.attempt.status !== "IN_PROGRESS") {
+          await loadReview();
+          return;
+        }
         setData(payload);
         const initial = {};
         for (const answer of payload.answers || []) {
@@ -452,6 +459,8 @@ export default function SustinereTestProfesional() {
     );
   }
 
+  const questionCount = data.questions.length;
+  const navigationLocked = busy || savingQuestion !== null || seconds === 0;
   const answered = (data.questions || []).filter(
     (q) => (answers[keyOf(q.id)] || []).length > 0,
   ).length;
@@ -512,24 +521,37 @@ export default function SustinereTestProfesional() {
               <button
                 type="button"
                 key={q.id}
-                className={done ? "is-answered" : ""}
+                className={[done && "is-answered", currentQuestion === i && "is-current"]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-current={currentQuestion === i ? "step" : undefined}
+                disabled={navigationLocked}
                 aria-label={`Întrebarea ${i + 1}, ${done ? "cu răspuns" : "fără răspuns"}`}
-                onClick={() =>
-                  document.getElementById(`st-question-${q.id}`)?.scrollIntoView({ block: "start" })
-                }
+                onClick={() => setCurrentQuestion(i)}
               >
                 {i + 1}
               </button>
             );
           })}
         </nav>
+        <div className="st-nav-legend">
+          <span>
+            <i className="st-legend-current" /> Curentă
+          </span>
+          <span>
+            <i className="st-legend-answered" /> Completată
+          </span>
+          <span>
+            <i /> Fără răspuns
+          </span>
+        </div>
       </div>
       <div className="st-questions">
-        {data.questions.map((q, i) => (
+        {data.questions.slice(currentQuestion, currentQuestion + 1).map((q) => (
           <article className="st-card st-exam-question" key={q.id} id={`st-question-${q.id}`}>
             <div className="st-question-title">
               <span>
-                Întrebarea {i + 1} din {data.questions.length}
+                Întrebarea {currentQuestion + 1} din {data.questions.length}
               </span>
               <span>{q.points} pct.</span>
             </div>
@@ -557,18 +579,53 @@ export default function SustinereTestProfesional() {
           </article>
         ))}
       </div>
-      <div className="st-footer">
-        <span>
-          {answered}/{data.questions.length} completate
-        </span>
+      <div className="st-step-controls">
         <button
-          className="st-primary"
-          disabled={busy || savingQuestion !== null}
+          type="button"
+          className="st-step-previous"
+          disabled={navigationLocked || currentQuestion === 0}
+          onClick={() => setCurrentQuestion((i) => Math.max(0, i - 1))}
+        >
+          <ArrowLeft size={17} /> Anterioară
+        </button>
+        {currentQuestion < questionCount - 1 ? (
+          <button
+            type="button"
+            className="st-primary"
+            disabled={navigationLocked}
+            onClick={() => setCurrentQuestion((i) => Math.min(questionCount - 1, i + 1))}
+          >
+            Următoarea <ArrowRight size={17} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="st-primary"
+            disabled={navigationLocked || !questionCount}
+            onClick={() => finalize(true)}
+          >
+            <Send size={17} /> Finalizează
+          </button>
+        )}
+      </div>
+      <div className="st-step-summary">
+        <span role="status">
+          Întrebarea {questionCount ? currentQuestion + 1 : 0} din {questionCount}
+        </span>
+        <span>
+          {answered}/{questionCount} completate
+        </span>
+      </div>
+      {currentQuestion < questionCount - 1 && answered === questionCount && (
+        <button
+          type="button"
+          className="st-primary st-step-finish"
+          disabled={navigationLocked}
           onClick={() => finalize(true)}
         >
-          <Send size={17} /> {busy ? "Se finalizează..." : "Finalizează testul"}
+          <Send size={17} /> Finalizează testul
         </button>
-      </div>
+      )}
       {showFinalizeModal && !review && (
         <div
           className="st-modal-backdrop"

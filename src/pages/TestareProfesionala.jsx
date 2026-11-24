@@ -5,8 +5,8 @@ import Incercari from "../components/testare/Incercari";
 import Atribuiri from "../components/testare/Atribuiri";
 import Rezultate from "../components/testare/Rezultate";
 import SetariTestare from "../components/testare/SetariTestare";
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
   GraduationCap,
@@ -74,10 +74,17 @@ const assignmentIdOf = (item) => item?.assignment_id ?? null;
 
 function TestareProfesionala() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const focusRef = useRef(null);
+  const query = new URLSearchParams(location.search);
+  const requestedAssignment = query.get("atribuire");
+  const requestedVersion = query.get("versiune");
+  const hasTarget = query.has("atribuire") || query.has("versiune");
+  const fromNotification = hasTarget || query.get("tab") === "assigned";
   const { user } = useAuth();
   const canManage = user?.role === "ADMIN" || user?.role === "EDITOR";
   const canDelete = user?.role === "ADMIN";
-  const [tab, setTab] = useState(canManage ? "dashboard" : "assigned");
+  const [tab, setTab] = useState(fromNotification || !canManage ? "assigned" : "dashboard");
   const [dashboardSearch, setDashboardSearch] = useState("");
   const [testSearch, setTestSearch] = useState("");
   const [testStatus, setTestStatus] = useState("all");
@@ -139,8 +146,49 @@ function TestareProfesionala() {
   }, [canManage]);
 
   useEffect(() => {
+    if (fromNotification) setTab("assigned");
     load();
-  }, [load]);
+  }, [load, location.key, fromNotification]);
+
+  // Identificăm atribuirea exactă, nu doar titlul testului.
+  const matchingAssignments = hasTarget
+    ? assigned.filter((item) => {
+        if (
+          requestedAssignment !== null &&
+          (!/^[1-9]\d*$/.test(requestedAssignment) ||
+            String(assignmentIdOf(item)) !== requestedAssignment)
+        )
+          return false;
+        if (
+          requestedVersion !== null &&
+          (!/^[1-9]\d*$/.test(requestedVersion) || String(versionIdOf(item)) !== requestedVersion)
+        )
+          return false;
+        return true;
+      })
+    : [];
+  const targetTest = matchingAssignments.length === 1 ? matchingAssignments[0] : null;
+  const showTarget = tab === "assigned" && hasTarget;
+
+  useEffect(() => {
+    if (!showTarget || loading || error) return;
+    const frame = window.requestAnimationFrame(() => {
+      focusRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+      focusRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showTarget, loading, error, location.key]);
+
+  const clearTestFocus = () => {
+    setTab("assigned");
+    navigate("/testare?tab=assigned", { replace: true });
+  };
+  const changeTab = (id) => {
+    if (id !== "assigned" && fromNotification) {
+      navigate("/testare", { replace: true });
+    }
+    setTab(id);
+  };
 
   const openEditor = (item) => {
     const versionId = versionIdOf(item);
@@ -639,7 +687,7 @@ function TestareProfesionala() {
               role="tab"
               aria-selected={tab === id}
               className={`pt-tab ${tab === id ? "pt-tab-active" : ""}`}
-              onClick={() => setTab(id)}
+              onClick={() => changeTab(id)}
             >
               <Icon size={18} /> {label}
             </button>
@@ -663,16 +711,74 @@ function TestareProfesionala() {
         ) : tab === "dashboard" && !loading && !error ? (
           <PanouGeneral ctx={sectionCtx} />
         ) : (tab === "assigned" || tab === "results") && !loading && !error ? (
-          <TestareUserViews
-            mode={tab}
-            assigned={assigned}
-            results={results}
-            startingId={startingId}
-            onStart={openAssignedTest}
-            onOpenResult={openFinishedAttempt}
-            versionIdOf={assignmentIdOf}
-            finishedForVersion={finishedForVersion}
-          />
+          showTarget ? (
+            <section
+              ref={focusRef}
+              tabIndex={-1}
+              aria-label="Testul din notificare"
+              style={{
+                minWidth: 0,
+                maxWidth: "100%",
+                scrollMarginTop: 110,
+                border: "2px solid #2563eb",
+                borderRadius: 16,
+                padding: "clamp(10px, 2vw, 18px)",
+                background: "#f0f6ff",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  marginBottom: 12,
+                }}
+              >
+                <strong style={{ color: "#1158a7", overflowWrap: "anywhere" }}>
+                  {targetTest ? "Testul din notificare" : "Testul solicitat"}
+                </strong>
+                <button
+                  type="button"
+                  className="pt-button pt-button-light"
+                  onClick={clearTestFocus}
+                >
+                  <ArrowLeft size={16} /> Toate testele mele
+                </button>
+              </div>
+              {targetTest ? (
+                <TestareUserViews
+                  key={`${location.key}-${assignmentIdOf(targetTest)}`}
+                  mode="assigned"
+                  assigned={[targetTest]}
+                  results={results}
+                  startingId={startingId}
+                  onStart={openAssignedTest}
+                  onOpenResult={openFinishedAttempt}
+                  versionIdOf={assignmentIdOf}
+                  finishedForVersion={finishedForVersion}
+                />
+              ) : (
+                <p role="status" style={{ color: "#405b78", overflowWrap: "anywhere" }}>
+                  {matchingAssignments.length > 1
+                    ? "Există mai multe atribuiri ale acestei versiuni. Accesează toate testele mele pentru a o alege pe cea dorită."
+                    : "Testul nu mai este disponibil în lista ta. Este posibil să fi fost șters, retras, să fi expirat sau să nu fie încă disponibil."}
+                </p>
+              )}
+            </section>
+          ) : (
+            <TestareUserViews
+              mode={tab}
+              assigned={assigned}
+              results={results}
+              startingId={startingId}
+              onStart={openAssignedTest}
+              onOpenResult={openFinishedAttempt}
+              versionIdOf={assignmentIdOf}
+              finishedForVersion={finishedForVersion}
+            />
+          )
         ) : loading ? (
           <div className="pt-loading">
             <span className="pt-spinner" aria-hidden="true" /> Se încarcă datele...

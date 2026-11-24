@@ -23,11 +23,12 @@ function getFrontendOrigin() {
   }
 }
 
-function getFrontendLink(versionId) {
+function getFrontendLink(versionId, assignmentId) {
   const origin = getFrontendOrigin();
   if (!origin) return null;
   const url = new URL("/testare", origin);
   url.searchParams.set("versiune", String(versionId));
+  if (assignmentId != null) url.searchParams.set("atribuire", String(assignmentId));
   return url.href;
 }
 
@@ -180,11 +181,11 @@ async function notifyTestAssignment({ assignmentId, versionId, testTitle }) {
 
   await sendTestEmails(
     inserted.rows.map((r) => r.email),
-    { versionId, title, message },
+    { versionId, assignmentId, title, message },
   );
 }
 
-async function sendTestEmails(recipients, { versionId, title, message }) {
+async function sendTestEmails(recipients, { versionId, assignmentId, title, message }) {
   if (!recipients.length) return;
 
   const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
@@ -205,7 +206,7 @@ async function sendTestEmails(recipients, { versionId, title, message }) {
     return;
   }
 
-  const url = getFrontendLink(versionId);
+  const url = getFrontendLink(versionId, assignmentId);
   const emailLogo = getEmailLogo();
   const html = buildTestEmailHtml({ title, message, url, logoSrc: emailLogo.src });
   const text = [
@@ -318,7 +319,7 @@ async function processTestReminders({ limit = 100 } = {}) {
     try {
       await sendTestEmails(
         inserted.rows.map((x) => x.email),
-        { versionId: a.version_id, title, message },
+        { versionId: a.version_id, assignmentId: a.assignment_id, title, message },
       );
     } catch (error) {
       console.error("TEST REMINDER EMAIL ERROR:", error);

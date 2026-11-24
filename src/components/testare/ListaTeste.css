@@ -411,7 +411,7 @@
   gap: 2px;
   justify-content: flex-end;
 }
-.lt-actions button {
+.lt-actions :is(button):not(.lt-menu button) {
   width: 31px;
   height: 32px;
   display: grid;
@@ -422,10 +422,10 @@
   cursor: pointer;
   border-radius: 8px;
 }
-.lt-actions button:hover {
+.lt-actions :is(button):not(.lt-menu button):hover {
   background: #eaf0ff;
 }
-.lt-actions button:disabled {
+.lt-actions :is(button):not(.lt-menu button):disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -764,7 +764,7 @@
     gap: 1px;
     flex-wrap: nowrap;
   }
-  .lt-row .lt-actions button {
+  .lt-row .lt-actions :is(button):not(.lt-menu button) {
     width: 34px;
     height: 38px;
     min-width: 34px;
@@ -897,7 +897,7 @@
   .lt-test-card {
     padding: 15px;
   }
-  .lt-actions button {
+  .lt-actions :is(button):not(.lt-menu button) {
     width: 40px;
     height: 40px;
   }
@@ -929,7 +929,7 @@
   .lt-row .lt-test-text strong {
     font-size: 13px;
   }
-  .lt-row .lt-actions button {
+  .lt-row .lt-actions :is(button):not(.lt-menu button) {
     width: 32px;
     min-width: 32px;
   }
@@ -1010,7 +1010,7 @@
   touch-action: manipulation;
 }
 @media (hover: none) and (pointer: coarse) {
-  .lt-actions button {
+  .lt-actions :is(button):not(.lt-menu button) {
     min-width: 44px;
     min-height: 44px;
   }
@@ -1036,4 +1036,78 @@
   .lt-pagination button:not(:disabled):hover {
     transform: translateY(-1px);
   }
+}
+
+/* Meniu de acțiuni: portal independent de tabel și de carduri. */
+.lt-menu.lt-menu-portal {
+  position: fixed;
+  right: auto;
+  top: auto;
+  z-index: 3000;
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #dce5f2;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(21, 45, 85, 0.18);
+  font-family: inherit;
+  overflow: auto;
+  max-height: calc(100dvh - 24px);
+}
+.lt-menu.lt-menu-portal > button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  height: auto;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #233c60;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.lt-menu.lt-menu-portal > button > svg {
+  flex: 0 0 17px;
+}
+.lt-menu.lt-menu-portal > button > span {
+  min-width: 0;
+}
+.lt-menu.lt-menu-portal > button:hover:not(:disabled) {
+  background: #eef4ff;
+}
+.lt-menu.lt-menu-portal > button.lt-danger {
+  color: #c62838;
+  background: #fff1f2;
+}
+.lt-menu.lt-menu-portal > button.lt-danger:hover:not(:disabled) {
+  background: #ffe3e7;
+}
+.lt-menu.lt-menu-portal > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.lt-menu.lt-menu-portal > button:focus-visible {
+  outline: 2px solid #245cff;
+  outline-offset: -2px;
+}
+.lt-menu-wrap > button[aria-expanded="true"] {
+  background: #eaf0ff;
 }
