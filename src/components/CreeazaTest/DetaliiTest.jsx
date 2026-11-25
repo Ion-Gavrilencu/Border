@@ -183,7 +183,22 @@ export default function DetaliiTest({ form, set }) {
       </h3>
       <div className="pte-soft-panel pte-switch-grid ptd-options-grid">
         <Switch {...toggle("allowRetake")} label="Permite reluarea testului după finalizare" />
-        <Switch {...toggle("showCorrect")} label="Afișează răspunsurile corecte" />
+        <Field
+          label="Dezvăluirea răspunsurilor corecte"
+          hint="Autorizarea manuală nu este încă implementată."
+        >
+          <select
+            value={form.revealAnswers ?? (form.showCorrect ? "AFTER_SUBMISSION" : "NEVER")}
+            onChange={(e) => set("revealAnswers", e.target.value)}
+          >
+            <option value="NEVER">Niciodată</option>
+            <option value="AFTER_SUBMISSION">După finalizarea încercării</option>
+            <option value="AFTER_DEADLINE">După expirarea termenului</option>
+            {form.revealAnswers === "MANUAL" && (
+              <option value="MANUAL">Manual (configurație existentă)</option>
+            )}
+          </select>
+        </Field>
         <Switch {...toggle("showGrade")} label="Afișează nota imediat după finalizare" />
         <Switch {...toggle("shuffleQuestions")} label="Amestecă întrebările" />
         <Switch {...toggle("showExplanations")} label="Afișează explicații la răspunsuri" />
@@ -214,9 +229,15 @@ export default function DetaliiTest({ form, set }) {
       <div className="pte-soft-panel ptd-retry-panel">
         <Field
           label="Avertizare de inactivitate"
-          hint="Avertizare locală, fără finalizare automată."
+          hint="Intervalul maxim fără activitate. Finalizarea automată este opțională."
         >
-          <select {...bind("idleWarningMinutes")}>
+          <select
+            {...bind("idleWarningMinutes")}
+            onChange={(e) => {
+              set("idleWarningMinutes", e.target.value);
+              if (!Number(e.target.value)) set("idleAutoFinish", false);
+            }}
+          >
             {[0, 2, 5, 10, 15, 30].map((n) => (
               <option key={n} value={n}>
                 {n === 0 ? "Dezactivată" : `${n} minute`}
@@ -224,6 +245,12 @@ export default function DetaliiTest({ form, set }) {
             ))}
           </select>
         </Field>
+        <Switch
+          checked={!!form.idleAutoFinish && Number(form.idleWarningMinutes) > 0}
+          onChange={(v) => set("idleAutoFinish", v && Number(form.idleWarningMinutes) > 0)}
+          label="Finalizează automat pentru inactivitate"
+          hint="Avertizare cu 60 secunde înainte. Necesită pagina vizibilă și conexiune continuă."
+        />
         <Switch
           {...toggle("notifyResult")}
           label="Notifică participantul la finalizare (în aplicație)"

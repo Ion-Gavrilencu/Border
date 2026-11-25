@@ -36,7 +36,9 @@ const getNotifications = async (req, res) => {
       params.push(status === "read");
       where.push(`is_read = $${params.length}`);
     }
-    if (type.trim()) {
+    if (type.trim().toLowerCase() === "documents") {
+      where.push("LOWER(type) NOT IN ('test','stire')");
+    } else if (type.trim()) {
       params.push(type.trim().toLowerCase());
       where.push(`LOWER(type) = $${params.length}`);
     }
@@ -56,7 +58,7 @@ const getNotifications = async (req, res) => {
         SELECT * FROM filtered ORDER BY created_at DESC NULLS LAST, id DESC
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}
       )
-      SELECT COALESCE((SELECT json_agg(p ORDER BY p.created_at DESC NULLS LAST, p.id DESC) FROM page_rows p), '[]'::json) AS notifications,
+      SELECT COALESCE((SELECT json_agg(jsonb_set(to_jsonb(p), '{id}', to_jsonb(p.id::text)) ORDER BY p.created_at DESC NULLS LAST, p.id DESC) FROM page_rows p), '[]'::json) AS notifications,
         (SELECT COUNT(*)::integer FROM filtered) AS total,
         (SELECT COUNT(*)::integer FROM notifications WHERE user_id = $1 AND is_read = FALSE) AS unread_count
     `,

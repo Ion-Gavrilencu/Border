@@ -111,6 +111,9 @@ const createTest = asyncRoute(async (req, res) => {
   const navigationMode = b.navigation_mode ?? "free";
   const scoringMode = b.scoring_mode ?? "exact";
   const idleWarningMinutes = b.idle_warning_minutes ?? 0;
+  const idleAutoFinish = b.idle_auto_finish ?? false;
+  if (typeof idleAutoFinish !== "boolean" || (idleAutoFinish && !idleWarningMinutes))
+    return fail(res, 400, "Regulă de inactivitate invalidă.");
   const notifyResult = b.notify_result ?? false;
   if (![0, 2, 5, 10, 15, 30].includes(idleWarningMinutes) || typeof notifyResult !== "boolean")
     return fail(res, 400, "Reguli suplimentare invalide.");
@@ -218,11 +221,11 @@ const createTest = asyncRoute(async (req, res) => {
         rounding_mode,
         allow_retake,
         show_grade,
-        show_explanations, retry_interval_hours, question_limit, navigation_mode, scoring_mode, monitor_tabs, tab_warning_limit, idle_warning_minutes, notify_result
+        show_explanations, retry_interval_hours, question_limit, navigation_mode, scoring_mode, monitor_tabs, tab_warning_limit, idle_warning_minutes, notify_result, idle_auto_finish
       )
       VALUES (
         $1, 1, $2, $3, $4, $5, $6, $7,
-        $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+        $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
       )
       RETURNING *`,
       [
@@ -249,6 +252,7 @@ const createTest = asyncRoute(async (req, res) => {
         tabWarningLimit,
         idleWarningMinutes,
         notifyResult,
+        idleAutoFinish,
       ],
     );
 
@@ -571,6 +575,11 @@ const updateDraft = asyncRoute(async (req, res) => {
     const navigationMode = b.navigation_mode ?? v.navigation_mode;
     const scoringMode = b.scoring_mode ?? v.scoring_mode;
     const idleWarningMinutes = b.idle_warning_minutes ?? v.idle_warning_minutes;
+    const idleAutoFinish = b.idle_auto_finish ?? v.idle_auto_finish;
+    if (typeof idleAutoFinish !== "boolean" || (idleAutoFinish && !idleWarningMinutes)) {
+      await client.query("ROLLBACK");
+      return fail(res, 400, "Regulă de inactivitate invalidă.");
+    }
     const notifyResult = b.notify_result ?? v.notify_result;
     if (![0, 2, 5, 10, 15, 30].includes(idleWarningMinutes) || typeof notifyResult !== "boolean") {
       await client.query("ROLLBACK");
@@ -682,7 +691,7 @@ const updateDraft = asyncRoute(async (req, res) => {
            question_limit = $17,
            navigation_mode = $18,
            scoring_mode = $19,
-           monitor_tabs = $20, tab_warning_limit = $21, idle_warning_minutes = $22, notify_result = $23,
+           monitor_tabs = $20, tab_warning_limit = $21, idle_warning_minutes = $22, notify_result = $23, idle_auto_finish = $24,
            updated_at = NOW()
        WHERE id = $1 AND status = 'DRAFT'
        RETURNING *`,
@@ -710,6 +719,7 @@ const updateDraft = asyncRoute(async (req, res) => {
         tabWarningLimit,
         idleWarningMinutes,
         notifyResult,
+        idleAutoFinish,
       ],
     );
 
@@ -1075,8 +1085,8 @@ const newVersion = asyncRoute(async (req, res) => {
       `INSERT INTO professional_test_versions(
          test_id,version_number,duration_minutes,max_attempts,passing_percentage,
          reveal_answers,shuffle_questions,shuffle_options,available_from,available_until,
-         max_grade,grading_mode,rounding_mode,allow_retake,show_grade,show_explanations,retry_interval_hours,question_limit,navigation_mode,scoring_mode,monitor_tabs,tab_warning_limit,idle_warning_minutes,notify_result
-       ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING *`,
+         max_grade,grading_mode,rounding_mode,allow_retake,show_grade,show_explanations,retry_interval_hours,question_limit,navigation_mode,scoring_mode,monitor_tabs,tab_warning_limit,idle_warning_minutes,notify_result,idle_auto_finish
+       ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25) RETURNING *`,
       [
         testId,
         v.version_number + 1,
@@ -1102,6 +1112,7 @@ const newVersion = asyncRoute(async (req, res) => {
         v.tab_warning_limit,
         v.idle_warning_minutes,
         v.notify_result,
+        v.idle_auto_finish,
       ],
     );
     const qs = await questionList(c, v.id, true);
@@ -1250,6 +1261,21 @@ const listAssigned = asyncRoute(async (req, res) => {
       CASE WHEN v.allow_retake AND a.allow_retake THEN v.max_attempts ELSE 1 END AS max_attempts,
       a.available_from, a.deadline_at AS available_until, a.deadline_at,
       a.assigned_at, a.allow_retake, a.block_after_expiry,
+      CASE WHEN a.available_from > now() THEN 'scheduled'
+           WHEN a.block_after_expiry AND a.deadline_at <= now() THEN 'expired'
+           ELSE 'available' END AS availability_state,
+      EXISTS (SELECT 1 FROM professional_test_attempts at
+       WHERE at.assignment_id=a.id AND at.user_id_snapshot=$1
+         AND at.status='IN_PROGRESS' AND at.expires_at>now()) AS has_active_attempt,
+      (SELECT MAX(at.expires_at) FROM professional_test_attempts at
+       WHERE at.assignment_id=a.id AND at.user_id_snapshot=$1 AND at.status='IN_PROGRESS') AS active_attempt_expires_at,
+      CASE WHEN v.retry_interval_hours > 0 THEN (
+        SELECT MAX(CASE WHEN at.status='SUBMITTED' THEN at.submitted_at
+          WHEN at.status='EXPIRED' THEN LEAST(at.submitted_at,at.expires_at)
+          ELSE at.expires_at END) + v.retry_interval_hours * interval '1 hour'
+        FROM professional_test_attempts at WHERE at.assignment_id=a.id AND at.user_id_snapshot=$1
+          AND (at.status IN ('SUBMITTED','EXPIRED') OR (at.status='IN_PROGRESS' AND at.expires_at<=now()))
+      ) END AS next_attempt_at,
       (SELECT COUNT(*)::int FROM professional_test_attempts at
        WHERE at.assignment_id=a.id AND at.user_id_snapshot=$1) AS attempts_used
      FROM professional_test_assignments a
@@ -1257,8 +1283,6 @@ const listAssigned = asyncRoute(async (req, res) => {
      JOIN professional_tests t ON t.id=v.test_id
      WHERE v.status='PUBLISHED' AND t.archived_at IS NULL AND a.revoked_at IS NULL
        AND a.show_in_assigned_tests
-       AND (a.available_from IS NULL OR a.available_from<=now())
-       AND (NOT a.block_after_expiry OR a.deadline_at IS NULL OR a.deadline_at>=now())
        AND (a.target_type='ALL' OR (a.target_type='USER' AND a.user_id=$1)
          OR (a.target_type='GROUP' AND EXISTS(SELECT 1 FROM professional_test_group_members gm
             WHERE gm.group_id=a.group_id AND gm.user_id=$1)))
@@ -1311,7 +1335,10 @@ const startAttempt = asyncRoute(async (req, res) => {
     if (active.rowCount) {
       if (new Date(active.rows[0].expires_at) > new Date()) {
         await c.query("COMMIT");
-        return res.json({ attempt: active.rows[0], resumed: true });
+        return res.json({
+          attempt: { id: active.rows[0].id, status: active.rows[0].status },
+          resumed: true,
+        });
       }
       await finalize(c, active.rows[0], "EXPIRED");
     }
@@ -1341,12 +1368,10 @@ const startAttempt = asyncRoute(async (req, res) => {
       if (wait.rows[0].blocked) {
         await c.query("COMMIT");
         const next = wait.rows[0].next_attempt_at;
-        return res
-          .status(409)
-          .json({
-            message: `Poți relua testul după ${new Date(next).toLocaleString("ro-RO", { timeZone: "Europe/Chisinau" })}.`,
-            next_attempt_at: next,
-          });
+        return res.status(409).json({
+          message: `Poți relua testul după ${new Date(next).toLocaleString("ro-RO", { timeZone: "Europe/Chisinau" })}.`,
+          next_attempt_at: next,
+        });
       }
     }
     let selectedIds = null;
@@ -1378,7 +1403,9 @@ const startAttempt = asyncRoute(async (req, res) => {
       ],
     );
     await c.query("COMMIT");
-    return res.status(201).json({ attempt: r.rows[0], resumed: false });
+    return res
+      .status(201)
+      .json({ attempt: { id: r.rows[0].id, status: r.rows[0].status }, resumed: false });
   } catch (e) {
     await c.query("ROLLBACK");
     throw e;
@@ -1420,7 +1447,7 @@ function visibleQuestions(questions, index, mode) {
     ? questions.map((q, i) => (i <= index ? q : { id: q.id }))
     : questions;
 }
-async function finalize(c, a, status) {
+async function finalize(c, a, status, reason = status === "EXPIRED" ? "TIME" : "MANUAL") {
   const v = await c.query(
     `SELECT passing_percentage, max_grade, grading_mode, rounding_mode, scoring_mode, notify_result FROM professional_test_versions WHERE id=$1`,
     [a.version_id],
@@ -1480,12 +1507,12 @@ async function finalize(c, a, status) {
   const rawGrade = 1 + ((maxGrade - 1) * earned) / (total || 1);
   const grade = Math.round((rawGrade + Number.EPSILON) * factor) / factor;
   const r = await c.query(
-    `UPDATE professional_test_attempts SET status=$2,submitted_at=now(),earned_points=$3,total_points=$4,percentage=$5,grade=$6,passed=$7 WHERE id=$1 RETURNING *`,
-    [a.id, status, earned, total, pct, grade, pct >= Number(v.rows[0].passing_percentage)],
+    `UPDATE professional_test_attempts SET status=$2,submitted_at=now(),earned_points=$3,total_points=$4,percentage=$5,grade=$6,passed=$7,completion_reason=$8 WHERE id=$1 RETURNING *`,
+    [a.id, status, earned, total, pct, grade, pct >= Number(v.rows[0].passing_percentage), reason],
   );
   // Finalizarea este serializată prin blocarea încercării. Notificarea nu dezvăluie nota.
   if (settings.notify_result && a.user_id != null) {
-    const link = `/testare?versiune=${encodeURIComponent(a.version_id)}&atribuire=${encodeURIComponent(a.assignment_id ?? "")}`;
+    const link = `/testare/incercari/${encodeURIComponent(a.id)}/rezultat`;
     await c.query("SAVEPOINT result_notification");
     try {
       await c.query(
@@ -1496,6 +1523,13 @@ async function finalize(c, a, status) {
           "Încercarea a fost finalizată. Consultă secțiunea Rezultatele mele, conform regulilor testului.",
           link,
         ],
+      );
+      await c.query(
+        `INSERT INTO professional_test_result_deliveries(attempt_id)
+         SELECT $1 FROM users WHERE id=$2 AND is_active=true
+           AND email_notifications=true AND email IS NOT NULL AND btrim(email)<>''
+         ON CONFLICT DO NOTHING`,
+        [a.id, a.user_id],
       );
       await c.query("RELEASE SAVEPOINT result_notification");
     } catch (error) {
@@ -1562,7 +1596,7 @@ const attemptData = asyncRoute(async (req, res) => {
   ).rows[0].count;
   const security = (
     await pool.query(
-      "SELECT monitor_tabs, tab_warning_limit, idle_warning_minutes FROM professional_test_versions WHERE id=$1",
+      "SELECT monitor_tabs, tab_warning_limit, idle_warning_minutes, idle_auto_finish FROM professional_test_versions WHERE id=$1",
       [a.version_id],
     )
   ).rows[0];
@@ -1578,12 +1612,16 @@ const saveAnswer = asyncRoute(async (req, res) => {
     ids = req.body.selected_option_ids;
   const advancing = req.body.action === "advance";
   const tabEvent = req.body.action === "tab_hidden";
+  const idlePoll = req.body.action === "idle_poll";
+  if (idlePoll && typeof req.body.active !== "boolean")
+    return fail(res, 400, "Activitate invalidă.");
   if (tabEvent && !/^[a-zA-Z0-9-]{16,80}$/.test(String(req.body.event_id || "")))
     return fail(res, 400, "Eveniment invalid.");
   if (
     !id ||
-    (!tabEvent && !qid) ||
+    (!tabEvent && !idlePoll && !qid) ||
     (!tabEvent &&
+      !idlePoll &&
       !advancing &&
       (!Array.isArray(ids) ||
         ids.length > 12 ||
@@ -1611,6 +1649,40 @@ const saveAnswer = asyncRoute(async (req, res) => {
       await finalize(c, a, "EXPIRED");
       await c.query("COMMIT");
       return fail(res, 409, "Timpul a expirat. Încercarea a fost finalizată automat.");
+    }
+    if (idlePoll) {
+      const config = (
+        await c.query(
+          "SELECT idle_auto_finish,idle_warning_minutes,clock_timestamp() AS server_now FROM professional_test_versions WHERE id=$1",
+          [a.version_id],
+        )
+      ).rows[0];
+      if (!config.idle_auto_finish || !config.idle_warning_minutes) {
+        await c.query("COMMIT");
+        return res.json({ enabled: false });
+      }
+      const now = new Date(config.server_now).getTime();
+      const lastPoll = a.idle_last_poll_at ? new Date(a.idle_last_poll_at).getTime() : 0;
+      // Lipsa semnalului (rețea, filă ascunsă, browser suspendat) nu este inactivitate confirmată.
+      const last =
+        req.body.active || !lastPoll || now - lastPoll > 25000 || !a.idle_last_activity_at
+          ? now
+          : new Date(a.idle_last_activity_at).getTime();
+      const left = Math.max(
+        0,
+        Math.ceil((last + Number(config.idle_warning_minutes) * 60000 - now) / 1000),
+      );
+      if (!left) {
+        await finalize(c, a, "SUBMITTED", "IDLE");
+        await c.query("COMMIT");
+        return res.json({ enabled: true, finished: true, remaining: 0 });
+      }
+      await c.query(
+        "UPDATE professional_test_attempts SET idle_last_poll_at=$2,idle_last_activity_at=$3 WHERE id=$1",
+        [id, new Date(now), new Date(last)],
+      );
+      await c.query("COMMIT");
+      return res.json({ enabled: true, remaining: left });
     }
     if (tabEvent) {
       const security = (
@@ -1654,7 +1726,7 @@ const saveAnswer = asyncRoute(async (req, res) => {
           return fail(res, 400, "Ai ajuns la ultima întrebare.");
         }
         await c.query(
-          "UPDATE professional_test_attempts SET current_question_index=$2 WHERE id=$1",
+          "UPDATE professional_test_attempts SET current_question_index=$2,idle_last_activity_at=clock_timestamp() WHERE id=$1",
           [id, index + 1],
         );
         await c.query("COMMIT");
@@ -1688,6 +1760,10 @@ const saveAnswer = asyncRoute(async (req, res) => {
       `INSERT INTO professional_test_attempt_answers(attempt_id,version_id,question_id,selected_option_ids) VALUES($1,$2,$3,$4::bigint[]) ON CONFLICT(attempt_id,question_id) DO UPDATE SET selected_option_ids=EXCLUDED.selected_option_ids,saved_at=now()`,
       [id, a.version_id, qid, ids],
     );
+    await c.query(
+      "UPDATE professional_test_attempts SET idle_last_activity_at=clock_timestamp() WHERE id=$1",
+      [id],
+    );
     await c.query("COMMIT");
     res.json({ saved: true });
   } catch (e) {
@@ -1714,7 +1790,7 @@ const submit = asyncRoute(async (req, res) => {
     const a = r.rows[0];
     if (a.status !== "IN_PROGRESS") {
       await c.query("COMMIT");
-      return res.json({ attempt: a });
+      return res.json({ attempt: { id: a.id, status: a.status } });
     }
     if (new Date(a.expires_at) > new Date() && (await navigationModeFor(c, a)) === "sequential") {
       const ordered = await orderedAttemptQuestions(c, a);
@@ -1729,7 +1805,7 @@ const submit = asyncRoute(async (req, res) => {
       new Date(a.expires_at) <= new Date() ? "EXPIRED" : "SUBMITTED",
     );
     await c.query("COMMIT");
-    res.json({ attempt: finished });
+    res.json({ attempt: { id: finished.id, status: finished.status } });
   } catch (e) {
     await c.query("ROLLBACK");
     throw e;
@@ -1785,6 +1861,8 @@ const attemptReview = asyncRoute(async (req, res) => {
       awarded_points: Number(answer?.awarded_points || 0),
       answered: Boolean(answer?.selected_option_ids?.length),
     };
+    if (reveal) item.is_partial = item.answered && !item.is_correct && item.awarded_points > 0;
+    if (!a.show_grade || a.grading_mode === "grade") delete item.awarded_points;
     // Înainte de dezvăluire nu furnizăm nici indicatorul de corectitudine per întrebare.
     if (!reveal) {
       delete item.is_correct;
@@ -1803,6 +1881,7 @@ const attemptReview = asyncRoute(async (req, res) => {
       assignment_id: a.assignment_id,
       attempt_number: a.attempt_number,
       status: a.status,
+      completion_reason: a.completion_reason,
       started_at: a.started_at,
       submitted_at: a.submitted_at,
       percentage: a.show_grade && a.grading_mode !== "grade" ? a.percentage : null,
@@ -1810,8 +1889,8 @@ const attemptReview = asyncRoute(async (req, res) => {
       show_grade: a.show_grade,
       grading_mode: a.grading_mode,
       passed: a.passed,
-      earned_points: a.earned_points,
-      total_points: a.total_points,
+      earned_points: a.show_grade && a.grading_mode !== "grade" ? a.earned_points : null,
+      total_points: a.show_grade && a.grading_mode !== "grade" ? a.total_points : null,
       duration_seconds: durationSeconds,
       title: a.title,
     },
@@ -1954,6 +2033,7 @@ const managerAttemptReview = asyncRoute(async (req, res) => {
         )
       ).rows[0].count,
       status: a.status,
+      completion_reason: a.completion_reason,
       started_at: a.started_at,
       submitted_at: a.submitted_at,
       percentage: a.percentage,
@@ -1984,13 +2064,15 @@ const managerResults = asyncRoute(async (req, res) => {
   if (!canManage(req, v)) return fail(res, 403, "Acces interzis.");
   const r = await pool.query(
     `SELECT a.id, a.version_id, a.assignment_id, a.user_name_snapshot, a.attempt_number,
-            a.status, a.started_at, a.submitted_at,
+            a.status, a.completion_reason, a.started_at, a.submitted_at,
             CASE WHEN a.submitted_at IS NOT NULL
               THEN GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (a.submitted_at-a.started_at))))::int
               ELSE NULL END AS duration_seconds,
             a.percentage, a.grade, a.passed, t.title AS test_title,
             t.category AS category_name,
-            v.monitor_tabs, v.tab_warning_limit,
+            v.monitor_tabs, v.tab_warning_limit, v.notify_result,
+            d.status AS result_email_status, d.created_at AS result_email_created_at,
+            d.updated_at AS result_email_updated_at, d.detail AS result_email_detail,
             (SELECT COUNT(*)::int FROM professional_test_integrity_events e WHERE e.attempt_id=a.id) AS tab_event_count,
             COALESCE((SELECT jsonb_agg(recent.created_at ORDER BY recent.created_at DESC) FROM (
               SELECT e.created_at FROM professional_test_integrity_events e
@@ -1999,6 +2081,7 @@ const managerResults = asyncRoute(async (req, res) => {
      FROM professional_test_attempts a
      JOIN professional_test_versions v ON v.id = a.version_id
      JOIN professional_tests t ON t.id = v.test_id
+     LEFT JOIN professional_test_result_deliveries d ON d.attempt_id=a.id
      WHERE a.version_id=$1
      ORDER BY a.started_at DESC, a.id DESC LIMIT 500`,
     [id],
@@ -2351,7 +2434,7 @@ const savePreferences = asyncRoute(async (req, res) => {
   for (const [key, min, max] of [
     ["threshold", 0, 100],
     ["maxGrade", 1, 10],
-    ["attempts", 1, 99],
+    ["attempts", 1, 100],
   ]) {
     if (!Object.hasOwn(preferences, key)) continue;
     const raw = preferences[key];
@@ -2378,6 +2461,7 @@ const savePreferences = asyncRoute(async (req, res) => {
     "shuffleAnswers",
     "monitorTabs",
     "notifyResult",
+    "idleAutoFinish",
   ]) {
     if (Object.hasOwn(preferences, key) && typeof preferences[key] !== "boolean")
       return fail(res, 400, `Preferință invalidă: ${key}.`);
@@ -2407,6 +2491,7 @@ const savePreferences = asyncRoute(async (req, res) => {
     "shuffleAnswers",
     "idleWarningMinutes",
     "notifyResult",
+    "idleAutoFinish",
   ]);
   const validConfig = (obj) => {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
@@ -2414,7 +2499,7 @@ const savePreferences = asyncRoute(async (req, res) => {
       if (!configKeys.has(k)) return false;
       if (enums[k]) return ["string", "number"].includes(typeof v) && enums[k].includes(String(v));
       if (k === "questionLimit") return validQuestionLimit(v);
-      const bounds = { threshold: [0, 100], maxGrade: [1, 10], attempts: [1, 99] }[k];
+      const bounds = { threshold: [0, 100], maxGrade: [1, 10], attempts: [1, 100] }[k];
       if (bounds)
         return (
           (typeof v === "number" || (typeof v === "string" && v.trim())) &&

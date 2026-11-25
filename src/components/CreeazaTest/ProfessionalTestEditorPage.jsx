@@ -73,6 +73,7 @@ const newTestDefaults = (p = {}, now = new Date()) => {
   out.idleWarningMinutes = [0, 2, 5, 10, 15, 30].includes(Number(p.idleWarningMinutes))
     ? Number(p.idleWarningMinutes)
     : 0;
+  out.idleAutoFinish = p.idleAutoFinish === true && out.idleWarningMinutes > 0;
   out.notifyResult = p.notifyResult === true;
   const limit = bounded(p.questionLimit, 0, 10000, true);
   if (limit !== undefined) out.questionLimit = limit;
@@ -103,6 +104,7 @@ const mapQuestion = (q) => ({
         : "single",
   points: Number(q.points),
   explanation: q.explanation || "",
+  legalReference: q.legal_reference || "",
   answers: (q.options || []).map((o) => ({ text: o.option_text, correct: o.is_correct })),
 });
 const mapForm = (v, questions) => ({
@@ -115,6 +117,7 @@ const mapForm = (v, questions) => ({
   navigationMode: v.navigation_mode ?? "free",
   scoringMode: v.scoring_mode ?? "exact",
   idleWarningMinutes: Number(v.idle_warning_minutes ?? 0),
+  idleAutoFinish: v.idle_auto_finish === true,
   notifyResult: v.notify_result === true,
   monitorTabs: v.monitor_tabs ?? false,
   tabWarningLimit: v.tab_warning_limit ?? 3,
@@ -126,6 +129,7 @@ const mapForm = (v, questions) => ({
   allowRetake: v.allow_retake,
   showGrade: v.show_grade,
   showCorrect: v.reveal_answers === "AFTER_SUBMISSION",
+  revealAnswers: v.reveal_answers,
   showExplanations: v.show_explanations,
   shuffleQuestions: v.shuffle_questions,
   shuffleAnswers: v.shuffle_options,
@@ -144,6 +148,7 @@ const questionPayload = (q) => ({
   question_text: q.text.trim(),
   points: Number(q.points),
   explanation: q.explanation || null,
+  legal_reference: q.legalReference || null,
   options: (q.answers || []).map((a) => ({ option_text: a.text.trim(), is_correct: !!a.correct })),
 });
 const settings = (form) => ({
@@ -153,6 +158,7 @@ const settings = (form) => ({
   navigation_mode: form.navigationMode ?? "free",
   scoring_mode: form.scoringMode ?? "exact",
   idle_warning_minutes: Number(form.idleWarningMinutes ?? 0),
+  idle_auto_finish: !!form.idleAutoFinish && Number(form.idleWarningMinutes) > 0,
   notify_result: !!form.notifyResult,
   monitor_tabs: !!form.monitorTabs,
   tab_warning_limit: Number(form.tabWarningLimit ?? 3),
@@ -163,7 +169,7 @@ const settings = (form) => ({
   rounding_mode: form.rounding,
   allow_retake: form.allowRetake,
   show_grade: form.showGrade,
-  reveal_answers: form.showCorrect ? "AFTER_SUBMISSION" : "NEVER",
+  reveal_answers: form.revealAnswers ?? (form.showCorrect ? "AFTER_SUBMISSION" : "NEVER"),
   show_explanations: form.showExplanations,
   shuffle_questions: form.shuffleQuestions,
   shuffle_options: form.shuffleAnswers,
@@ -391,6 +397,7 @@ export default function ProfessionalTestEditorPage() {
                 : "single",
           points: Number(q.points || 1),
           explanation: q.explanation || "",
+          legalReference: q.legal_reference || "",
           answers: (q.options || []).map((o) => ({ text: o.option_text, correct: !!o.is_correct })),
         }));
         if (!imported.length) throw new Error("Documentul nu conține întrebări valide.");

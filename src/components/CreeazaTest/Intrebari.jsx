@@ -2,6 +2,11 @@ import "./Intrebari.css";
 import React, { useState } from "react";
 import {
   SlidersHorizontal,
+  Database,
+  Save,
+  Search,
+  ArrowUp,
+  ArrowDown,
   Download,
   Plus,
   GripVertical,
@@ -17,6 +22,9 @@ import {
   MoreHorizontal,
   Play,
 } from "lucide-react";
+import api from "../../services/api";
+import { toast } from "sonner";
+import { bankPayload, validBankPayload } from "../testare/questionBankUtils";
 
 const TRUE_FALSE_ANSWERS = [
   { text: "Adevărat", correct: false },
@@ -79,6 +87,28 @@ export default function Intrebari({
   removeQuestion,
 }) {
   const [menuId, setMenuId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [savingBank, setSavingBank] = useState(false);
+  const saveToBank = async (question) => {
+    if (savingBank) return;
+    const payload = bankPayload(question, form.category);
+    if (!validBankPayload(payload)) {
+      toast.error("Completează categoria, întrebarea și răspunsurile corecte.");
+      return;
+    }
+    setSavingBank(true);
+    try {
+      const { data } = await api.post("/testare/banca", { items: [payload], skipDuplicates: true });
+      if (data.added) toast.success("Întrebarea a fost salvată în bancă.");
+      else toast.info("Întrebarea există deja în această categorie.");
+      window.dispatchEvent(new Event("border:question-bank-updated"));
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Salvarea în bancă a eșuat.");
+    } finally {
+      setSavingBank(false);
+    }
+  };
   const [draggedAnswer, setDraggedAnswer] = useState(null);
 
   const questions = form.questions || [];
@@ -270,7 +300,7 @@ export default function Intrebari({
 
           <div>
             <h2>Întrebări ({total})</h2>
-            <p>Gestionează întrebările testului.</p>
+            <p>Compune, verifică și reutilizează întrebările testului.</p>
           </div>
         </div>
 
@@ -326,14 +356,57 @@ export default function Intrebari({
         </div>
       </div>
 
+      <div className="pte-question-overview">
+        <div>
+          <span>Total întrebări</span>
+          <strong>{total}</strong>
+        </div>
+        <div>
+          <span>Complete</span>
+          <strong>{questions.filter(isQuestionValid).length}</strong>
+        </div>
+        <div>
+          <span>Punctaj total</span>
+          <strong>
+            {Math.round(questions.reduce((n, q) => n + (Number(q.points) || 0), 0) * 100) / 100}
+          </strong>
+        </div>
+      </div>
       <div className="pte-questions-columns">
         <div className="pte-questions-left">
+          <div className="pte-question-filters">
+            <label>
+              <Search size={17} />
+              <input
+                aria-label="Caută în întrebările testului"
+                placeholder="Caută în test..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </label>
+            <select
+              aria-label="Starea întrebării"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">Toate</option>
+              <option value="valid">Complete</option>
+              <option value="invalid">Incomplete</option>
+            </select>
+          </div>
           <div className="pte-question-list" aria-label="Lista întrebărilor">
             {total === 0 && (
               <p className="pte-empty">Nu ai adăugat încă întrebări. Apasă „Adaugă întrebare”.</p>
             )}
 
             {questions.map((question, index) => {
+              if (
+                !String(question.text || "")
+                  .toLowerCase()
+                  .includes(search.trim().toLowerCase()) ||
+                (statusFilter !== "all" && isQuestionValid(question) !== (statusFilter === "valid"))
+              )
+                return null;
               const type = getType(question, questionType);
               const menuKey = question.id ?? index;
 
@@ -372,6 +445,7 @@ export default function Intrebari({
 
                     <span className="pte-question-list-text">
                       {question.text?.trim() || "Întrebare fără text"}
+                      {question.bankSource && <small className="pte-bank-origin">Din bancă</small>}
                     </span>
 
                     <span className="pte-question-type-badge">{typeLabel(type)}</span>
@@ -420,6 +494,36 @@ export default function Intrebari({
                           Duplică
                         </button>
 
+                        <button
+                          type="button"
+                          disabled={savingBank || !isQuestionValid(question)}
+                          onClick={() => {
+                            setMenuId(null);
+                            void saveToBank(question);
+                          }}
+                        >
+                          <Database size={15} /> Salvează în bancă
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => {
+                            reorderQuestion(index, index - 1);
+                            setMenuId(null);
+                          }}
+                        >
+                          <ArrowUp size={15} /> Mută în sus
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === total - 1}
+                          onClick={() => {
+                            reorderQuestion(index, index + 1);
+                            setMenuId(null);
+                          }}
+                        >
+                          <ArrowDown size={15} /> Mută în jos
+                        </button>
                         <button
                           type="button"
                           className="is-danger"
@@ -683,7 +787,25 @@ export default function Intrebari({
                 )}
               </div>
 
+              <Field label="Referință juridică (opțional)">
+                <input
+                  maxLength={1000}
+                  value={selectedQuestion.legalReference || ""}
+                  placeholder="Act normativ, articol, alineat"
+                  onChange={(e) =>
+                    updateQuestion(selectedIndex, { legalReference: e.target.value })
+                  }
+                />
+              </Field>
               <div className="pte-question-editor-footer">
+                <button
+                  type="button"
+                  className="pte-btn pte-btn-light"
+                  disabled={savingBank || !isQuestionValid(selectedQuestion)}
+                  onClick={() => saveToBank(selectedQuestion)}
+                >
+                  <Save size={17} /> {savingBank ? "Se salvează..." : "Salvează în bancă"}
+                </button>
                 <button
                   type="button"
                   className="pte-btn pte-btn-light"

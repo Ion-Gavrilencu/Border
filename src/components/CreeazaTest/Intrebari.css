@@ -1027,3 +1027,118 @@
     white-space: normal;
   }
 }
+
+/* Integrare unitară cu biblioteca */
+.pte-page .pte-questions-workspace {
+  container-type: inline-size;
+}
+.pte-page .pte-question-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.pte-question-overview > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid #dfe6f4;
+  border-radius: 13px;
+  background: #f7f9ff;
+  min-width: 0;
+}
+.pte-question-overview span {
+  font-size: 12px;
+  color: #64748b;
+}
+.pte-question-overview strong {
+  font-size: 23px;
+  color: #142347;
+  font-variant-numeric: tabular-nums;
+}
+.pte-question-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.pte-question-filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 180px;
+  border: 1px solid #d4deef;
+  border-radius: 10px;
+  padding: 0 10px;
+  background: #fff;
+  color: #52678b;
+  min-width: 0;
+}
+.pte-question-filters input,
+.pte-question-filters select {
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  color: #142347;
+}
+.pte-question-filters input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+.pte-question-filters select {
+  max-width: 100%;
+  border: 1px solid #d4deef;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+}
+.pte-bank-origin {
+  display: block;
+  font-size: 10px;
+  color: #315cc6;
+  font-weight: 700;
+}
+.pte-page .pte-question-editor-footer {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.pte-page .pte-question-editor-footer .pte-btn {
+  white-space: normal;
+}
+.pte-page .pte-question-editor-footer .pte-btn-danger {
+  margin-left: auto;
+}
+.pte-question-filters :focus-visible,
+.pte-page .pte-question-editor :focus-visible {
+  outline: 2px solid #4469ed;
+  outline-offset: 2px;
+}
+.pte-page .pte-question-editor .pte-field {
+  margin-bottom: 12px;
+}
+@container (max-width:650px) {
+  .pte-page .pte-question-overview {
+    gap: 6px;
+  }
+  .pte-question-overview > div {
+    padding: 10px 8px;
+  }
+  .pte-question-overview strong {
+    font-size: 19px;
+  }
+  .pte-question-overview span {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .pte-page .pte-question-editor-footer .pte-btn {
+    flex: 1 1 140px;
+    min-height: 44px;
+  }
+  .pte-page .pte-question-editor-footer .pte-btn-danger {
+    margin-left: 0;
+  }
+  .pte-question-filters select {
+    flex: 1 1 110px;
+  }
+}

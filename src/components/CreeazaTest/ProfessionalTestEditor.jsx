@@ -1,5 +1,6 @@
 import DetaliiTest from "./DetaliiTest";
 import Intrebari from "./Intrebari";
+import QuestionBank from "../testare/QuestionBank";
 import Atribuire from "./Atribuire";
 import Rezumat from "./Rezumat";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -53,6 +54,7 @@ const DEFAULT = {
   navigationMode: "free",
   scoringMode: "exact",
   idleWarningMinutes: 0,
+  idleAutoFinish: false,
   notifyResult: false,
   monitorTabs: false,
   tabWarningLimit: 3,
@@ -565,6 +567,22 @@ export default function ProfessionalTestEditor({
       ["Rotunjire", rounding[form.rounding] ?? form.rounding ?? "—"],
       ["Reîncercare", form.allowRetake == null ? "—" : form.allowRetake ? "Permisă" : "Nepermisă"],
       ["Afișare notă", yesNo(form.showGrade)],
+      [
+        "Dezvăluire răspunsuri",
+        {
+          NEVER: "Niciodată",
+          AFTER_SUBMISSION: "După finalizare",
+          AFTER_DEADLINE: "După termen",
+          MANUAL: "Manual",
+        }[form.revealAnswers ?? (form.showCorrect ? "AFTER_SUBMISSION" : "NEVER")],
+      ],
+      ["Monitorizare file", yesNo(form.monitorTabs)],
+      ["Prag avertizare", form.monitorTabs ? form.tabWarningLimit : "—"],
+      [
+        "Inactivitate",
+        Number(form.idleWarningMinutes) ? `${form.idleWarningMinutes} min` : "Dezactivată",
+      ],
+      ["Notificare finalizare", yesNo(form.notifyResult)],
       ["Explicații", yesNo(form.showExplanations)],
       ["Amestecare întrebări", yesNo(form.shuffleQuestions)],
       ["Amestecare răspunsuri", yesNo(form.shuffleAnswers)],
@@ -783,31 +801,43 @@ export default function ProfessionalTestEditor({
         <div className="pte-main">
           {step === 0 && <DetaliiTest form={form} set={set} />}
           {step === 1 && (
-            <Intrebari
-              form={form}
-              set={set}
-              onImportQuestions={onImportQuestions}
-              onExportQuestions={onExportQuestions}
-              onPreview={onPreview}
-              newId={newId}
-              setSelectedQuestionId={setSelectedQuestionId}
-              addQuestion={addQuestion}
-              selectedIndex={selectedIndex}
-              setDraggedQuestion={setDraggedQuestion}
-              draggedQuestion={draggedQuestion}
-              reorderQuestion={reorderQuestion}
-              questionType={questionType}
-              questionValid={questionValid}
-              duplicateQuestion={duplicateQuestion}
-              questionCounts={questionCounts}
-              selectedQuestion={selectedQuestion}
-              updateQuestion={updateQuestion}
-              changeQuestionType={changeQuestionType}
-              setCorrectAnswer={setCorrectAnswer}
-              showExplanation={showExplanation}
-              setShowExplanation={setShowExplanation}
-              removeQuestion={removeQuestion}
-            />
+            <>
+              <QuestionBank
+                currentQuestions={form.questions}
+                category={form.category}
+                onAdd={(items) =>
+                  setForm((f) => ({
+                    ...f,
+                    questions: [...f.questions, ...items.map((q) => ({ ...q, id: newId() }))],
+                  }))
+                }
+              />
+              <Intrebari
+                form={form}
+                set={set}
+                onImportQuestions={onImportQuestions}
+                onExportQuestions={onExportQuestions}
+                onPreview={onPreview}
+                newId={newId}
+                setSelectedQuestionId={setSelectedQuestionId}
+                addQuestion={addQuestion}
+                selectedIndex={selectedIndex}
+                setDraggedQuestion={setDraggedQuestion}
+                draggedQuestion={draggedQuestion}
+                reorderQuestion={reorderQuestion}
+                questionType={questionType}
+                questionValid={questionValid}
+                duplicateQuestion={duplicateQuestion}
+                questionCounts={questionCounts}
+                selectedQuestion={selectedQuestion}
+                updateQuestion={updateQuestion}
+                changeQuestionType={changeQuestionType}
+                setCorrectAnswer={setCorrectAnswer}
+                showExplanation={showExplanation}
+                setShowExplanation={setShowExplanation}
+                removeQuestion={removeQuestion}
+              />
+            </>
           )}
           {step === 2 && (
             <Atribuire

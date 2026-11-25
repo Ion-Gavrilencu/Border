@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -132,6 +132,11 @@ export default function TestareUserViews({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
 
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
   const isResults = mode === "results";
 
   const assignedItems = Array.isArray(assigned) ? assigned : [];
@@ -160,10 +165,13 @@ export default function TestareUserViews({
 
       const progress = String(item?.progress_status ?? item?.assignment_status ?? "").toUpperCase();
       const active =
-        PROGRESS_STATUSES.has(progress) ||
-        resultItems.some(
-          (result) => sameAssignment(result) && PROGRESS_STATUSES.has(getStatus(result)),
-        );
+        typeof item.has_active_attempt === "boolean"
+          ? item.has_active_attempt &&
+            (!item.active_attempt_expires_at || Date.parse(item.active_attempt_expires_at) > now)
+          : PROGRESS_STATUSES.has(progress) ||
+            resultItems.some(
+              (result) => sameAssignment(result) && PROGRESS_STATUSES.has(getStatus(result)),
+            );
       const attemptsUsed = numberOrNull(item?.attempts_used);
       const exhausted =
         !active &&
@@ -171,7 +179,21 @@ export default function TestareUserViews({
         maxAttempts > 0 &&
         Math.max(done.length, attemptsUsed ?? 0) >= maxAttempts;
 
-      const state = exhausted ? "finished" : active ? "progress" : "pending";
+      const start = Date.parse(item.available_from);
+      const end = Date.parse(item.deadline_at ?? item.available_until);
+      const retry = Date.parse(item.next_attempt_at);
+      const state =
+        item.block_after_expiry !== false && Number.isFinite(end) && end <= now
+          ? "expired"
+          : Number.isFinite(start) && start > now
+            ? "scheduled"
+            : exhausted
+              ? "finished"
+              : active
+                ? "progress"
+                : Number.isFinite(retry) && retry > now
+                  ? "waiting"
+                  : "pending";
 
       return {
         item,
@@ -182,7 +204,7 @@ export default function TestareUserViews({
         state,
       };
     });
-  }, [assigned, results, versionIdOf, finishedForVersion]);
+  }, [assigned, results, versionIdOf, finishedForVersion, now]);
 
   const resultRows = useMemo(() => {
     return completed.map((item) => {
@@ -228,7 +250,7 @@ export default function TestareUserViews({
           value: grades.length
             ? (grades.reduce((sum, value) => sum + value, 0) / grades.length).toFixed(2)
             : "—",
-          label: "Punctaj mediu",
+          label: "Nota medie",
           tone: "purple",
         },
         {
@@ -347,6 +369,9 @@ export default function TestareUserViews({
               : [
                   ["all", "Toate testele"],
                   ["pending", "Neîncepute"],
+                  ["scheduled", "Programate"],
+                  ["expired", "Expirate"],
+                  ["waiting", "În așteptare"],
                   ["progress", "În desfășurare"],
                   ["finished", "Finalizate"],
                 ]
@@ -380,11 +405,17 @@ export default function TestareUserViews({
                   : isFailed
                     ? "Nepromovat"
                     : "Finalizat"
-                : state === "finished"
-                  ? "Finalizat"
-                  : state === "progress"
-                    ? "În desfășurare"
-                    : "Neînceput";
+                : state === "expired"
+                  ? "Expirat"
+                  : state === "scheduled"
+                    ? "Programat"
+                    : state === "waiting"
+                      ? "În așteptare"
+                      : state === "finished"
+                        ? "Finalizat"
+                        : state === "progress"
+                          ? "În desfășurare"
+                          : "Neînceput";
 
               const grade = scoreOf(item);
               const duration = durationOf(item);
@@ -532,7 +563,7 @@ export default function TestareUserViews({
                           </button>
                         )}
 
-                        {!exhausted && (
+                        {!exhausted && !["scheduled", "expired", "waiting"].includes(state) && (
                           <button
                             type="button"
                             className="ptuv-btn ptuv-btn-primary"
@@ -551,7 +582,20 @@ export default function TestareUserViews({
                           </button>
                         )}
 
-                        {exhausted && done.length === 0 && (
+                        {state === "waiting" && (
+                          <span className="ptuv-unavailable">
+                            Reluare: {dateLabel(item.next_attempt_at)}
+                          </span>
+                        )}
+                        {state === "scheduled" && (
+                          <span className="ptuv-unavailable">
+                            Disponibil de la {dateLabel(item.available_from)}
+                          </span>
+                        )}
+                        {state === "expired" && (
+                          <span className="ptuv-unavailable">Termenul a expirat.</span>
+                        )}
+                        {state === "finished" && done.length === 0 && (
                           <span className="ptuv-unavailable">Încercările au fost utilizate.</span>
                         )}
                       </>

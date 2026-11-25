@@ -101,6 +101,52 @@ const statWave = (
     />
   </svg>
 );
+const EMAIL_STATES = {
+  PENDING: "În așteptare",
+  SENDING: "În curs / neconfirmat",
+  SENT: "Acceptat de SMTP",
+  FAILED: "Eșuat / neconfirmat",
+  SKIPPED: "Destinatar neeligibil",
+  NONE: "Fără înregistrare",
+  OFF: "Dezactivat",
+  UNKNOWN: "Date indisponibile",
+};
+const emailState = (r) => {
+  if (["PENDING", "SENDING", "SENT", "FAILED", "SKIPPED"].includes(r.result_email_status))
+    return r.result_email_status;
+  if (r.notify_result === false) return "OFF";
+  if (r.notify_result === true && r.result_email_status === null) return "NONE";
+  return "UNKNOWN";
+};
+const emailLabel = (r) => EMAIL_STATES[emailState(r)];
+function ResultEmailStatus({ row }) {
+  const state = emailState(row);
+  return (
+    <details style={{ marginTop: 8, fontSize: 12, whiteSpace: "normal", overflowWrap: "anywhere" }}>
+      <summary
+        style={{
+          cursor: "pointer",
+          color: state === "FAILED" ? "#b91c1c" : state === "SENT" ? "#087637" : "#40547f",
+        }}
+      >
+        E-mail: {emailLabel(row)}
+      </summary>
+      <div style={{ padding: "6px 0", lineHeight: 1.5 }}>
+        {row.result_email_created_at && (
+          <div>Înregistrat: {dateText(row.result_email_created_at)}</div>
+        )}
+        {row.result_email_updated_at && (
+          <div>Actualizat: {dateText(row.result_email_updated_at)}</div>
+        )}
+        {row.result_email_detail && <div>{row.result_email_detail}</div>}
+        {state === "SENT" && <div>Acceptarea SMTP nu confirmă citirea sau recepția în inbox.</div>}
+        {state === "NONE" && <div>Nu există o livrare înregistrată; motivul nu este cunoscut.</div>}
+        {state === "SENDING" && <div>Poate fi o expediere întreruptă; nu retrimite automat.</div>}
+      </div>
+    </details>
+  );
+}
+
 export default function Rezultate({ ctx }) {
   const {
     managed = [],
@@ -119,6 +165,7 @@ export default function Rezultate({ ctx }) {
   const [period, setPeriod] = useState("all");
   const [page, setPage] = useState(1);
   const [integrityFilter, setIntegrityFilter] = useState("all");
+  const [emailFilter, setEmailFilter] = useState("all");
   const [showReports, setShowReports] = useState(false);
   const tests = Array.isArray(managed) ? managed : [];
   const rows = Array.isArray(reportRows) ? reportRows : [];
@@ -141,12 +188,14 @@ export default function Rezultate({ ctx }) {
     setVerdict("all");
     setPeriod("all");
     setIntegrityFilter("all");
+    setEmailFilter("all");
     setPage(1);
   };
   const filtered = useMemo(
     () =>
       rows.filter((r) => {
         if (!integrityMatches(r, integrityFilter)) return false;
+        if (emailFilter !== "all" && emailState(r) !== emailFilter) return false;
         const q = search.trim().toLocaleLowerCase("ro");
         if (
           q &&
@@ -170,7 +219,7 @@ export default function Rezultate({ ctx }) {
         }
         return true;
       }),
-    [rows, search, test, group, verdict, period, tests, integrityFilter],
+    [rows, search, test, group, verdict, period, tests, integrityFilter, emailFilter],
   );
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pages);
@@ -206,6 +255,9 @@ export default function Rezultate({ ctx }) {
       "Rezultat",
       "Monitorizare",
       "Evenimente de integritate",
+      "Stare e-mail",
+      "Actualizare e-mail",
+      "Detalii e-mail",
     ];
     const body = filtered.map((r) => [
       userOf(r),
@@ -218,6 +270,9 @@ export default function Rezultate({ ctx }) {
       verdictOf(r) === true ? "Promovat" : verdictOf(r) === false ? "Nepromovat" : "Neevaluat",
       integrityLabel(r),
       integrityCount(r) ?? "",
+      emailLabel(r),
+      r.result_email_updated_at ? dateText(r.result_email_updated_at) : "",
+      r.result_email_detail ?? "",
     ]);
     const csv =
       "\uFEFF" + [header, ...body].map((line) => line.map(csvCell).join(";")).join("\r\n");
@@ -431,6 +486,23 @@ export default function Rezultate({ ctx }) {
                 <option value="off">Nemonitorizate</option>
                 <option value="unknown">Date indisponibile</option>
               </select>
+              <label className="pt-r-select">
+                <span className="pt-r-sr">Stare e-mail</span>
+                <select
+                  value={emailFilter}
+                  onChange={(e) => {
+                    setEmailFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Toate e-mailurile</option>
+                  {Object.entries(EMAIL_STATES).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button type="button" className="pt-r-reset" onClick={reset}>
                 <RotateCcw size={17} /> Resetează
               </button>
@@ -519,6 +591,12 @@ export default function Rezultate({ ctx }) {
                             </td>
                             <td className="pt-integrity-cell">
                               <IntegrityReport row={r} name={userOf(r)} title={titleOf(r)} />
+                              {r.completion_reason === "IDLE" && (
+                                <small style={{ display: "block", color: "#986313" }}>
+                                  Finalizare: inactivitate
+                                </small>
+                              )}
+                              <ResultEmailStatus row={r} />
                             </td>
                             <td>
                               <button

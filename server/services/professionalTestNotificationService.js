@@ -254,10 +254,90 @@ async function sendTestEmails(recipients, { versionId, assignmentId, title, mess
   }
 }
 
+// A separate durable queue for result emails. No grades or answers are sent.
+// Claim one row atomically; concurrent cron invocations cannot claim the same row.
+async function processResultEmails({ limit = 3 } = {}) {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASSWORD;
+  const origin = getFrontendOrigin();
+  if (!user || !pass || !origin || !Number.isInteger(port) || port < 1 || port > 65535)
+    return { sent: 0, failed: 0, skipped: 0, configured: false };
+  const transport = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+  const stats = { sent: 0, failed: 0, skipped: 0, configured: true };
+  try {
+    for (let i = 0; i < Math.min(10, Math.max(1, Number(limit) || 3)); i++) {
+      const claim = await pool.query(`WITH next AS (
+        SELECT attempt_id FROM professional_test_result_deliveries WHERE status='PENDING'
+        ORDER BY created_at,attempt_id LIMIT 1 FOR UPDATE SKIP LOCKED
+      ) UPDATE professional_test_result_deliveries d SET status='SENDING',updated_at=now()
+        FROM next WHERE d.attempt_id=next.attempt_id RETURNING d.attempt_id`);
+      if (!claim.rowCount) break;
+      const id = claim.rows[0].attempt_id;
+      const result = await pool.query(
+        `SELECT u.email FROM professional_test_attempts a
+        JOIN users u ON u.id=a.user_id AND u.is_active=true AND u.email_notifications=true
+        WHERE a.id=$1 AND a.status IN ('SUBMITTED','EXPIRED') AND u.email IS NOT NULL AND btrim(u.email)<>''`,
+        [id],
+      );
+      let status = "SKIPPED",
+        detail = "Destinatar indisponibil sau optiune email dezactivata";
+      if (result.rowCount) {
+        const url = new URL(`/testare/incercari/${encodeURIComponent(id)}/rezultat`, origin).href;
+        const title = "Test profesional finalizat";
+        const message =
+          "Încercarea a fost finalizată. Consultă rezultatul în BORDER, conform regulilor testului.";
+        const logo = getEmailLogo();
+        try {
+          const info = await transport.sendMail({
+            from: process.env.SMTP_FROM?.trim() || user,
+            to: result.rows[0].email,
+            subject: title,
+            text: `${message}\n${url}`,
+            html: buildTestEmailHtml({ title, message, url, logoSrc: logo.src }),
+            attachments: logo.attachments,
+          });
+          status = info.accepted?.length ? "SENT" : "FAILED";
+          detail =
+            status === "SENT" ? "Acceptat de serverul SMTP" : "Destinatar neacceptat de SMTP";
+        } catch (error) {
+          status = "FAILED";
+          detail = "Eroare SMTP; livrarea nu poate fi confirmata";
+        }
+      }
+      await pool.query(
+        `UPDATE professional_test_result_deliveries SET status=$2,detail=$3,updated_at=now() WHERE attempt_id=$1 AND status='SENDING'`,
+        [id, status, detail],
+      );
+      stats[status.toLowerCase()]++;
+    }
+  } finally {
+    transport.close();
+  }
+  return stats;
+}
+
 // Rulează numai prin endpoint cron protejat cu CRON_SECRET.
 // Marchează reminderul în aceeași operație SQL cu notificarea in-app.
 // E-mailurile SMTP sunt best-effort: un eșec SMTP nu reia notificarea in-app.
 async function processTestReminders({ limit = 100 } = {}) {
+  // Reutilizează cronul existent; eșecul cozii nu blochează reminderele.
+  let resultEmails;
+  try {
+    resultEmails = await processResultEmails();
+  } catch (error) {
+    console.error("RESULT EMAIL QUEUE ERROR:", error.code);
+    resultEmails = { error: true };
+  }
   const due = await pool.query(
     `
     SELECT a.id AS assignment_id, a.version_id, t.title,
@@ -325,7 +405,7 @@ async function processTestReminders({ limit = 100 } = {}) {
       console.error("TEST REMINDER EMAIL ERROR:", error);
     }
   }
-  return { assignments_checked: due.rowCount, email_recipients: delivered };
+  return { assignments_checked: due.rowCount, email_recipients: delivered, resultEmails };
 }
 
-module.exports = { notifyTestAssignment, processTestReminders };
+module.exports = { notifyTestAssignment, processTestReminders, processResultEmails };

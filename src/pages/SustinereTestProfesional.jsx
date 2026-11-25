@@ -88,9 +88,11 @@ export default function SustinereTestProfesional() {
     };
   }, [attemptId, monitorTabs, review]);
 
+  const idleAuto = data?.attempt?.idle_auto_finish === true;
   const idleWarningMinutes = Number(data?.attempt?.idle_warning_minutes ?? 0);
   useEffect(() => {
-    if (!idleWarningMinutes || review || data?.attempt?.status !== "IN_PROGRESS") return;
+    if (idleAuto || !idleWarningMinutes || review || data?.attempt?.status !== "IN_PROGRESS")
+      return;
     let last = Date.now(),
       warned = false;
     const activity = () => {
@@ -113,7 +115,7 @@ export default function SustinereTestProfesional() {
       window.clearInterval(timer);
       events.forEach((name) => window.removeEventListener(name, activity));
     };
-  }, [attemptId, idleWarningMinutes, review, data?.attempt?.status]);
+  }, [attemptId, idleWarningMinutes, idleAuto, review, data?.attempt?.status]);
   const loadReview = useCallback(async () => {
     const payload = await getProfessionalAttemptReview(attemptId);
     if (active.current) {
@@ -122,6 +124,70 @@ export default function SustinereTestProfesional() {
     }
   }, [attemptId]);
 
+  const [idleRemaining, setIdleRemaining] = useState(null);
+  const idleConfirm = useRef(null);
+  const idleDialog = useRef(null);
+  const idleWarningOpen = idleRemaining !== null;
+  useEffect(() => {
+    const dialog = idleDialog.current;
+    if (!dialog) return;
+    if (idleWarningOpen && !dialog.open) dialog.showModal();
+    else if (!idleWarningOpen && dialog.open) dialog.close();
+  }, [idleWarningOpen]);
+  useEffect(() => {
+    setIdleRemaining(null);
+    if (!idleAuto || review || data?.attempt?.status !== "IN_PROGRESS") return;
+    let alive = true,
+      touched = false,
+      sending = false;
+    const activity = (e) => {
+      if (e.isTrusted && document.visibilityState === "visible" && !idleDialog.current?.open)
+        touched = true;
+    };
+    const poll = async () => {
+      if (!alive || sending || document.visibilityState !== "visible" || submitting.current) return;
+      sending = true;
+      const wasActive = touched;
+      touched = false;
+      try {
+        const r = await saveProfessionalAnswer(attemptId, {
+          action: "idle_poll",
+          active: wasActive,
+        });
+        if (!alive) return;
+        if (r.finished) {
+          setIdleRemaining(null);
+          await loadReview();
+        } else setIdleRemaining(r.enabled && r.remaining <= 60 ? r.remaining : null);
+      } catch (e) {
+        if (alive) {
+          setIdleRemaining(null);
+          touched = touched || wasActive;
+          if (e?.response?.status === 409) {
+            try {
+              await loadReview();
+            } catch {}
+          }
+        }
+      } finally {
+        sending = false;
+      }
+    };
+    idleConfirm.current = () => {
+      touched = true;
+      void poll();
+    };
+    const events = ["pointerdown", "keydown", "scroll"];
+    events.forEach((n) => window.addEventListener(n, activity, { passive: true, capture: true }));
+    void poll();
+    const timer = window.setInterval(poll, 5000);
+    return () => {
+      alive = false;
+      idleConfirm.current = null;
+      clearInterval(timer);
+      events.forEach((n) => window.removeEventListener(n, activity, true));
+    };
+  }, [attemptId, idleAuto, review, data?.attempt?.status, loadReview]);
   useEffect(() => {
     active.current = true;
     setData(null);
@@ -324,7 +390,8 @@ export default function SustinereTestProfesional() {
     const answered = questions.filter((q) => q.answered).length;
     const revealed = Boolean(review.reveal_answers);
     const correct = revealed ? questions.filter((q) => q.is_correct).length : null;
-    const isPartial = (q) => q.answered && !q.is_correct && Number(q.awarded_points) > 0;
+    const isPartial = (q) =>
+      q.answered && !q.is_correct && (q.is_partial === true || Number(q.awarded_points) > 0);
     const partial = revealed ? questions.filter(isPartial).length : 0;
     const wrong = revealed
       ? questions.filter((q) => q.answered && !q.is_correct && !isPartial(q)).length
@@ -333,7 +400,8 @@ export default function SustinereTestProfesional() {
     const displayGrade = a.show_grade !== false && a.grade != null;
     const displayPercent = a.show_grade !== false && a.percentage != null;
     const percentage = Math.max(0, Math.min(100, Number(a.percentage) || 0));
-    const statusOf = (q) => (!q.answered ? "unanswered" : q.is_correct ? "correct" : "wrong");
+    const statusOf = (q) =>
+      !q.answered ? "unanswered" : q.is_correct ? "correct" : isPartial(q) ? "partial" : "wrong";
     return (
       <section className="st-page st-review-page">
         <button className="st-back" onClick={() => navigate("/testare")}>
@@ -473,7 +541,9 @@ export default function SustinereTestProfesional() {
                     </span>
                   </div>
                   <div className="st-review-question-meta">
-                    <span className={`st-question-badge st-badge-${status}`}>
+                    <span
+                      className={`st-question-badge st-badge-${status === "partial" ? "unanswered" : status}`}
+                    >
                       {revealed ? (
                         status === "correct" ? (
                           <CheckCircle2 size={15} />
@@ -488,18 +558,18 @@ export default function SustinereTestProfesional() {
                       {revealed
                         ? status === "correct"
                           ? "Corect"
-                          : status === "wrong"
-                            ? isPartial(q)
-                              ? "Parțial corect"
-                              : "Greșit"
-                            : "Fără răspuns"
+                          : status === "partial"
+                            ? "Parțial corect"
+                            : status === "wrong"
+                              ? "Greșit"
+                              : "Fără răspuns"
                         : q.answered
                           ? "Înregistrat"
                           : "Fără răspuns"}
                     </span>
                     <span className="st-review-points">
-                      {revealed
-                        ? `${q.awarded_points ?? 0} / ${q.points} pct.`
+                      {revealed && q.awarded_points != null
+                        ? `${q.awarded_points} / ${q.points} pct.`
                         : `${q.points} pct.`}
                     </span>
                   </div>
@@ -605,6 +675,31 @@ export default function SustinereTestProfesional() {
           </p>
         </div>
       </div>
+      <dialog
+        ref={idleDialog}
+        aria-labelledby="idle-warning-title"
+        onCancel={(e) => e.preventDefault()}
+        style={{
+          border: 0,
+          borderRadius: 20,
+          padding: 24,
+          width: "min(420px,calc(100% - 32px))",
+          boxShadow: "0 20px 65px #172a5266",
+          color: "#14234d",
+        }}
+      >
+        <h2 id="idle-warning-title">Inactivitate detectată</h2>
+        <p>
+          Testul se finalizează automat dacă nu confirmi continuarea. Răspunsurile salvate vor fi
+          evaluate.
+        </p>
+        <strong style={{ fontSize: 32, color: "#a36612" }}>{idleRemaining ?? 0} secunde</strong>
+        <p>
+          <button type="button" onClick={() => idleConfirm.current?.()} className="st-back">
+            Sunt prezent – Continuă testul
+          </button>
+        </p>
+      </dialog>
       {monitorTabs && (
         <div
           role="status"

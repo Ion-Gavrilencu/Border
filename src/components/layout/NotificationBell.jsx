@@ -19,6 +19,8 @@ import {
   File,
 } from "lucide-react";
 
+import Swal from "sweetalert2";
+import { toast } from "sonner";
 import api from "../../services/api";
 import "./NotificationBell.css";
 
@@ -86,24 +88,11 @@ function NotificationBell() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [expanded, setExpanded] = useState({});
-  const [visibleLimit, setVisibleLimit] = useState(15);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const requestId = useRef(0);
   const [panelRight, setPanelRight] = useState(16);
-  const normalize = (value) =>
-    String(value ?? "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-  const visibleNotifications = notifications
-    .filter(
-      (item) =>
-        (filter !== "unread" || !item.is_read) &&
-        (category === "all" ||
-          (category === "documents"
-            ? !["test", "stire"].includes(item.type)
-            : item.type === category)) &&
-        normalize(`${item.title ?? ""} ${item.message ?? ""}`).includes(normalize(query.trim())),
-    )
-    .sort((a, b) => (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0));
+  const visibleNotifications = notifications;
   const dayGroup = (value) => {
     const date = new Date(value);
     if (!value || Number.isNaN(date.getTime())) return "Anterior";
@@ -116,9 +105,6 @@ function NotificationBell() {
         ? "Ieri"
         : "Anterior";
   };
-  useEffect(() => {
-    setVisibleLimit(15);
-  }, [filter, category, query]);
   useEffect(() => {
     if (!open) return;
     const position = () =>
@@ -137,47 +123,57 @@ function NotificationBell() {
   const [selectedAttachments, setSelectedAttachments] = useState([]);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
 
-  const loadNotifications = useCallback(async ({ silent = false } = {}) => {
-    if (!silent) setLoading(true);
-
-    try {
-      const { data } = await api.get("/notifications");
-
-      const items = Array.isArray(data.notifications) ? data.notifications : [];
-
-      setNotifications(items);
-      setUnreadCount(Number(data.unreadCount) || 0);
-      setError("");
-    } catch (err) {
-      console.error("GET NOTIFICATIONS ERROR:", err);
-      setError("Notificările nu sunt disponibile momentan.");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
+  const loadNotifications = useCallback(
+    async ({ silent = false } = {}) => {
+      const id = ++requestId.current;
+      if (!silent) setLoading(true);
+      try {
+        const { data } = await api.get("/notifications", {
+          params: {
+            page,
+            limit: 15,
+            status: filter,
+            q: query.trim(),
+            type: category === "all" ? "" : category,
+          },
+        });
+        if (id !== requestId.current) return;
+        if (!data.pagination) throw new Error("Serverul nu oferă paginare.");
+        const last = Math.max(1, data.pagination.totalPages);
+        if (page > last) {
+          setPage(last);
+          return;
+        }
+        setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
+        setPagination(data.pagination);
+        setUnreadCount(Number(data.unreadCount) || 0);
+        setError("");
+      } catch (err) {
+        if (id !== requestId.current) return;
+        console.error("GET NOTIFICATIONS ERROR:", err);
+        setError("Notificările nu sunt disponibile momentan.");
+      } finally {
+        if (id === requestId.current) setLoading(false);
+      }
+    },
+    [page, filter, query, category],
+  );
 
   useEffect(() => {
-    loadNotifications();
-
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        loadNotifications({ silent: true });
-      }
-    }, REFRESH_INTERVAL);
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        loadNotifications({ silent: true });
-      }
+    setLoading(true);
+    const debounce = window.setTimeout(() => loadNotifications(), 250);
+    const refresh = () => {
+      if (document.visibilityState === "visible" && !busy) loadNotifications({ silent: true });
     };
-
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
+    const interval = window.setInterval(refresh, REFRESH_INTERVAL);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
+      ++requestId.current;
+      window.clearTimeout(debounce);
       window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("visibilitychange", refresh);
     };
-  }, [loadNotifications]);
+  }, [loadNotifications, busy]);
 
   useEffect(() => {
     setOpen(false);
@@ -189,6 +185,7 @@ function NotificationBell() {
     if (!open) return;
 
     const onPointerDown = (event) => {
+      if (Swal.isVisible()) return;
       if (
         !containerRef.current?.contains(event.target) &&
         !panelRef.current?.contains(event.target)
@@ -199,6 +196,7 @@ function NotificationBell() {
     };
 
     const onKeyDown = (event) => {
+      if (Swal.isVisible()) return;
       if (event.key === "Escape") {
         setOpen(false);
         setShowAttachmentPicker(false);
@@ -242,6 +240,51 @@ function NotificationBell() {
       await markRead(item.id);
     } catch {
       setError("Notificarea nu a putut fi marcată ca citită.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const manageNotification = async (action, item) => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const deleting = action === "delete" || action === "delete-read";
+      if (deleting) {
+        const all = action === "delete-read";
+        const result = await Swal.fire({
+          icon: "warning",
+          iconColor: "#dc4754",
+          title: all ? "Ștergi notificările citite?" : "Ștergi notificarea?",
+          text: all
+            ? "Toate notificările citite vor fi eliminate definitiv. Cele necitite vor fi păstrate."
+            : "Notificarea va fi eliminată definitiv. Această acțiune nu poate fi anulată.",
+          showCancelButton: true,
+          confirmButtonText: all ? "Da, șterge toate" : "Da, șterge",
+          cancelButtonText: "Anulează",
+          confirmButtonColor: "#dc3545",
+          cancelButtonColor: "#52658c",
+          reverseButtons: true,
+          focusCancel: true,
+          allowOutsideClick: false,
+          width: "min(420px, 94vw)",
+          backdrop: "rgba(12, 25, 52, 0.48)",
+          customClass: { container: "border-notification-confirm" },
+          didOpen: () => {
+            const container = Swal.getContainer();
+            if (container) container.style.zIndex = "2147483647";
+          },
+        });
+        if (!result.isConfirmed) return;
+      }
+      if (action === "unread") await api.patch(`/notifications/${item.id}/unread`);
+      if (action === "delete") await api.delete(`/notifications/${item.id}`);
+      if (action === "delete-read") await api.delete("/notifications/read");
+      if (action === "delete") toast.success("Notificarea a fost ștearsă.");
+      if (action === "delete-read") toast.success("Notificările citite au fost șterse.");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Operațiunea nu a reușit.");
     } finally {
       setBusy(false);
     }
@@ -373,6 +416,13 @@ function NotificationBell() {
       const params = new URLSearchParams({ tab: "assigned" });
       if (isSafeInternalPath(item.link)) {
         const url = new URL(item.link, window.location.origin);
+        if (
+          url.origin === window.location.origin &&
+          /^\/testare\/incercari\/[1-9]\d*\/rezultat$/.test(url.pathname)
+        ) {
+          navigate(url.pathname);
+          return false;
+        }
         if (url.origin === window.location.origin && url.pathname === "/testare") {
           for (const name of ["versiune", "atribuire"]) {
             const value = url.searchParams.get(name);
@@ -603,32 +653,55 @@ function NotificationBell() {
                   <button
                     type="button"
                     aria-pressed={filter === "all"}
-                    onClick={() => setFilter("all")}
+                    onClick={() => {
+                      setPage(1);
+                      setFilter("all");
+                    }}
                   >
                     Toate
                   </button>
                   <button
                     type="button"
                     aria-pressed={filter === "unread"}
-                    onClick={() => setFilter("unread")}
+                    onClick={() => {
+                      setPage(1);
+                      setFilter("unread");
+                    }}
                   >
                     Necitite <span>{unreadCount}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={filter === "read"}
+                    onClick={() => {
+                      setPage(1);
+                      setFilter("read");
+                    }}
+                  >
+                    Citite
                   </button>
                 </div>
                 <div className="notification-search-row">
                   <label className="notification-search">
                     <Search size={16} />
                     <input
-                      aria-label="Caută în notificările încărcate"
+                      aria-label="Caută în toate notificările"
                       placeholder="Caută notificări..."
                       value={query}
-                      onChange={(e) => setQuery(e.target.value)}
+                      maxLength={120}
+                      onChange={(e) => {
+                        setPage(1);
+                        setQuery(e.target.value);
+                      }}
                     />
                     {query && (
                       <button
                         type="button"
                         aria-label="Șterge căutarea"
-                        onClick={() => setQuery("")}
+                        onClick={() => {
+                          setPage(1);
+                          setQuery("");
+                        }}
                       >
                         <X size={15} />
                       </button>
@@ -637,7 +710,10 @@ function NotificationBell() {
                   <select
                     aria-label="Categorie"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => {
+                      setPage(1);
+                      setCategory(e.target.value);
+                    }}
                   >
                     <option value="all">Categorii</option>
                     <option value="test">Teste</option>
@@ -684,7 +760,7 @@ function NotificationBell() {
               </div>
             ) : (
               <div className="notification-list">
-                {visibleNotifications.slice(0, visibleLimit).map((item, index) => (
+                {visibleNotifications.map((item, index) => (
                   <div key={item.id}>
                     {(index === 0 ||
                       dayGroup(item.created_at) !==
@@ -729,7 +805,10 @@ function NotificationBell() {
                           )}
                           {item.type === "test" && (
                             <span style={{ color: "#1666b1", fontSize: 12, fontWeight: 700 }}>
-                              Accesează testul →
+                              {typeof item.link === "string" &&
+                              /^\/testare\/incercari\/[1-9]\d*\/rezultat$/.test(item.link)
+                                ? "Vezi rezultatul →"
+                                : "Accesează testul →"}
                             </span>
                           )}
                           <time
@@ -768,27 +847,67 @@ function NotificationBell() {
                             <Check size={14} /> Marchează citită
                           </button>
                         )}
+                        {item.is_read && (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => manageNotification("unread", item)}
+                          >
+                            Marchează necitită
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => manageNotification("delete", item)}
+                        >
+                          Șterge
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
-                {visibleNotifications.length > visibleLimit && (
+                <div
+                  className="notification-card-actions"
+                  style={{ flexWrap: "wrap", justifyContent: "center" }}
+                >
                   <button
                     type="button"
-                    className="notification-more"
-                    onClick={() => setVisibleLimit((n) => n + 15)}
+                    disabled={busy || loading || page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
                   >
-                    Afișează mai multe
+                    Anterioară
                   </button>
-                )}
+                  <span>
+                    Pagina {page} / {Math.max(1, pagination?.totalPages || 1)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy || loading || !pagination?.hasMore}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Următoarea
+                  </button>
+                </div>
               </div>
             )}
 
+            {!showAttachmentPicker && (
+              <div className="notification-card-actions">
+                <button
+                  type="button"
+                  disabled={busy || loading}
+                  onClick={() => manageNotification("delete-read")}
+                >
+                  Șterge notificările citite
+                </button>
+              </div>
+            )}
             <div className="notification-panel-footer">
               <span className="notification-footer-label">
                 {showAttachmentPicker
                   ? "Selectează un document"
-                  : `${Math.min(visibleLimit, visibleNotifications.length)} din ${visibleNotifications.length} afișate`}
+                  : `${pagination?.total ?? 0} notificări găsite`}
               </span>
               <button
                 type="button"

@@ -6,7 +6,10 @@ const c = require("../controllers/professionalTestingController");
 const importer = require("../controllers/professionalTestingImportController");
 
 const router = express.Router();
-
+router.use(
+  "/banca",
+  require("./professionalQuestionBankRoutes")
+);
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 1 },

@@ -51,6 +51,7 @@ const CONFIG_KEYS = [
   "shuffleQuestions",
   "shuffleAnswers",
   "idleWarningMinutes",
+  "idleAutoFinish",
   "notifyResult",
 ];
 const pickConfig = (v) =>
@@ -59,6 +60,7 @@ const defaults = {
   personalCategories: [],
   personalTemplates: [],
   idleWarningMinutes: "0",
+  idleAutoFinish: false,
   notifyResult: false,
   grading: "both",
   threshold: 50,
@@ -130,6 +132,7 @@ const normalizePreferences = (saved) => {
   )
     ? String(next.idleWarningMinutes)
     : "0";
+  next.idleAutoFinish = next.idleAutoFinish === true && Number(next.idleWarningMinutes) > 0;
   next.notifyResult = next.notifyResult === true;
   return next;
 };
@@ -283,7 +286,7 @@ export default function SetariTestare({ ctx = {} }) {
       ["questionLimit", 0, 10000],
       ["threshold", 0, 100],
       ["maxGrade", 1, 10],
-      ["attempts", 1, 99],
+      ["attempts", 1, 100],
     ];
     for (const [key, min, max] of numeric) {
       if (
@@ -576,7 +579,7 @@ export default function SetariTestare({ ctx = {} }) {
                         aria-label="Număr de încercări"
                         type="number"
                         min="1"
-                        max="99"
+                        max="100"
                         value={values.attempts}
                         onChange={(e) => update("attempts", e.target.value)}
                       />
@@ -736,7 +739,10 @@ export default function SetariTestare({ ctx = {} }) {
                       <span>Avertizare de inactivitate</span>
                       <select
                         value={values.idleWarningMinutes}
-                        onChange={(e) => update("idleWarningMinutes", e.target.value)}
+                        onChange={(e) => {
+                          update("idleWarningMinutes", e.target.value);
+                          if (!Number(e.target.value)) update("idleAutoFinish", false);
+                        }}
                       >
                         <option value="0">Dezactivată</option>
                         <option value="2">2 minute</option>
@@ -746,9 +752,13 @@ export default function SetariTestare({ ctx = {} }) {
                         <option value="30">30 minute</option>
                       </select>
                     </div>
-                    <p>
-                      Avertizarea este locală, fără finalizare automată. Timpul testului continuă.
-                    </p>
+                    <Switch
+                      label="Finalizează automat la inactivitate"
+                      disabled={!Number(values.idleWarningMinutes)}
+                      checked={!!values.idleAutoFinish}
+                      onChange={(v) => update("idleAutoFinish", v)}
+                    />
+                    <p>Avertizare cu 60 secunde înainte; lipsa conexiunii nu finalizează testul.</p>
                     <Switch
                       label="Monitorizează ascunderea filei"
                       checked={values.monitorTabs}

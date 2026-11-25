@@ -4,6 +4,7 @@ import ListaTeste from "../components/testare/ListaTeste";
 import Incercari from "../components/testare/Incercari";
 import Atribuiri from "../components/testare/Atribuiri";
 import Rezultate from "../components/testare/Rezultate";
+import QuestionBank from "../components/testare/QuestionBank";
 import SetariTestare from "../components/testare/SetariTestare";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -348,6 +349,7 @@ function TestareProfesionala() {
           { id: "attempts", label: "Încercări", icon: Activity },
           { id: "assignments", label: "Atribuiri", icon: Users },
           { id: "reports", label: "Rezultate", icon: Trophy },
+          { id: "bank", label: "Bancă de întrebări", icon: Layers3 },
           { id: "settings", label: "Setări", icon: Settings2 },
         ]
       : []),
@@ -695,7 +697,9 @@ function TestareProfesionala() {
             {error}
           </div>
         )}
-        {tab === "settings" && canManage ? (
+        {tab === "bank" && canManage ? (
+          <QuestionBank />
+        ) : tab === "settings" && canManage ? (
           <SetariTestare ctx={sectionCtx} />
         ) : tab === "reports" && canManage && !loading && !error ? (
           <Rezultate ctx={sectionCtx} />

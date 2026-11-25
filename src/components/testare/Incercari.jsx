@@ -417,7 +417,11 @@ export default function Incercari({ ctx }) {
                                 {active(r)
                                   ? "Activă"
                                   : finished(r)
-                                    ? "Finalizată"
+                                    ? r.completion_reason === "IDLE"
+                                      ? "Finalizată – inactivitate"
+                                      : r.completion_reason === "TIME"
+                                        ? "Finalizată – timp expirat"
+                                        : "Finalizată"
                                     : statusOf(r) || "—"}
                               </span>
                             </td>
