@@ -123,7 +123,8 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
           ? "Individual"
           : assignmentType;
   const groupLabel = form.selectedGroupName || form.groupName || "";
-  const notificationEnabled = form.notifyOnAssign ?? form.notifyUsers ?? false;
+  const notificationEnabled =
+    form.notifyOnAssignment ?? form.notifyOnAssign ?? form.notifyUsers ?? false;
   const reminderEnabled = form.sendReminder ?? form.reminderEnabled ?? false;
 
   return (
@@ -169,31 +170,35 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <Clock3 />
                 <span>
-                  Durată:<strong>{form.duration} minute</strong>
+                  <small className="pte-r-metric-label">Durată:</small>
+                  <strong>{form.duration} minute</strong>
                 </span>
               </div>
               <div>
                 <Trophy />
                 <span>
-                  Prag promovare:<strong>{form.passThreshold}%</strong>
+                  <small className="pte-r-metric-label">Prag promovare:</small>
+                  <strong>{form.passThreshold}%</strong>
                 </span>
               </div>
               <div>
                 <Star />
                 <span>
-                  Nota maximă:<strong>{form.maxGrade}</strong>
+                  <small className="pte-r-metric-label">Nota maximă:</small>
+                  <strong>{form.maxGrade}</strong>
                 </span>
               </div>
               <div>
                 <RefreshCw />
                 <span>
-                  Încercări permise:<strong>{form.maxAttempts}</strong>
+                  <small className="pte-r-metric-label">Încercări permise:</small>
+                  <strong>{form.maxAttempts}</strong>
                 </span>
               </div>
               <div>
                 <Layers3 />
                 <span>
-                  Metodă de notare:
+                  <small className="pte-r-metric-label">Metodă de notare:</small>
                   <strong className="pte-r-pill">
                     {labelGrading[form.grading] || form.grading || "Nesetată"}
                   </strong>
@@ -202,7 +207,7 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <CalendarDays />
                 <span>
-                  Rotunjire notă:
+                  <small className="pte-r-metric-label">Rotunjire notă:</small>
                   <strong className="pte-r-pill">
                     {labelRounding[form.rounding] || form.rounding || "Nesetată"}
                   </strong>
@@ -224,7 +229,7 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <Circle />
                 <span>
-                  Un singur răspuns:
+                  <small className="pte-r-metric-label">Un singur răspuns:</small>
                   <strong>
                     {counts.single} (
                     {questions.length ? Math.round((counts.single / questions.length) * 100) : 0}%)
@@ -234,7 +239,7 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <Circle />
                 <span>
-                  Răspuns multiplu:
+                  <small className="pte-r-metric-label">Răspuns multiplu:</small>
                   <strong>
                     {counts.multiple} (
                     {questions.length ? Math.round((counts.multiple / questions.length) * 100) : 0}
@@ -245,7 +250,7 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <ListChecks />
                 <span>
-                  Deschis:
+                  <small className="pte-r-metric-label">Deschis:</small>
                   <strong>
                     {counts.open} (
                     {questions.length ? Math.round((counts.open / questions.length) * 100) : 0}%)
@@ -268,27 +273,30 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <Users />
                 <span>
-                  Tip atribuire:<strong>{assignmentLabel}</strong>
+                  <small className="pte-r-metric-label">Tip atribuire:</small>
+                  <strong>{assignmentLabel}</strong>
                 </span>
               </div>
               {groupLabel && (
                 <div>
                   <Layers3 />
                   <span>
-                    Grup:<strong>{groupLabel}</strong>
+                    <small className="pte-r-metric-label">Grup:</small>
+                    <strong>{groupLabel}</strong>
                   </span>
                 </div>
               )}
               <div>
                 <Users />
                 <span>
-                  Destinatari:<strong>{assignments.length} selectați</strong>
+                  <small className="pte-r-metric-label">Destinatari:</small>
+                  <strong>{assignments.length} selectați</strong>
                 </span>
               </div>
               <div className="pte-r-period">
                 <CalendarDays />
                 <span>
-                  Perioada de participare:
+                  <small className="pte-r-metric-label">Perioada de participare:</small>
                   <strong>
                     {fmtDate(form.availableFrom)} – {fmtDate(form.availableUntil)}
                   </strong>
@@ -297,7 +305,7 @@ export default function Rezumat({ form, move, onPreview, questionValid, busy }) 
               <div>
                 <Bell />
                 <span>
-                  Notificări:
+                  <small className="pte-r-metric-label">Notificări:</small>
                   <strong>
                     {notificationEnabled
                       ? `Activate${reminderEnabled ? " (cu reminder)" : ""}`

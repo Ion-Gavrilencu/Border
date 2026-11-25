@@ -282,7 +282,9 @@ export default function Atribuire({
           <>
             <div className="pta-group-row">
               <label>
-                Selectează grupul <b>*</b>
+                <span className="pta-field-label">
+                  Selectează grupul <b>*</b>
+                </span>
                 <span className="pta-select-wrap">
                   <UsersRound size={19} />
 
@@ -473,7 +475,9 @@ export default function Atribuire({
 
         <div className="pta-period">
           <label>
-            Disponibil de la <b>*</b>
+            <span className="pta-field-label">
+              Disponibil de la <b>*</b>
+            </span>
             <span className="pta-date">
               <CalendarDays size={18} />
 
@@ -486,7 +490,9 @@ export default function Atribuire({
           </label>
 
           <label>
-            Disponibil până la <b>*</b>
+            <span className="pta-field-label">
+              Disponibil până la <b>*</b>
+            </span>
             <span className="pta-date">
               <CalendarDays size={18} />
 
@@ -500,7 +506,7 @@ export default function Atribuire({
           </label>
 
           <label>
-            Durată test
+            <span className="pta-field-label">Durată test</span>
             <span className="pta-duration">
               <Clock3 size={21} />
               {form.duration ?? 30} minute
@@ -542,6 +548,7 @@ export default function Atribuire({
               <label className="pta-toggle">
                 <input
                   type="checkbox"
+                  aria-label={label}
                   checked={Boolean(option(key, fallback))}
                   onChange={() => toggle(key, fallback)}
                 />
