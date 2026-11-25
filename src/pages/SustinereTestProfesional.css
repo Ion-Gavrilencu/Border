@@ -1214,3 +1214,27 @@
     gap: 4px;
   }
 }
+
+/* BORDER – integritate strictă */
+.st-integrity-notice {
+  padding: 16px;
+  margin: 0 0 16px;
+  border: 1px solid #f3c98c;
+  border-radius: 14px;
+  background: #fff8eb;
+  color: #854c0d;
+  overflow-wrap: anywhere;
+}
+.st-integrity-notice svg {
+  vertical-align: middle;
+  margin-right: 7px;
+  color: #b66a10;
+}
+.st-integrity-notice p {
+  margin: 8px 0 0;
+  line-height: 1.6;
+  font-size: 14px;
+}
+.st-integrity-notice button {
+  margin-top: 16px;
+}

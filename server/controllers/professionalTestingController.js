@@ -1257,7 +1257,7 @@ const assign = asyncRoute(async (req, res) => {
 const listAssigned = asyncRoute(async (req, res) => {
   const r = await pool.query(
     `SELECT a.id AS id, a.id AS assignment_id, v.id AS version_id,
-      t.id AS test_id, t.title, v.version_number, v.duration_minutes,
+      t.id AS test_id, t.title, v.version_number, v.duration_minutes, v.monitor_tabs,
       CASE WHEN v.allow_retake AND a.allow_retake THEN v.max_attempts ELSE 1 END AS max_attempts,
       a.available_from, a.deadline_at AS available_until, a.deadline_at,
       a.assigned_at, a.allow_retake, a.block_after_expiry,
@@ -1542,7 +1542,7 @@ async function finalize(c, a, status, reason = status === "EXPIRED" ? "TIME" : "
 }
 // Finalizează atomic o încercare expirată, inclusiv dacă browserul a fost închis.
 // Blocarea rândului împiedică evaluarea dublă la cereri concurente.
-async function finalizeExpiredAttempt(attemptId, userId) {
+async function finalizeExpiredAttempt(attemptId, userId, pageToken = null) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -1561,6 +1561,30 @@ async function finalizeExpiredAttempt(attemptId, userId) {
       await client.query("COMMIT");
       return finished;
     }
+    if (attempt.status === "IN_PROGRESS" && pageToken !== null) {
+      const security = (
+        await client.query("SELECT monitor_tabs FROM professional_test_versions WHERE id=$1", [
+          attempt.version_id,
+        ])
+      ).rows[0];
+      if (security?.monitor_tabs) {
+        if (attempt.integrity_page_token && attempt.integrity_page_token !== pageToken) {
+          await client.query(
+            "INSERT INTO professional_test_integrity_events(attempt_id,event_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
+            [attempt.id, pageToken],
+          );
+          const finished = await finalize(client, attempt, "SUBMITTED", "TAB_EXIT");
+          await client.query("COMMIT");
+          return finished;
+        }
+        if (!attempt.integrity_page_token) {
+          await client.query(
+            "UPDATE professional_test_attempts SET integrity_page_token=$2 WHERE id=$1",
+            [attempt.id, pageToken],
+          );
+        }
+      }
+    }
     await client.query("COMMIT");
     return attempt;
   } catch (error) {
@@ -1573,7 +1597,10 @@ async function finalizeExpiredAttempt(attemptId, userId) {
 const attemptData = asyncRoute(async (req, res) => {
   const id = integer(req.params.attemptId);
   if (!id) return fail(res, 400, "ID invalid.");
-  const a = await finalizeExpiredAttempt(id, req.user.id);
+  const pageToken = String(req.query.page_token || "");
+  if (pageToken && !/^[a-zA-Z0-9-]{16,80}$/.test(pageToken))
+    return fail(res, 400, "Sesiune invalidă.");
+  const a = await finalizeExpiredAttempt(id, req.user.id, pageToken || null);
   if (!a) return fail(res, 404, "Încercare inexistentă.");
   if (a.status !== "IN_PROGRESS") {
     return res.json({
@@ -1600,6 +1627,9 @@ const attemptData = asyncRoute(async (req, res) => {
       [a.version_id],
     )
   ).rows[0];
+  if (security?.monitor_tabs && !pageToken)
+    return fail(res, 400, "Actualizează aplicația pentru testarea monitorizată.");
+  delete a.integrity_page_token;
   res.json({
     attempt: { ...a, ...security, navigation_mode },
     questions: visibleQuestions(questions, a.current_question_index, navigation_mode),
@@ -1649,6 +1679,10 @@ const saveAnswer = asyncRoute(async (req, res) => {
       await finalize(c, a, "EXPIRED");
       await c.query("COMMIT");
       return fail(res, 409, "Timpul a expirat. Încercarea a fost finalizată automat.");
+    }
+    if (a.integrity_page_token && req.body.page_token !== a.integrity_page_token) {
+      await c.query("ROLLBACK");
+      return fail(res, 409, "Sesiunea de testare nu mai este validă.");
     }
     if (idlePoll) {
       const config = (
@@ -1705,9 +1739,12 @@ const saveAnswer = asyncRoute(async (req, res) => {
           [id],
         )
       ).rows[0].count;
+      const finished = await finalize(c, a, "SUBMITTED", "TAB_EXIT");
       await c.query("COMMIT");
       return res.json({
         monitored: true,
+        finished: true,
+        completion_reason: finished.completion_reason,
         tab_event_count: count,
         tab_warning_limit: security.tab_warning_limit,
       });

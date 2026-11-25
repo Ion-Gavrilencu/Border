@@ -116,6 +116,7 @@ function TestareProfesionala() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [startingId, setStartingId] = useState(null);
+  const [integrityTarget, setIntegrityTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -200,7 +201,11 @@ function TestareProfesionala() {
     navigate(`/testare/${encodeURIComponent(versionId)}/editare`);
   };
 
-  const openAssignedTest = async (item) => {
+  const openAssignedTest = (item) => {
+    if (item.monitor_tabs === true) setIntegrityTarget(item);
+    else void beginAssignedTest(item);
+  };
+  const beginAssignedTest = async (item) => {
     const versionId = versionIdOf(item);
     const assignmentId = assignmentIdOf(item);
     if (versionId == null || assignmentId == null || startingId != null) return;
@@ -944,6 +949,45 @@ function TestareProfesionala() {
         )}
       </div>
 
+      {integrityTarget && (
+        <div className="pt-modal-backdrop">
+          <div
+            className="pt-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="pt-integrity-title"
+          >
+            <div className="pt-modal-header">
+              <h2 id="pt-integrity-title">
+                <ShieldCheck size={22} /> Reguli de integritate
+              </h2>
+            </div>
+            <p>
+              Nu schimba fila, nu părăsi pagina și nu reîncărca testul. La prima abatere, încercarea
+              se închide automat, iar nota se calculează din răspunsurile salvate. Nu vei putea
+              relua această încercare.
+            </p>
+            <div className="pt-modal-actions">
+              <button
+                className="pt-button pt-button-light"
+                onClick={() => setIntegrityTarget(null)}
+              >
+                Anulează
+              </button>
+              <button
+                className="pt-button pt-button-primary"
+                onClick={() => {
+                  const item = integrityTarget;
+                  setIntegrityTarget(null);
+                  void beginAssignedTest(item);
+                }}
+              >
+                Am înțeles – Începe testul
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {deleteTarget && canDelete && (
         <div className="pt-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
           <div

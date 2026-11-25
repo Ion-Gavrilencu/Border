@@ -20,11 +20,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  getProfessionalAttempt,
   getProfessionalAttemptReview,
-  saveProfessionalAnswer,
+  saveProfessionalAnswer as saveAnswerRequest,
   submitProfessionalAttempt,
 } from "../services/professionalTestingService";
+import api from "../services/api";
 import "./SustinereTestProfesional.css";
 
 const errorMessage = (e) => e?.response?.data?.message || e?.message || "A apărut o eroare.";
@@ -54,40 +54,19 @@ export default function SustinereTestProfesional() {
   const pending = useRef(Promise.resolve());
   const active = useRef(true);
   const monitorTabs = data?.attempt?.monitor_tabs === true;
-  const [tabCount, setTabCount] = useState(0);
-  useEffect(() => {
-    if (data?.attempt?.tab_event_count != null)
-      setTabCount((n) => Math.max(n, Number(data.attempt.tab_event_count)));
-  }, [data?.attempt?.tab_event_count]);
-  useEffect(() => {
-    setTabCount(0);
-  }, [attemptId]);
-  useEffect(() => {
-    if (!monitorTabs || review) return;
-    let live = true;
-    const handle = () => {
-      if (document.visibilityState !== "hidden" || submitting.current) return;
-      const event_id =
-        globalThis.crypto?.randomUUID?.() ||
-        `${Date.now()}-${Math.random().toString(36).slice(2)}-tab`;
-      saveProfessionalAnswer(attemptId, { action: "tab_hidden", event_id })
-        .then((r) => {
-          if (!live || !r.monitored) return;
-          setTabCount((n) => Math.max(n, r.tab_event_count));
-          if (r.tab_event_count >= r.tab_warning_limit)
-            toast.warning("Pragul de avertizare a fost atins. Testul continuă.");
-        })
-        .catch(() => {
-          if (live) toast.warning("Evenimentul de vizibilitate nu a putut fi înregistrat.");
-        });
-    };
-    document.addEventListener("visibilitychange", handle);
-    return () => {
-      live = false;
-      document.removeEventListener("visibilitychange", handle);
-    };
-  }, [attemptId, monitorTabs, review]);
-
+  const pageToken = useRef(null);
+  if (!pageToken.current)
+    pageToken.current =
+      globalThis.crypto?.randomUUID?.() ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}-page`;
+  const saveProfessionalAnswer = useCallback(
+    (id, payload) => saveAnswerRequest(id, { ...payload, page_token: pageToken.current }),
+    [],
+  );
+  const exitRequested = useRef(false);
+  const [integrityClosing, setIntegrityClosing] = useState(false);
+  const [integrityError, setIntegrityError] = useState(false);
+  const cleanupTimer = useRef(null);
   const idleAuto = data?.attempt?.idle_auto_finish === true;
   const idleWarningMinutes = Number(data?.attempt?.idle_warning_minutes ?? 0);
   useEffect(() => {
@@ -123,6 +102,79 @@ export default function SustinereTestProfesional() {
       setData(null);
     }
   }, [attemptId]);
+
+  // O singură abatere închide definitiv încercarea. Serverul calculează nota.
+  const finishForExit = useCallback(
+    async (silent = false) => {
+      if (exitRequested.current || submitting.current || !monitorTabs || review) return;
+      exitRequested.current = true;
+      submitting.current = true;
+      if (!silent) {
+        setIntegrityClosing(true);
+        setIntegrityError(false);
+        setBusy(true);
+        setShowFinalizeModal(false);
+      }
+      const event_id =
+        globalThis.crypto?.randomUUID?.() ||
+        `${Date.now()}-${Math.random().toString(36).slice(2)}-exit`;
+      try {
+        // Nu așteptăm cererile nesalvate: evaluăm ce a ajuns deja la server.
+        await saveProfessionalAnswer(attemptId, { action: "tab_hidden", event_id });
+        if (active.current && !silent) {
+          await loadReview();
+          toast.error("Testul a fost finalizat automat pentru părăsirea paginii.");
+        }
+      } catch (e) {
+        if (!silent && active.current) {
+          if (e?.response?.status === 409) {
+            try {
+              await loadReview();
+              return;
+            } catch {
+              /* reîncercare */
+            }
+          }
+          setIntegrityError(true);
+        }
+      }
+    },
+    [attemptId, monitorTabs, review, loadReview, saveProfessionalAnswer],
+  );
+
+  useEffect(() => {
+    if (!monitorTabs || review || data?.attempt?.status !== "IN_PROGRESS") return;
+    clearTimeout(cleanupTimer.current);
+    const hidden = () => {
+      if (document.visibilityState === "hidden") void finishForExit();
+    };
+    const unload = (event) => {
+      if (submitting.current && !exitRequested.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const pagehide = () => {
+      void finishForExit(true);
+    };
+    const pop = () => {
+      void finishForExit(true);
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("beforeunload", unload);
+    window.addEventListener("pagehide", pagehide);
+    window.addEventListener("popstate", pop);
+    hidden();
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("beforeunload", unload);
+      window.removeEventListener("pagehide", pagehide);
+      window.removeEventListener("popstate", pop);
+      // Acoperă navigarea React; amânarea evită declanșarea la StrictMode.
+      cleanupTimer.current = setTimeout(() => {
+        if (!active.current) void finishForExit(true);
+      }, 0);
+    };
+  }, [attemptId, monitorTabs, review, data?.attempt?.status, finishForExit]);
 
   const [idleRemaining, setIdleRemaining] = useState(null);
   const idleConfirm = useRef(null);
@@ -198,10 +250,20 @@ export default function SustinereTestProfesional() {
     setCurrentQuestion(0);
     setSeconds(null);
     pending.current = Promise.resolve();
+    exitRequested.current = false;
+    submitting.current = false;
+    setIntegrityClosing(false);
+    setIntegrityError(false);
+    let cancelled = false;
     (async () => {
       try {
-        const payload = await getProfessionalAttempt(attemptId);
-        if (!active.current) return;
+        const { data: payload } = await api.get(
+          `/testare/incercari/${encodeURIComponent(attemptId)}`,
+          {
+            params: { page_token: pageToken.current },
+          },
+        );
+        if (cancelled || !active.current) return;
         if (payload.attempt.status !== "IN_PROGRESS") {
           await loadReview();
           return;
@@ -232,6 +294,7 @@ export default function SustinereTestProfesional() {
       }
     })();
     return () => {
+      cancelled = true;
       active.current = false;
     };
   }, [attemptId, loadReview]);
@@ -366,6 +429,32 @@ export default function SustinereTestProfesional() {
       });
   };
 
+  if (integrityClosing && !review)
+    return (
+      <section className="st-page">
+        <div className="st-card st-integrity-notice" role="alert">
+          <AlertTriangle size={28} />
+          <h2>Încercare blocată</h2>
+          <p>
+            {integrityError
+              ? "Nu am putut confirma finalizarea. Reconectează-te și reîncearcă. Testul nu poate continua."
+              : "Se finalizează automat testul. Răspunsurile salvate vor fi evaluate."}
+          </p>
+          {integrityError && (
+            <button
+              className="st-primary"
+              onClick={() => {
+                exitRequested.current = false;
+                submitting.current = false;
+                void finishForExit();
+              }}
+            >
+              Reîncearcă finalizarea
+            </button>
+          )}
+        </div>
+      </section>
+    );
   if (error)
     return (
       <section className="st-page">
@@ -404,6 +493,15 @@ export default function SustinereTestProfesional() {
       !q.answered ? "unanswered" : q.is_correct ? "correct" : isPartial(q) ? "partial" : "wrong";
     return (
       <section className="st-page st-review-page">
+        {a.completion_reason === "TAB_EXIT" && (
+          <div className="st-integrity-notice" role="alert">
+            <AlertTriangle size={22} /> <strong>Test finalizat automat</strong>
+            <p>
+              Pagina de testare a fost părăsită sau redeschisă. Încercarea a fost închisă definitiv.
+              Rezultatul reflectă răspunsurile salvate.
+            </p>
+          </div>
+        )}
         <button className="st-back" onClick={() => navigate("/testare")}>
           <ArrowLeft size={17} /> Înapoi la teste
         </button>
@@ -662,7 +760,18 @@ export default function SustinereTestProfesional() {
       : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   return (
     <section className="st-page st-taking-page">
-      <button className="st-back" onClick={() => navigate("/testare")}>
+      <button
+        className="st-back"
+        onClick={() => {
+          if (!monitorTabs) return navigate("/testare");
+          if (
+            window.confirm(
+              "Dacă părăsești pagina, testul va fi finalizat automat și nu va putea fi reluat. Continui?",
+            )
+          )
+            void finishForExit();
+        }}
+      >
         <ArrowLeft size={17} /> Înapoi la teste
       </button>
       <div className="st-header">
@@ -701,19 +810,12 @@ export default function SustinereTestProfesional() {
         </p>
       </dialog>
       {monitorTabs && (
-        <div
-          role="status"
-          style={{
-            padding: 12,
-            marginBottom: 12,
-            border: "1px solid #dce4ff",
-            borderRadius: 12,
-            background: "#f1f5ff",
-            color: "#173c8b",
-          }}
-        >
-          Monitorizarea vizibilității este activă. Evenimente înregistrate: {tabCount}. Prag:{" "}
-          {data.attempt.tab_warning_limit}. Testul nu se încheie automat.
+        <div className="st-integrity-notice" role="status">
+          <AlertTriangle size={22} /> <strong>Mod strict de testare</strong>
+          <p>
+            Nu părăsi pagina și nu schimba fila. La prima abatere, testul se finalizează automat și
+            nu poate fi reluat.
+          </p>
         </div>
       )}
       <div className="st-exam-progress">
