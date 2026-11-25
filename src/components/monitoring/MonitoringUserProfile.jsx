@@ -1,111 +1,168 @@
-import { useState } from "react";
-import api from "../../services/api";
-import { dateTime, initials, readDevice } from "./monitoringUtils";
+import { useEffect, useState } from "react";
+import {
+  UserRound,
+  Mail,
+  ShieldCheck,
+  CalendarDays,
+  Clock3,
+  Monitor,
+  Smartphone,
+  Laptop,
+  Activity,
+  ChevronDown,
+} from "lucide-react";
+import MonitoringAvatar from "./MonitoringAvatar";
+import { dateTime, readDevice } from "./monitoringUtils";
+import "./MonitoringUserProfile.css";
 
-function getAvatarUrl(user) {
-  const avatar = user?.avatarURL || user?.avatar_url;
-  if (typeof avatar !== "string" || !avatar.trim()) return "";
-  const value = avatar.trim();
-  if (/^https?:\/\//i.test(value)) return value;
-  if (!value.startsWith("/") || value.startsWith("//")) return "";
-  try {
-    const base = new URL(api.defaults.baseURL || "/api", window.location.origin);
-    return `${base.origin}${value}`;
-  } catch {
-    return "";
-  }
+function duration(value, now) {
+  if (!value) return "—";
+  const start = Date.parse(value);
+  if (!Number.isFinite(start) || start > now) return "—";
+  const minutes = Math.floor((now - start) / 60000);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor(minutes / 60) % 24;
+  const rest = minutes % 60;
+  return minutes < 1
+    ? "Sub 1 min"
+    : [days && `${days} z`, hours && `${hours} h`, `${rest} min`].filter(Boolean).join(" ");
 }
-function ProfileAvatar({ user }) {
-  const [failedUrl, setFailedUrl] = useState("");
-  const avatarUrl = getAvatarUrl(user);
+function Info({ icon: Icon, label, value }) {
   return (
-    <span className="mon-avatar mon-avatar-lg" style={{ overflow: "hidden" }}>
-      {avatarUrl && failedUrl !== avatarUrl ? (
-        <img
-          src={avatarUrl}
-          alt={`Fotografia utilizatorului ${user.username}`}
-          onError={() => setFailedUrl(avatarUrl)}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            borderRadius: "50%",
-          }}
+    <div className="mp-info">
+      <span className="mp-info-icon">
+        <Icon size={17} aria-hidden="true" />
+      </span>
+      <div>
+        <span>{label}</span>
+        <strong>{value || "—"}</strong>
+      </div>
+    </div>
+  );
+}
+function Session({ session, now }) {
+  const device = readDevice(session.user_agent);
+  const Icon = /Android|iOS/i.test(device)
+    ? Smartphone
+    : /Windows|macOS|Linux/i.test(device)
+      ? Laptop
+      : Monitor;
+  return (
+    <article className="mp-session">
+      <div className="mp-session-head">
+        <span className="mp-device-icon">
+          <Icon size={21} aria-hidden="true" />
+        </span>
+        <div>
+          <strong>{device}</strong>
+          <small>Sesiune raportată activă</small>
+        </div>
+        <span className="mp-status is-online">
+          <i />
+          Activă
+        </span>
+      </div>
+      <div className="mp-session-data">
+        <Info icon={CalendarDays} label="Autentificare" value={dateTime(session.started_at)} />
+        <Info icon={Clock3} label="Ultima activitate" value={dateTime(session.last_seen_at)} />
+        <Info
+          icon={Activity}
+          label="Timp de la autentificare"
+          value={duration(session.started_at, now)}
         />
-      ) : (
-        initials(user.full_name || user.username)
-      )}
-    </span>
+      </div>
+    </article>
+  );
+}
+function Profile({ user }) {
+  const [expanded, setExpanded] = useState(true);
+  const [now, setNow] = useState(Date.now);
+  const sessions = Array.isArray(user.sessions) ? user.sessions : [];
+  useEffect(() => {
+    if (!sessions.length) return;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) setNow(Date.now());
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [sessions.length]);
+  return (
+    <>
+      <div className="mp-heading">
+        <span>
+          <UserRound size={18} /> Profil utilizator
+        </span>
+        <span className={`mp-status ${user.online ? "is-online" : ""}`}>
+          <i />
+          {user.online ? "Online" : "Offline"}
+        </span>
+      </div>
+      <div className="mp-identity">
+        <MonitoringAvatar user={user} large />
+        <div>
+          <h2>{user.full_name || user.username || "Utilizator"}</h2>
+          <p>{user.username ? `@${user.username}` : "—"}</p>
+          <span className="mp-role">
+            <ShieldCheck size={13} />
+            {user.role || "—"}
+          </span>
+        </div>
+      </div>
+      <div className="mp-info-grid">
+        <Info icon={Mail} label="Adresă de email" value={user.email} />
+        <Info icon={CalendarDays} label="Data înregistrării" value={dateTime(user.created_at)} />
+        <Info icon={Monitor} label="Ultimul dispozitiv" value={readDevice(user.user_agent)} />
+        <Info icon={Clock3} label="Ultima activitate" value={dateTime(user.last_seen_at)} />
+        <Info
+          icon={Activity}
+          label="Începutul ultimei sesiuni"
+          value={dateTime(user.session_started_at)}
+        />
+      </div>
+      <div className="mp-sessions">
+        <button
+          className="mp-toggle"
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <Monitor size={19} />
+          <span>Sesiuni active</span>
+          <span className="mp-count">{user.active_sessions ?? sessions.length}</span>
+          <ChevronDown size={19} className={expanded ? "mp-chevron open" : "mp-chevron"} />
+        </button>
+        {expanded && (
+          <div className="mp-session-list">
+            {sessions.length ? (
+              sessions.map((session, index) => (
+                <Session key={session.session_id ?? index} session={session} now={now} />
+              ))
+            ) : (
+              <p className="mp-empty">
+                {Number(user.active_sessions) > 0
+                  ? "Detaliile sesiunilor nu sunt disponibile."
+                  : "Nicio sesiune activă raportată în ultimele două minute."}
+              </p>
+            )}
+            <p className="mp-note">
+              Prezența reflectă ultima sincronizare cu serverul, nu activitatea continuă la
+              dispozitiv.
+            </p>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 export default function MonitoringUserProfile({ user }) {
-  const sessions = Array.isArray(user?.sessions) ? user.sessions : [];
   return (
-    <section className="mon-panel mon-profile" aria-label="Profilul utilizatorului">
+    <section className="mon-panel mon-profile mp-profile" aria-label="Profilul utilizatorului">
       {user ? (
-        <>
-          <div className="mon-profile-top">
-            <ProfileAvatar key={user.id} user={user} />
-            <div className="mon-profile-name">
-              <h2>{user.username}</h2>
-              <span>{user.full_name}</span>
-            </div>
-            <span className={`mon-status ${user.online ? "online" : ""}`}>
-              ● {user.online ? "Online" : "Offline"}
-            </span>
-          </div>
-          <div className="mon-profile-details">
-            <div>
-              <p>
-                <strong>Email:</strong> {user.email || "—"}
-              </p>
-              <p>
-                <strong>Rol:</strong> {user.role || "—"}
-              </p>
-              <p>
-                <strong>Data înregistrării:</strong> {dateTime(user.created_at)}
-              </p>
-            </div>
-            <div>
-              <p>
-                <strong>Dispozitiv / Browser (ultima sesiune):</strong>{" "}
-                {readDevice(user.user_agent)}
-              </p>
-              <p>
-                <strong>Ultima activitate:</strong> {dateTime(user.last_seen_at)}
-              </p>
-              <p>
-                <strong>Început ultima sesiune:</strong> {dateTime(user.session_started_at)}
-              </p>
-            </div>
-          </div>
-          <div className="mon-session-section">
-            <h3>
-              Sesiuni active{" "}
-              <span className="mon-session-count">{user.active_sessions ?? sessions.length}</span>
-            </h3>
-            {sessions.length ? (
-              <div className="mon-session-list">
-                {sessions.map((session) => (
-                  <div className="mon-session-item" key={session.session_id}>
-                    <div className="mon-session-top">
-                      <strong>{readDevice(session.user_agent)}</strong>
-                      <span className="mon-status online">● Activ</span>
-                    </div>
-                    <div className="mon-session-meta">
-                      <span>Autentificare: {dateTime(session.started_at)}</span>
-                      <span>Ultima activitate: {dateTime(session.last_seen_at)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mon-session-empty">Nicio sesiune activă în ultimele două minute.</p>
-            )}
-          </div>
-        </>
+        <Profile key={user.id} user={user} />
       ) : (
-        <p className="mon-empty">Selectează un utilizator pentru detalii.</p>
+        <div className="mp-empty">
+          <UserRound size={26} />
+          <p>Selectează un utilizator pentru a vedea detaliile.</p>
+        </div>
       )}
     </section>
   );

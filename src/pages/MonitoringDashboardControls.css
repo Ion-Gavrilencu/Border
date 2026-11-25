@@ -1,0 +1,114 @@
+.mon-page .mon-dashboard-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #ffffff30;
+}
+.mon-page .mon-sync-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #fff;
+}
+.mon-page .mon-sync-info strong,
+.mon-page .mon-sync-info small {
+  display: block;
+  line-height: 1.5;
+  font-size: 13px;
+}
+.mon-page .mon-sync-info small {
+  color: #c6d7ed;
+  font-size: 12px;
+}
+.mon-page .mon-sync-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #aab8ca;
+  flex: none;
+}
+.mon-page .mon-sync-dot.is-live {
+  background: #4ade80;
+  box-shadow: 0 0 0 4px #4ade8026;
+}
+.mon-page .mon-dashboard-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mon-page .mon-dashboard-actions button,
+.mon-page .mon-dashboard-filterbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid #ffffff42;
+  border-radius: 10px;
+  background: #ffffff12;
+  color: #fff;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mon-page .mon-dashboard-actions button:hover:not(:disabled) {
+  background: #ffffff24;
+}
+.mon-page .mon-dashboard-filterbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  color: var(--mon-navy);
+  font-size: 13px;
+}
+.mon-page .mon-dashboard-filterbar label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.mon-page .mon-dashboard-filterbar select,
+.mon-page .mon-dashboard-filterbar button {
+  background: #fff;
+  color: var(--mon-navy);
+  border: 1px solid #dfe7f0;
+  border-radius: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  max-width: 100%;
+}
+.mon-page .mon-right {
+  scroll-margin-top: 90px;
+}
+.mon-page .mon-error button {
+  background: #fff;
+  border: 1px solid currentColor;
+  color: inherit;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+@container (max-width: 540px) {
+  .mon-page .mon-dashboard-actions,
+  .mon-page .mon-dashboard-filterbar label,
+  .mon-page .mon-dashboard-filterbar button {
+    width: 100%;
+  }
+  .mon-page .mon-dashboard-actions button {
+    flex: 1;
+  }
+  .mon-page .mon-dashboard-filterbar select {
+    flex: 1;
+    min-width: 0;
+  }
+}

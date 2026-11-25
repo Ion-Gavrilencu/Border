@@ -3,6 +3,7 @@ const pool = require("../config/database");
 const { touchMonitoringSession, logMonitoringEvent } = require("../services/monitoringService");
 
 const ONLINE_INTERVAL = "2 minutes";
+const ACTIONS = new Set(["all", "login", "logout", "search", "page_view", "view", "download"]);
 
 async function heartbeat(req, res) {
   try {
@@ -94,27 +95,39 @@ async function getOverview(req, res) {
       `),
 
       pool.query(`
-
-        SELECT
-
-          (SELECT COUNT(DISTINCT user_id)::int FROM monitoring_sessions
-
-           WHERE logged_out_at IS NULL AND expires_at > NOW()
-
-             AND last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}') AS online_users,
-
-          (SELECT COUNT(*)::int FROM monitoring_events WHERE action = 'login'
-
-           AND created_at >= (DATE_TRUNC('day', NOW() AT TIME ZONE 'Europe/Chisinau') AT TIME ZONE 'Europe/Chisinau')) AS logins_today,
-
-          (SELECT COUNT(*)::int FROM monitoring_events WHERE action = 'search'
-
-           AND created_at >= NOW() - INTERVAL '24 hours') AS searches_24h,
-
-          (SELECT COUNT(*)::int FROM monitoring_events WHERE action = 'download'
-
-           AND created_at >= NOW() - INTERVAL '24 hours') AS downloads_24h
-
+        WITH bounds AS (
+          SELECT (NOW() AT TIME ZONE 'Europe/Chisinau')::date AS today
+        ), recent AS (
+          SELECT action, user_id, created_at,
+                 (created_at AT TIME ZONE 'Europe/Chisinau')::date AS day
+          FROM monitoring_events, bounds
+          WHERE created_at >= ((today - 6)::timestamp AT TIME ZONE 'Europe/Chisinau')
+            AND created_at <= NOW()
+        ), daily AS (
+          SELECT day, COUNT(*)::int AS events, COUNT(DISTINCT user_id)::int AS users
+          FROM recent GROUP BY day
+        ), days AS (
+          SELECT today - n AS day FROM bounds CROSS JOIN generate_series(0, 6) AS g(n)
+        ), distribution AS (
+          SELECT action, COUNT(*)::int AS total FROM recent GROUP BY action
+        ), presence AS (
+          SELECT COUNT(*)::int AS active_sessions, COUNT(DISTINCT user_id)::int AS online_users
+          FROM monitoring_sessions
+          WHERE logged_out_at IS NULL AND expires_at > NOW()
+            AND last_seen_at >= NOW() - INTERVAL '${ONLINE_INTERVAL}'
+        )
+        SELECT presence.*,
+          COUNT(*) FILTER (WHERE action = 'login' AND day = bounds.today)::int AS logins_today,
+          COUNT(*) FILTER (WHERE action = 'search' AND created_at >= NOW() - INTERVAL '24 hours')::int AS searches_24h,
+          COUNT(*) FILTER (WHERE action = 'download' AND created_at >= NOW() - INTERVAL '24 hours')::int AS downloads_24h,
+          COUNT(*) FILTER (WHERE action = 'view' AND created_at >= NOW() - INTERVAL '24 hours')::int AS views_24h,
+          COUNT(*) FILTER (WHERE action = 'page_view' AND created_at >= NOW() - INTERVAL '24 hours')::int AS page_views_24h,
+          COUNT(recent.created_at)::int AS events_7d,
+          (SELECT json_agg(json_build_object('date', days.day::text, 'events', COALESCE(daily.events,0), 'users', COALESCE(daily.users,0)) ORDER BY days.day)
+             FROM days LEFT JOIN daily ON daily.day = days.day) AS daily_activity,
+          (SELECT COALESCE(json_agg(json_build_object('action', action, 'total', total) ORDER BY total DESC, action), '[]'::json) FROM distribution) AS action_distribution
+        FROM presence CROSS JOIN bounds LEFT JOIN recent ON TRUE
+        GROUP BY presence.active_sessions, presence.online_users, bounds.today
       `),
     ]);
 
@@ -193,11 +206,11 @@ async function enrichLegacyAttachmentEvents(activities) {
 
         CASE a.entity_type
 
-          WHEN 'telegrame' THEN t.number
+          WHEN 'telegrame' THEN t.number::text
 
-          WHEN 'ordine' THEN o.number
+          WHEN 'ordine' THEN o.number::text
 
-          WHEN 'legislatie' THEN l.law_number
+          WHEN 'legislatie' THEN l.law_number::text
 
           ELSE NULL
 
@@ -269,6 +282,7 @@ async function getActivities(req, res) {
 
     if (
       (userId !== null && (!Number.isSafeInteger(userId) || userId < 1)) ||
+      (action && !ACTIONS.has(action)) ||
       (start && !validDate(start)) ||
       (end && !validDate(end)) ||
       (start && end && start > end)
@@ -290,9 +304,29 @@ async function getActivities(req, res) {
 
     if (action && action !== "all") add("e.action = ?", action);
 
-    if (search) add("COALESCE(e.details, '') ILIKE ?", `%${search}%`);
+    if (search) {
+      values.push(`%${search.replace(/[\\%_]/g, (ch) => "\\" + ch)}%`);
+      const param = `$${values.length}`;
+      clauses.push(`(COALESCE(e.details, '') ILIKE ${param} OR (
+        e.action IN ('view', 'download') AND EXISTS (
+          SELECT 1 FROM attachments a
+          LEFT JOIN telegrame t ON a.entity_type = 'telegrame' AND t.id = a.entity_id
+          LEFT JOIN ordine o ON a.entity_type = 'ordine' AND o.id = a.entity_id
+          LEFT JOIN legislatie l ON a.entity_type = 'legislatie' AND l.id = a.entity_id
+          LEFT JOIN informatii_utile i ON a.entity_type = 'informatii_utile' AND i.id = a.entity_id
+          LEFT JOIN news n ON a.entity_type = 'news' AND n.id = a.entity_id
+          WHERE a.id::text = substring(e.details from '^(?:Vizualizare|Descărcare) atașament #([1-9][0-9]*): ')
+            AND concat_ws(' ', CASE a.entity_type
+              WHEN 'telegrame' THEN 'Telegramă nr.' WHEN 'ordine' THEN 'Ordin intern nr.'
+              WHEN 'legislatie' THEN 'Act normativ nr.' WHEN 'informatii_utile' THEN 'Informație utilă'
+              WHEN 'news' THEN 'Noutate' END,
+              COALESCE(t.number::text, o.number::text, l.law_number::text),
+              COALESCE(t.title, o.title, l.title, i.title, n.title)) ILIKE ${param}
+        )
+      ))`);
+    }
 
-    if (start) add("e.created_at >= (?::date AT TIME ZONE 'Europe/Chisinau')", start);
+    if (start) add("e.created_at >= (?::date::timestamp AT TIME ZONE 'Europe/Chisinau')", start);
 
     if (end)
       add("e.created_at < ((?::date + INTERVAL '1 day') AT TIME ZONE 'Europe/Chisinau')", end);
@@ -301,27 +335,23 @@ async function getActivities(req, res) {
 
     const base = `FROM monitoring_events e LEFT JOIN users u ON u.id = e.user_id ${where}`;
 
-    const count = await pool.query(`SELECT COUNT(*)::int AS total ${base}`, values);
-
     const result = await pool.query(
-      `SELECT e.id, e.user_id, e.action, e.details, e.ip_address, e.user_agent,
-
-              e.created_at, u.username, u.full_name ${base}
-
-       ORDER BY e.created_at DESC, e.id DESC
-
-       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-
+      `WITH matched AS (
+         SELECT e.id, e.user_id, e.action, e.details, e.ip_address, e.user_agent,
+                e.created_at, u.username, u.full_name ${base}
+       ), paged AS (
+         SELECT * FROM matched ORDER BY created_at DESC, id DESC
+         LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+       )
+       SELECT (SELECT COUNT(*)::int FROM matched) AS total,
+         COALESCE((SELECT json_agg(p ORDER BY p.created_at DESC, p.id DESC) FROM paged p), '[]'::json) AS activities`,
       [...values, limit, (page - 1) * limit],
     );
-
-    const activities = await enrichLegacyAttachmentEvents(result.rows);
-
+    const row = result.rows[0];
+    const activities = await enrichLegacyAttachmentEvents(row.activities);
     return res.json({
       activities,
-
-      total: count.rows[0].total,
-
+      total: row.total,
       page,
 
       limit,
@@ -346,12 +376,20 @@ async function recordPageView(req, res) {
       return res.status(400).json({ message: "Pagina accesată este invalidă." });
     }
 
+    const cleanPath = path.split(/[?#]/, 1)[0];
+    if (
+      !/^\/(?!\/)[a-zA-Z0-9_/%.-]*$/.test(cleanPath) ||
+      cleanPath.includes("..") ||
+      /%2f|%5c|%2e/i.test(cleanPath)
+    ) {
+      return res.status(400).json({ message: "Pagina accesată este invalidă." });
+    }
     await logMonitoringEvent({
       userId: req.user.id,
 
       action: "page_view",
 
-      details: `Pagină accesată: ${path}`,
+      details: `Pagină accesată: ${cleanPath}`,
 
       req,
     });

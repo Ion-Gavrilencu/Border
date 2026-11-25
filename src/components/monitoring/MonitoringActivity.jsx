@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../../services/api";
 import {
   Activity,
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -17,77 +17,111 @@ import {
   LogIn,
   LogOut,
   Globe,
-  CircleHelp,
+  List,
+  Table2,
+  RotateCcw,
 } from "lucide-react";
 import { actionNames, dateTime, readDevice } from "./monitoringUtils";
+import "./MonitoringActivity.css";
 
-const LIMIT = 8;
 const tabs = [
-  ["all", "Toată activitatea", Activity],
+  ["all", "Toate", Activity],
   ["login", "Conectări", LogIn],
   ["logout", "Deconectări", LogOut],
   ["search", "Căutări", Search],
-  ["page_view", "Pagini accesate", Globe],
+  ["page_view", "Pagini", Globe],
   ["view", "Documente", Eye],
   ["download", "Descărcări", Download],
 ];
-const icons = {
-  login: LogIn,
-  logout: LogOut,
-  search: Search,
-  page_view: Globe,
-  view: Eye,
-  download: Download,
-};
-const sectionPaths = {
-  telegrame: "/telegrame",
-  ordine: "/ordine",
-  legislatie: "/legislatie",
-  informatii_utile: "/informatii-utile",
-  news: "/noutati",
-};
-const allowedPage = /^\/(?!\/)[a-zA-Z0-9/_?=&%.-]*$/;
-function detailTarget(item) {
-  const details = String(item.details || "");
-  if (item.action === "page_view") {
-    const path = details.match(/^Pagină accesată:\s*(\/\S*)/i)?.[1];
-    if (path && allowedPage.test(path) && !path.includes(".."))
-      return { path, title: "Pagină accesată", subtitle: path };
+const icons = Object.fromEntries(tabs.map(([key, , Icon]) => [key, Icon]));
+function attachmentUrl(id) {
+  if (!/^[1-9]\d*$/.test(String(id ?? ""))) return null;
+  try {
+    const base = new URL(api.defaults.baseURL || "/api", window.location.origin);
+    if (!["http:", "https:"].includes(base.protocol)) return null;
+    base.search = "";
+    base.hash = "";
+    base.pathname = `${base.pathname.replace(/\/+$/, "")}/attachments/file/${id}`;
+    return base.href;
+  } catch {
+    return null;
   }
-  if (["view", "download"].includes(item.action) && item.document) {
-    const { entity_type, title } = item.document;
-    const path = sectionPaths[entity_type];
-    if (path)
-      return { path, title: title || "Document", subtitle: "Deschide secțiunea documentului" };
-  }
-  return null;
 }
 function Details({ item }) {
-  const target = detailTarget(item);
-  if (!target)
+  const details = String(item.details || "");
+  const path =
+    item.action === "page_view" ? details.match(/^Pagină accesată:\s*(\/\S*)$/i)?.[1] : null;
+  const safe =
+    path &&
+    /^\/(?!\/)[a-zA-Z0-9/_?=&%.-]*$/.test(path) &&
+    !path.includes("..") &&
+    !/%(?:2f|5c|2e|25)/i.test(path);
+  if (safe) {
     return (
-      <span className="mon-activity-detail-unavailable" title={item.details || ""}>
-        {item.details || "—"}
+      <Link className="ma-link" to={path} target="_blank" rel="noopener noreferrer">
+        <span>
+          {path}
+          <small>Deschide pagina într-o filă nouă</small>
+        </span>
+        <ExternalLink size={15} aria-hidden="true" />
+      </Link>
+    );
+  }
+  if (["view", "download"].includes(item.action)) {
+    const legacyId = details.match(/^(?:Vizualizare|Descărcare) atașament #([1-9]\d*): /)?.[1];
+    const url = attachmentUrl(item.document?.attachment_id ?? legacyId);
+    if (url) {
+      return (
+        <a className="ma-link" href={url} target="_blank" rel="noopener noreferrer">
+          <span>
+            {item.document?.title || details || "Document"}
+            <small>Deschide fișierul original</small>
+          </span>
+          <ExternalLink size={15} aria-hidden="true" />
+        </a>
+      );
+    }
+    return (
+      <span className="ma-detail" title="Evenimentul nu conține identificatorul atașamentului">
+        {details || "—"}
+        <small style={{ display: "block" }}>Fișierul exact nu poate fi identificat</small>
       </span>
     );
+  }
+  return <span className="ma-detail">{details || "—"}</span>;
+}
+function Action({ item }) {
+  const Icon = icons[item.action] || FileText;
   return (
-    <Link
-      className="mon-activity-detail-link"
-      to={target.path}
-      title={item.details || target.title}
-    >
-      <span className="mon-activity-detail-link-text">
-        <span className="mon-activity-detail-title">{target.title}</span>
-        <span className="mon-activity-detail-path">{target.subtitle}</span>
-      </span>
-      <ExternalLink className="mon-activity-detail-link-icon" aria-hidden="true" />
-    </Link>
+    <span className="ma-kind" data-kind={item.action}>
+      <Icon size={16} />
+      {actionNames[item.action] || item.action}
+    </span>
   );
+}
+const localDay = (date) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Chisinau",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce((o, p) => ({ ...o, [p.type]: p.value }), {});
+function dayString(parts) {
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+function range(days) {
+  const today = localDay(new Date());
+  const start = new Date(Date.UTC(+today.year, +today.month - 1, +today.day - days + 1));
+  return [start.toISOString().slice(0, 10), dayString(today)];
 }
 export default function MonitoringActivity({
   activities = [],
   total = 0,
   page = 1,
+  limit = 10,
+  onLimitChange,
   onPageChange,
   action,
   onActionChange,
@@ -97,75 +131,113 @@ export default function MonitoringActivity({
   onStartChange,
   end,
   onEndChange,
+  onDateRangeChange,
+  onReset,
   loading = false,
   error,
   onRefresh,
 }) {
-  const pages = Math.max(1, Math.ceil(total / LIMIT));
-  const from = total ? (page - 1) * LIMIT + 1 : 0;
-  const to = Math.min(page * LIMIT, total);
+  const [view, setView] = useState("table");
+  const pages = Math.max(1, Math.ceil(total / limit));
+  const from = total && activities.length ? (page - 1) * limit + 1 : 0;
+  const to = from ? Math.min(total, from + activities.length - 1) : 0;
   return (
-    <section className="mon-panel mon-activity" aria-label="Istoricul activității">
-      <div className="mon-activity-title">
-        <h2>
-          <Activity size={20} /> Istoricul activității
-        </h2>
-        <button
-          type="button"
-          className="mon-refresh"
-          onClick={onRefresh}
-          disabled={loading}
-          title="Actualizează activitățile"
-          aria-label="Actualizează activitățile"
-        >
-          <RefreshCw size={17} />
-        </button>
-      </div>
-      <div className="mon-action-tabs" role="group" aria-label="Filtrează după acțiune">
+    <section
+      className="mon-panel mon-activity ma"
+      aria-label="Istoricul activității"
+      aria-busy={loading}
+    >
+      <header className="ma-heading">
+        <div>
+          <h2>
+            <Activity size={21} /> Istoricul activității
+          </h2>
+          <p>{total.toLocaleString("ro-RO")} evenimente pentru filtrele curente</p>
+        </div>
+        <div className="ma-tools">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading}
+            aria-label="Actualizează istoricul"
+          >
+            <RefreshCw size={17} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("table")}
+            aria-pressed={view === "table"}
+            aria-label="Vizualizare tabel"
+          >
+            <Table2 size={17} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("timeline")}
+            aria-pressed={view === "timeline"}
+            aria-label="Vizualizare cronologică"
+          >
+            <List size={17} />
+          </button>
+        </div>
+      </header>
+      <div className="ma-tabs" role="group" aria-label="Tip activitate">
         {tabs.map(([value, label, Icon]) => (
           <button
-            key={value}
             type="button"
-            className={action === value ? "active" : ""}
+            key={value}
             aria-pressed={action === value}
             onClick={() => onActionChange(value)}
           >
-            <Icon size={14} />
+            <Icon size={15} />
             {label}
           </button>
         ))}
       </div>
-      <div className="mon-activity-filters">
-        <label className="mon-date-field">
-          <span className="mon-date-caption">De la</span>
-          <CalendarDays size={16} aria-hidden="true" />
+      <div className="ma-presets">
+        <button type="button" onClick={() => onDateRangeChange(...range(1))}>
+          Astăzi
+        </button>
+        <button type="button" onClick={() => onDateRangeChange(...range(7))}>
+          Ultimele 7 zile
+        </button>
+        <button type="button" onClick={() => onDateRangeChange(...range(30))}>
+          Ultimele 30 de zile
+        </button>
+        <button type="button" onClick={onReset}>
+          <RotateCcw size={15} /> Resetează
+        </button>
+      </div>
+      <div className="ma-filters">
+        <label>
+          <span>De la</span>
           <input
             type="date"
-            aria-label="De la data"
             value={start}
             max={end || undefined}
             onChange={(e) => onStartChange(e.target.value)}
           />
         </label>
-        <label className="mon-date-field">
-          <span className="mon-date-caption">Până la</span>
-          <CalendarDays size={16} aria-hidden="true" />
+        <label>
+          <span>Până la</span>
           <input
             type="date"
-            aria-label="Până la data"
             value={end}
             min={start || undefined}
             onChange={(e) => onEndChange(e.target.value)}
           />
         </label>
-        <label className="mon-activity-search">
-          <Search size={17} aria-hidden="true" />
-          <input
-            placeholder="Caută în activitate..."
-            aria-label="Caută în activitate"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
+        <label>
+          <span>Caută în detalii</span>
+          <span className="ma-search">
+            <Search size={17} />
+            <input
+              value={search}
+              maxLength={120}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Caută activitate..."
+            />
+          </span>
         </label>
       </div>
       {error && (
@@ -173,100 +245,107 @@ export default function MonitoringActivity({
           {error}
         </p>
       )}
-      <div className="mon-activity-desktop mon-table-scroll">
-        <table className="mon-table mon-activity-table">
-          <thead>
-            <tr>
-              <th>Data și ora</th>
-              <th>Acțiune</th>
-              <th>Detalii</th>
-              <th>IP</th>
-              <th>Dispozitiv / Browser</th>
-            </tr>
-          </thead>
-          <tbody>
-            {activities.map((item) => {
-              const Icon = icons[item.action] || FileText;
-              return (
-                <tr key={item.id}>
-                  <td>{dateTime(item.created_at)}</td>
-                  <td>
-                    <span className="mon-action-label" data-kind={item.action}>
-                      <Icon size={16} />
-                      {actionNames[item.action] || item.action}
-                    </span>
-                  </td>
-                  <td className="mon-activity-details-cell">
-                    <Details item={item} />
-                  </td>
-                  <td>{item.ip_address || "—"}</td>
-                  <td>{readDevice(item.user_agent)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className="mon-activity-mobile" aria-label="Activități în format mobil">
-        {activities.map((item) => {
-          const Icon = icons[item.action] || FileText;
-          return (
-            <article className="mon-activity-card" key={item.id}>
-              <div className="mon-activity-card-head">
-                <span className="mon-activity-card-action">
-                  <Icon size={17} />
-                  {actionNames[item.action] || item.action}
-                </span>
-              </div>
-              <div className="mon-activity-card-date">
-                <Clock3 size={14} />
-                <time>{dateTime(item.created_at)}</time>
-              </div>
-              <div className="mon-activity-card-details">
-                <Details item={item} />
-              </div>
-              <div className="mon-activity-card-meta">
-                <span>
-                  <Monitor size={15} />
-                  {readDevice(item.user_agent)}
-                </span>
-                <span>
-                  <Network size={15} />
-                  IP: {item.ip_address || "—"}
-                </span>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      {!loading && !activities.length && !error && (
-        <p className="mon-empty">Nu există activități înregistrate pentru filtrele selectate.</p>
-      )}
       {loading && (
-        <p className="mon-empty" role="status">
-          Se încarcă activitățile...
+        <p className="ma-loading" role="status">
+          Se încarcă activitățile…
         </p>
       )}
-      <footer className="mon-panel-footer mon-pagination">
+      {!loading && !error && !activities.length && (
+        <div className="ma-empty">
+          <Activity size={28} />
+          <strong>Nu există activități</strong>
+          <span>Modifică filtrele pentru a căuta alte evenimente.</span>
+        </div>
+      )}
+      {!!activities.length && (
+        <div className={`ma-results ma-mode-${view}`}>
+          {view === "table" && (
+            <table className="ma-table">
+              <thead>
+                <tr>
+                  <th>Data și ora</th>
+                  <th>Acțiune</th>
+                  <th>Detalii</th>
+                  <th>IP / Dispozitiv</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activities.map((item) => (
+                  <tr key={item.id}>
+                    <td>{dateTime(item.created_at)}</td>
+                    <td>
+                      <Action item={item} />
+                    </td>
+                    <td>
+                      <Details item={item} />
+                    </td>
+                    <td>
+                      <div className="ma-meta">
+                        <span>{item.ip_address || "—"}</span>
+                        <small>{readDevice(item.user_agent)}</small>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <div className="ma-feed">
+            {activities.map((item) => (
+              <article key={item.id} className="ma-event">
+                <div className="ma-event-head">
+                  <Action item={item} />
+                  <time>
+                    <Clock3 size={14} />
+                    {dateTime(item.created_at)}
+                  </time>
+                </div>
+                <Details item={item} />
+                <div className="ma-event-meta">
+                  <span>
+                    <Monitor size={15} />
+                    {readDevice(item.user_agent)}
+                  </span>
+                  <span>
+                    <Network size={15} />
+                    {item.ip_address || "—"}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+      <footer className="ma-footer">
         <span>
           Afișate {from}–{to} din {total}
         </span>
-        <div>
+        <label>
+          Pe pagină{" "}
+          <select value={limit} onChange={(e) => onLimitChange(Number(e.target.value))}>
+            {[10, 20, 50].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="ma-pagination">
           <button
             type="button"
             disabled={page <= 1 || loading}
-            onClick={() => onPageChange(Math.max(1, page - 1))}
+            onClick={() => onPageChange(page - 1)}
             aria-label="Pagina precedentă"
           >
             <ChevronLeft size={18} />
           </button>
           <span>
-            Pagina {page} din {pages}
+            {page} / {pages}
           </span>
           <button
             type="button"
             disabled={page >= pages || loading}
-            onClick={() => onPageChange(Math.min(pages, page + 1))}
+            onClick={() => onPageChange(page + 1)}
             aria-label="Pagina următoare"
           >
             <ChevronRight size={18} />
