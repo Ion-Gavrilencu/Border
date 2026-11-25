@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus,
   ArrowRight,
@@ -21,13 +21,20 @@ import {
   Play,
   ShieldCheck,
   MoreHorizontal,
-  ArrowUpRight,
+  Trash2,
+  X,
+  RotateCcw,
   ArrowDownUp,
   Check,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import "./PanouGeneral.css";
 
-const normalize = (value) => String(value ?? "").toLocaleLowerCase("ro-RO");
+const normalize = (value) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLocaleLowerCase("ro-RO");
 const number = (value) =>
   value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const dateOf = (item) =>
@@ -51,7 +58,7 @@ const dateLabel = (value) => {
         minute: "2-digit",
       });
 };
-const statusOf = (item) => normalize(item.status ?? item.version_status).toUpperCase();
+const statusOf = (item) => normalize(item.version_status ?? item.status).toUpperCase();
 const statusMeta = (item) => {
   const s = statusOf(item);
   if (["PUBLISHED", "ACTIVE", "ACTIV"].includes(s)) {
@@ -65,8 +72,8 @@ const statusMeta = (item) => {
     return { label: "Programat", cls: "scheduled", Icon: CalendarDays };
   if (["FINISHED", "COMPLETED", "CLOSED", "FINALIZAT"].includes(s))
     return { label: "Finalizat", cls: "finished", Icon: Check };
-  if (s === "DRAFT" || s === "CIORNĂ") return { label: "Ciornă", cls: "draft", Icon: null };
-  return { label: item.status ?? item.version_status ?? "Necunoscut", cls: "draft", Icon: null };
+  if (s === "DRAFT" || s === "CIORNA") return { label: "Ciornă", cls: "draft", Icon: null };
+  return { label: item.status ?? item.version_status ?? "Necunoscut", cls: "unknown", Icon: null };
 };
 const percentOf = (item) => {
   const value = number(item.score_percent ?? item.percentage ?? item.percent);
@@ -88,14 +95,9 @@ export default function PanouGeneral({ ctx }) {
     setDashboardSearch,
     dashboardPage,
     setDashboardPage,
-    filteredDashboardTests = [],
     results = [],
     managed = [],
     attemptRows = [],
-    passRate,
-    knownPasses,
-    passedResults = [],
-    completedResults = [],
     setShowCreate,
     openEditor,
     openFinishedAttempt,
@@ -105,6 +107,56 @@ export default function PanouGeneral({ ctx }) {
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState("newest");
   const [menuId, setMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+  const [pageSize, setPageSize] = useState(4);
+  const menuTrigger = useRef(null);
+  const menuPanel = useRef(null);
+  const closeMenu = () => setMenuId(null);
+  const toggleMenu = (event, key) => {
+    if (menuId === key) return closeMenu();
+    const rect = event.currentTarget.getBoundingClientRect();
+    menuTrigger.current = event.currentTarget;
+    const width = Math.min(220, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    const above =
+      window.innerHeight - rect.bottom < 240 && rect.top > window.innerHeight - rect.bottom;
+    setMenuPosition({
+      width,
+      left,
+      ...(above ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+    });
+    setMenuId(key);
+  };
+  useEffect(() => {
+    if (menuId === null) return;
+    const outside = (event) => {
+      if (
+        !menuPanel.current?.contains(event.target) &&
+        !menuTrigger.current?.contains(event.target)
+      )
+        closeMenu();
+    };
+    const keyboard = (event) => {
+      if (event.key === "Escape") {
+        closeMenu();
+        menuTrigger.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", keyboard);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+    menuPanel.current?.querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", keyboard);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [menuId]);
+  useEffect(() => {
+    closeMenu();
+  }, [dashboardSearch, category, status, sort, dashboardPage, pageSize, managed]);
 
   const allTests = Array.isArray(managed) ? managed : [];
   const categories = useMemo(
@@ -113,7 +165,17 @@ export default function PanouGeneral({ ctx }) {
     [managed],
   );
   const tests = useMemo(() => {
-    const base = Array.isArray(filteredDashboardTests) ? filteredDashboardTests : [];
+    const terms = normalize(dashboardSearch).trim().split(/\s+/).filter(Boolean);
+    const base = (Array.isArray(managed) ? managed : []).filter((item) => {
+      const text = normalize(
+        [
+          item.title ?? item.test_title,
+          item.description,
+          item.category_name ?? item.category ?? "General",
+        ].join(" "),
+      );
+      return terms.every((term) => text.includes(term));
+    });
     return base
       .filter(
         (item) =>
@@ -131,10 +193,10 @@ export default function PanouGeneral({ ctx }) {
         const bb = new Date(dateOf(b) ?? 0).getTime() || 0;
         return sort === "oldest" ? aa - bb : bb - aa;
       });
-  }, [filteredDashboardTests, category, status, sort]);
-  const pages = Math.max(1, Math.ceil(tests.length / 4));
+  }, [managed, dashboardSearch, category, status, sort]);
+  const pages = Math.max(1, Math.ceil(tests.length / pageSize));
   const page = Math.max(1, Math.min(dashboardPage, pages));
-  const visible = tests.slice((page - 1) * 4, page * 4);
+  const visible = tests.slice((page - 1) * pageSize, page * pageSize);
   // Preferăm totalurile furnizate de API; rezultatele personale pot fi incomplete.
   const attemptsByVersion = useMemo(() => {
     const counts = new Map();
@@ -158,17 +220,23 @@ export default function PanouGeneral({ ctx }) {
   };
   const metrics = dashboardMetrics;
   const attemptsCount = metrics?.total_attempts ?? "—";
-  const chartRate = number(metrics?.pass_rate);
+  const rawRate = number(metrics?.pass_rate);
+  const chartRate = rawRate != null && rawRate >= 0 && rawRate <= 100 ? rawRate : null;
   const rate = chartRate;
   const recent = [...(Array.isArray(results) ? results : [])]
     .filter((item) =>
       ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"].includes(
-        String(item.status ?? "").toUpperCase(),
+        String(item.status ?? item.attempt_status ?? "").toUpperCase(),
       ),
     )
     .sort((a, b) => (Date.parse(dateOf(b)) || 0) - (Date.parse(dateOf(a)) || 0))
     .slice(0, 4);
   const totalCompleted = metrics?.completed ?? null;
+  const evaluated =
+    metrics?.evaluated ??
+    (metrics?.passed != null && metrics?.failed != null
+      ? Number(metrics.passed) + Number(metrics.failed)
+      : null);
   const passedCount = metrics?.passed ?? null;
   const failedCount = metrics?.failed ?? null;
   // Stil inline: evită suprascrierea gradientului de către alte fișiere CSS.
@@ -242,8 +310,8 @@ export default function PanouGeneral({ ctx }) {
               {[
                 ["1. Detalii test", "Titlu, descriere, categorie", FileCheck2],
                 ["2. Întrebări", "Adaugă sau importă întrebări", ListChecks],
-                ["3. Atribuire", "Selectează destinatarii", Users],
-                ["4. Publicare", "Activează testul", Play],
+                ["3. Publicare", "Activează testul", Play],
+                ["4. Atribuire", "Selectează destinatarii", Users],
               ].map(([name, detail, Icon], index) => (
                 <div className="pt-dashboard-step" key={name}>
                   <span>
@@ -277,6 +345,19 @@ export default function PanouGeneral({ ctx }) {
                   placeholder="Caută test după titlu, categorie..."
                   aria-label="Caută teste"
                 />
+                {dashboardSearch && (
+                  <button
+                    type="button"
+                    className="pt-pg-clear"
+                    aria-label="Șterge căutarea"
+                    onClick={() => {
+                      setDashboardSearch("");
+                      setDashboardPage(1);
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </label>
               <label className="pt-filter-select">
                 <LayoutDashboard size={17} />
@@ -306,6 +387,7 @@ export default function PanouGeneral({ ctx }) {
                   <option value="draft">Ciorne</option>
                   <option value="scheduled">Programate</option>
                   <option value="finished">Finalizate</option>
+                  <option value="unknown">Alte stări</option>
                 </select>
                 <ChevronRight size={16} />
               </label>
@@ -318,6 +400,27 @@ export default function PanouGeneral({ ctx }) {
                 </select>
                 <ChevronRight size={16} />
               </label>
+            </div>
+            <div className="pt-pg-toolbar">
+              <span aria-live="polite">
+                {tests.length} din {allTests.length} teste
+              </span>
+              <button
+                type="button"
+                className="pt-pg-reset"
+                disabled={
+                  !dashboardSearch && category === "all" && status === "all" && sort === "newest"
+                }
+                onClick={() => {
+                  setDashboardSearch("");
+                  setCategory("all");
+                  setStatus("all");
+                  setSort("newest");
+                  setDashboardPage(1);
+                }}
+              >
+                <RotateCcw size={15} /> Resetează filtrele
+              </button>
             </div>
             <div className="pt-dashboard-table-wrap">
               <table className="pt-dashboard-table">
@@ -395,7 +498,8 @@ export default function PanouGeneral({ ctx }) {
                               <button
                                 type="button"
                                 className="pt-dashboard-view"
-                                onClick={() => setMenuId(menuId === testKey ? null : testKey)}
+                                onClick={(event) => toggleMenu(event, testKey)}
+                                aria-expanded={menuId === testKey}
                                 title="Mai multe acțiuni"
                                 aria-label="Mai multe acțiuni"
                               >
@@ -466,9 +570,26 @@ export default function PanouGeneral({ ctx }) {
             </div>
             <div className="pt-dashboard-footer">
               <span>
-                Afișează {visible.length ? (page - 1) * 4 + 1 : 0} –{" "}
-                {Math.min(page * 4, tests.length)} din {tests.length} teste
+                Afișează {visible.length ? (page - 1) * pageSize + 1 : 0} –{" "}
+                {Math.min(page * pageSize, tests.length)} din {tests.length} teste
               </span>
+              <label className="pt-pg-size">
+                Pe pagină{" "}
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value));
+                    setDashboardPage(1);
+                  }}
+                  aria-label="Teste pe pagină"
+                >
+                  {[4, 8, 12, 24].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div>
                 <button
                   type="button"
@@ -608,13 +729,15 @@ export default function PanouGeneral({ ctx }) {
                 </p>
                 <p className="pt-legend-total">
                   <span className="pt-legend-dot pt-dot-slate" />
-                  Total rezultate <strong>{totalCompleted ?? "—"}</strong>
+                  Evaluate <strong>{evaluated ?? "—"}</strong>
                 </p>
               </div>
             </div>
             {chartRate == null && (
               <p className="pt-dashboard-muted">
-                Rata de promovare este disponibilă după evaluarea rezultatelor.
+                {dashboardMetricsError
+                  ? "Statisticile sunt momentan indisponibile."
+                  : "Rata de promovare este disponibilă după evaluarea rezultatelor."}
               </p>
             )}
           </section>

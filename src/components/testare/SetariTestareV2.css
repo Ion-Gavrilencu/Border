@@ -1,0 +1,122 @@
+/* BORDER — extensie izolată pentru Setări testare; păstrează CSS-ul de bază. */
+.pts-page .pts-settings-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.pts-page .pts-settings-fields:disabled .pts-panel {
+  opacity: 0.72;
+}
+.pts-page .pts-switch {
+  transition: background 0.18s ease;
+}
+.pts-page .pts-switch-row.is-disabled {
+  cursor: default;
+  color: #66738d;
+}
+.pts-page .pts-switch-row input:disabled + .pts-switch {
+  opacity: 0.7;
+}
+.pts-page .pts-sidebar button.active:hover {
+  background: #dbe7ff;
+  color: #1648d4;
+}
+.pts-page .pts-save:hover:not(:disabled) {
+  background: linear-gradient(105deg, #7530de, #382de0);
+  box-shadow: 0 6px 18px #4537f733;
+}
+.pts-page .pts-secondary:hover:not(:disabled),
+.pts-page .pts-reset:hover:not(:disabled) {
+  background: #edf3ff;
+}
+.pts-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.pts-page .pts-retry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #f0c8c8;
+  border-radius: 12px;
+  background: #fff5f5;
+  color: #a32626;
+  margin-bottom: 15px;
+}
+.pts-page .pts-saved-at {
+  display: block;
+  margin-top: 4px;
+  color: #52658c;
+  font-size: 11px;
+}
+.pts-page .pts-bottom > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pts-page .pts-control-row > span {
+  overflow-wrap: anywhere;
+}
+.pts-page .pts-switch-row input {
+  z-index: 1;
+  margin: 0;
+}
+.pts-page .pts-save,
+.pts-page .pts-reset,
+.pts-page .pts-secondary {
+  min-height: 44px;
+}
+@media (max-width: 680px) {
+  .pts-page .pts-bottom .pts-secondary {
+    width: 100%;
+  }
+  .pts-page .pts-control-row {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pts-page .pts-switch,
+  .pts-page .pts-switch:after {
+    transition: none;
+  }
+}
+
+.pts-page .pts-library-input,
+.pts-page .pts-library-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  min-width: 0;
+}
+.pts-library-row {
+  border: 1px solid #dce4ff;
+  padding: 10px;
+  border-radius: 12px;
+}
+.pts-library-row > span {
+  flex: 1;
+  min-width: 100px;
+  overflow-wrap: anywhere;
+}
+.pts-library-input input {
+  flex: 1;
+  min-width: 120px;
+  border: 1px solid #d5ddff;
+  border-radius: 10px;
+  padding: 10px;
+  font: inherit;
+}
+.pts-library-file {
+  display: block;
+  margin-top: 14px;
+}
+.pts-library-file input {
+  display: block;
+  max-width: 100%;
+  margin-top: 8px;
+}

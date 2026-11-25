@@ -703,7 +703,7 @@
     max-width: 100%;
     line-height: 1.35;
   }
-  .pt-ia-table tbody td:nth-child(9) {
+  .pt-ia-table tbody td:nth-child(10) {
     position: absolute;
     top: 13px;
     right: 13px;
@@ -879,7 +879,7 @@
   .pt-ia-table tbody td:nth-child(2) {
     padding-right: 76px;
   }
-  .pt-ia-table tbody td:nth-child(9) {
+  .pt-ia-table tbody td:nth-child(10) {
     top: 10px;
     right: 10px;
   }
@@ -899,5 +899,24 @@
     scroll-behavior: auto;
     animation-duration: 0.01ms;
     transition-duration: 0.01ms;
+  }
+}
+
+.pt-ia-page .pt-ia-filters {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+.pt-ia-page .pt-ia-search {
+  grid-column: 1 / -1;
+}
+@container (max-width: 960px) {
+  .pt-ia-table tbody td.pt-integrity-cell {
+    grid-column: 1 / -1;
+  }
+  .pt-ia-table tbody td.pt-integrity-cell::before {
+    content: "Integritate";
+    display: block;
+    margin-bottom: 5px;
+    color: #63779b;
+    font-size: 11px;
   }
 }

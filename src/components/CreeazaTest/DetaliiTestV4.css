@@ -1,0 +1,45 @@
+/* Extensii izolate; DetaliiTest.css rămâne baza designului. */
+.pte-page .ptd-details-card .ptd-help {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #52658c;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.pte-page .ptd-details-card .ptd-retry-panel {
+  padding: 16px;
+  border: 1px solid #dce5ff;
+  border-radius: 15px;
+  background: #f9faff;
+  min-width: 0;
+}
+.pte-page .ptd-details-card .ptd-retry-panel .ptd-field {
+  max-width: 550px;
+}
+.pte-page .ptd-details-card .ptd-input-wrap select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231a356b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.pte-page .ptd-details-card .ptd-switch-row .pte-switch {
+  transition: background 0.2s ease;
+}
+.pte-page .ptd-details-card .ptd-input-wrap:has(.ptd-input-suffix) input {
+  padding-right: 88px;
+}
+.pte-page .ptd-details-card select:disabled {
+  background-color: #eef1f8;
+  color: #64748b;
+  cursor: not-allowed;
+}
+@media (max-width: 700px) {
+  .pte-page .ptd-details-card .ptd-retry-panel {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pte-page .ptd-details-card .pte-switch,
+  .pte-page .ptd-details-card .pte-switch::after {
+    transition: none;
+  }
+}

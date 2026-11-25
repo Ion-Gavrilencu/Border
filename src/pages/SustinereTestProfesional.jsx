@@ -50,9 +50,70 @@ export default function SustinereTestProfesional() {
   const [error, setError] = useState("");
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const submitting = useRef(false);
+  const advancing = useRef(false);
   const pending = useRef(Promise.resolve());
   const active = useRef(true);
+  const monitorTabs = data?.attempt?.monitor_tabs === true;
+  const [tabCount, setTabCount] = useState(0);
+  useEffect(() => {
+    if (data?.attempt?.tab_event_count != null)
+      setTabCount((n) => Math.max(n, Number(data.attempt.tab_event_count)));
+  }, [data?.attempt?.tab_event_count]);
+  useEffect(() => {
+    setTabCount(0);
+  }, [attemptId]);
+  useEffect(() => {
+    if (!monitorTabs || review) return;
+    let live = true;
+    const handle = () => {
+      if (document.visibilityState !== "hidden" || submitting.current) return;
+      const event_id =
+        globalThis.crypto?.randomUUID?.() ||
+        `${Date.now()}-${Math.random().toString(36).slice(2)}-tab`;
+      saveProfessionalAnswer(attemptId, { action: "tab_hidden", event_id })
+        .then((r) => {
+          if (!live || !r.monitored) return;
+          setTabCount((n) => Math.max(n, r.tab_event_count));
+          if (r.tab_event_count >= r.tab_warning_limit)
+            toast.warning("Pragul de avertizare a fost atins. Testul continuă.");
+        })
+        .catch(() => {
+          if (live) toast.warning("Evenimentul de vizibilitate nu a putut fi înregistrat.");
+        });
+    };
+    document.addEventListener("visibilitychange", handle);
+    return () => {
+      live = false;
+      document.removeEventListener("visibilitychange", handle);
+    };
+  }, [attemptId, monitorTabs, review]);
 
+  const idleWarningMinutes = Number(data?.attempt?.idle_warning_minutes ?? 0);
+  useEffect(() => {
+    if (!idleWarningMinutes || review || data?.attempt?.status !== "IN_PROGRESS") return;
+    let last = Date.now(),
+      warned = false;
+    const activity = () => {
+      last = Date.now();
+      warned = false;
+    };
+    const events = ["pointerdown", "keydown", "scroll"];
+    events.forEach((name) => window.addEventListener(name, activity, { passive: true }));
+    const timer = window.setInterval(() => {
+      if (
+        !warned &&
+        document.visibilityState === "visible" &&
+        Date.now() - last >= idleWarningMinutes * 60000
+      ) {
+        warned = true;
+        toast.warning("Nu a fost detectată activitate. Timpul testului continuă să curgă.");
+      }
+    }, 1000);
+    return () => {
+      window.clearInterval(timer);
+      events.forEach((name) => window.removeEventListener(name, activity));
+    };
+  }, [attemptId, idleWarningMinutes, review, data?.attempt?.status]);
   const loadReview = useCallback(async () => {
     const payload = await getProfessionalAttemptReview(attemptId);
     if (active.current) {
@@ -80,6 +141,11 @@ export default function SustinereTestProfesional() {
           return;
         }
         setData(payload);
+        setCurrentQuestion(
+          payload.attempt.navigation_mode === "sequential"
+            ? Number(payload.attempt.current_question_index)
+            : 0,
+        );
         const initial = {};
         for (const answer of payload.answers || []) {
           initial[keyOf(answer.question_id)] = (answer.selected_option_ids || []).map(keyOf);
@@ -160,8 +226,48 @@ export default function SustinereTestProfesional() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showFinalizeModal, busy]);
 
+  const advance = async () => {
+    if (busy || savingQuestion !== null || seconds === 0 || submitting.current || advancing.current)
+      return;
+    if (data.attempt.navigation_mode !== "sequential") {
+      setCurrentQuestion((i) => Math.min(data.questions.length - 1, i + 1));
+      return;
+    }
+    advancing.current = true;
+    setBusy(true);
+    try {
+      const request = pending.current
+        .catch(() => {})
+        .then(() =>
+          saveProfessionalAnswer(attemptId, {
+            action: "advance",
+            question_id: data.questions[currentQuestion].id,
+          }),
+        );
+      pending.current = request.catch(() => {});
+      const result = await request;
+      if (active.current) {
+        setData((old) =>
+          old
+            ? {
+                ...old,
+                attempt: { ...old.attempt, current_question_index: result.current_question_index },
+                questions: result.questions,
+              }
+            : old,
+        );
+        setCurrentQuestion(result.current_question_index);
+      }
+    } catch (e) {
+      if (active.current) toast.error(errorMessage(e));
+    } finally {
+      advancing.current = false;
+      if (active.current && !submitting.current) setBusy(false);
+    }
+  };
   const choose = (question, optionId) => {
-    if (busy || savingQuestion !== null || seconds === 0) return;
+    if (busy || savingQuestion !== null || seconds === 0 || advancing.current || submitting.current)
+      return;
     const qid = keyOf(question.id);
     const oid = keyOf(optionId);
     const previous = answers[qid] || [];
@@ -218,7 +324,11 @@ export default function SustinereTestProfesional() {
     const answered = questions.filter((q) => q.answered).length;
     const revealed = Boolean(review.reveal_answers);
     const correct = revealed ? questions.filter((q) => q.is_correct).length : null;
-    const wrong = revealed ? questions.filter((q) => q.answered && !q.is_correct).length : null;
+    const isPartial = (q) => q.answered && !q.is_correct && Number(q.awarded_points) > 0;
+    const partial = revealed ? questions.filter(isPartial).length : 0;
+    const wrong = revealed
+      ? questions.filter((q) => q.answered && !q.is_correct && !isPartial(q)).length
+      : null;
     const unanswered = questions.length - answered;
     const displayGrade = a.show_grade !== false && a.grade != null;
     const displayPercent = a.show_grade !== false && a.percentage != null;
@@ -320,6 +430,15 @@ export default function SustinereTestProfesional() {
               </div>
             </div>
           )}
+          {revealed && partial > 0 && (
+            <div className="st-overview-item st-overview-neutral">
+              <Target size={22} />
+              <div>
+                <strong>{partial}</strong>
+                <span>Parțial corecte</span>
+              </div>
+            </div>
+          )}
           <div className="st-overview-item st-overview-neutral">
             <CircleHelp size={22} />
             <div>
@@ -370,7 +489,9 @@ export default function SustinereTestProfesional() {
                         ? status === "correct"
                           ? "Corect"
                           : status === "wrong"
-                            ? "Greșit"
+                            ? isPartial(q)
+                              ? "Parțial corect"
+                              : "Greșit"
                             : "Fără răspuns"
                         : q.answered
                           ? "Înregistrat"
@@ -460,6 +581,7 @@ export default function SustinereTestProfesional() {
   }
 
   const questionCount = data.questions.length;
+  const sequential = data.attempt.navigation_mode === "sequential";
   const navigationLocked = busy || savingQuestion !== null || seconds === 0;
   const answered = (data.questions || []).filter(
     (q) => (answers[keyOf(q.id)] || []).length > 0,
@@ -483,6 +605,22 @@ export default function SustinereTestProfesional() {
           </p>
         </div>
       </div>
+      {monitorTabs && (
+        <div
+          role="status"
+          style={{
+            padding: 12,
+            marginBottom: 12,
+            border: "1px solid #dce4ff",
+            borderRadius: 12,
+            background: "#f1f5ff",
+            color: "#173c8b",
+          }}
+        >
+          Monitorizarea vizibilității este activă. Evenimente înregistrate: {tabCount}. Prag:{" "}
+          {data.attempt.tab_warning_limit}. Testul nu se încheie automat.
+        </div>
+      )}
       <div className="st-exam-progress">
         <div className="st-exam-progress-top">
           <div className="st-exam-time">
@@ -525,7 +663,7 @@ export default function SustinereTestProfesional() {
                   .filter(Boolean)
                   .join(" ")}
                 aria-current={currentQuestion === i ? "step" : undefined}
-                disabled={navigationLocked}
+                disabled={navigationLocked || (sequential && currentQuestion !== i)}
                 aria-label={`Întrebarea ${i + 1}, ${done ? "cu răspuns" : "fără răspuns"}`}
                 onClick={() => setCurrentQuestion(i)}
               >
@@ -579,11 +717,17 @@ export default function SustinereTestProfesional() {
           </article>
         ))}
       </div>
+      {sequential && (
+        <p className="st-hint">
+          Navigare secvențială: după trecerea la următoarea întrebare nu mai poți reveni.
+          Întrebările pot fi lăsate fără răspuns.
+        </p>
+      )}
       <div className="st-step-controls">
         <button
           type="button"
           className="st-step-previous"
-          disabled={navigationLocked || currentQuestion === 0}
+          disabled={navigationLocked || sequential || currentQuestion === 0}
           onClick={() => setCurrentQuestion((i) => Math.max(0, i - 1))}
         >
           <ArrowLeft size={17} /> Anterioară
@@ -593,7 +737,7 @@ export default function SustinereTestProfesional() {
             type="button"
             className="st-primary"
             disabled={navigationLocked}
-            onClick={() => setCurrentQuestion((i) => Math.min(questionCount - 1, i + 1))}
+            onClick={advance}
           >
             Următoarea <ArrowRight size={17} />
           </button>
@@ -616,7 +760,7 @@ export default function SustinereTestProfesional() {
           {answered}/{questionCount} completate
         </span>
       </div>
-      {currentQuestion < questionCount - 1 && answered === questionCount && (
+      {!sequential && currentQuestion < questionCount - 1 && answered === questionCount && (
         <button
           type="button"
           className="st-primary st-step-finish"

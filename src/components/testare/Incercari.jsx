@@ -18,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import "./Incercari.css";
+import IntegrityReport, { integrityMatches } from "./IntegrityReport";
 
 const FINISHED = ["SUBMITTED", "EXPIRED", "FINISHED", "COMPLETED"];
 const ACTIVE = ["STARTED", "IN_PROGRESS", "ACTIVE"];
@@ -95,6 +96,7 @@ export default function Incercari({ ctx }) {
   const [resultFilter, setResultFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("30");
   const [page, setPage] = useState(1);
+  const [integrityFilter, setIntegrityFilter] = useState("all");
   const rows = Array.isArray(attemptRows) ? attemptRows : [];
   const summary = useMemo(() => {
     const evaluated = rows.filter((r) => finished(r) && passedOf(r) !== null);
@@ -148,6 +150,7 @@ export default function Incercari({ ctx }) {
     () =>
       rows
         .filter((r) => {
+          if (!integrityMatches(r, integrityFilter)) return false;
           const text = `${nameOf(r)} ${r.test_title ?? ""} ${r.category ?? ""}`.toLocaleLowerCase(
             "ro",
           );
@@ -167,7 +170,7 @@ export default function Incercari({ ctx }) {
           return true;
         })
         .sort((a, b) => new Date(dateOf(b) || 0) - new Date(dateOf(a) || 0)),
-    [rows, query, testFilter, userFilter, resultFilter, periodFilter],
+    [rows, query, testFilter, userFilter, resultFilter, periodFilter, integrityFilter],
   );
   const pages = Math.max(1, Math.ceil(filtered.length / 6));
   const safePage = Math.min(page, pages);
@@ -182,6 +185,7 @@ export default function Incercari({ ctx }) {
     setUserFilter("all");
     setResultFilter("all");
     setPeriodFilter("30");
+    setIntegrityFilter("all");
     setPage(1);
   };
   const open = (r) => {
@@ -318,6 +322,22 @@ export default function Incercari({ ctx }) {
                 <option value="90">Ultimele 90 zile</option>
                 <option value="all">Orice perioadă</option>
               </select>
+              <select
+                className="pt-integrity-filter"
+                aria-label="Filtrează după integritate"
+                value={integrityFilter}
+                onChange={(e) => {
+                  setIntegrityFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">Toată integritatea</option>
+                <option value="events">Cu evenimente</option>
+                <option value="threshold">Prag atins</option>
+                <option value="zero">Fără evenimente înregistrate</option>
+                <option value="off">Nemonitorizate</option>
+                <option value="unknown">Date indisponibile</option>
+              </select>
               <button className="pt-ia-reset" type="button" onClick={reset}>
                 <RotateCcw size={17} /> Resetează
               </button>
@@ -345,6 +365,7 @@ export default function Incercari({ ctx }) {
                         <th>Scor</th>
                         <th>Rezultat</th>
                         <th>Status</th>
+                        <th>Integritate</th>
                         <th>Acțiuni</th>
                       </tr>
                     </thead>
@@ -399,6 +420,9 @@ export default function Incercari({ ctx }) {
                                     ? "Finalizată"
                                     : statusOf(r) || "—"}
                               </span>
+                            </td>
+                            <td className="pt-integrity-cell">
+                              <IntegrityReport row={r} name={nameOf(r)} title={r.test_title} />
                             </td>
                             <td>
                               <button

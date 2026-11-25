@@ -644,9 +644,6 @@ function TestareProfesionala() {
     <section className="pt-page">
       <div className="pt-heading">
         <div className="pt-heading-copy">
-          <button className="pt-back-link" type="button" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft size={17} /> Înapoi la Dashboard
-          </button>
           <span className="pt-eyebrow">
             <Sparkles size={14} /> BORDER / TESTARE PROFESIONALĂ
           </span>

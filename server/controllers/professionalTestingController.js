@@ -1,6 +1,18 @@
 const pool = require("../config/database");
 const { notifyTestAssignment } = require("../services/professionalTestNotificationService");
 const VALID_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]);
+const retryHours = (raw) =>
+  (typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "")) &&
+  [0, 1, 24, 48].includes(Number(raw))
+    ? Number(raw)
+    : null;
+const validQuestionLimit = (raw) =>
+  (typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "")) &&
+  Number.isInteger(Number(raw)) &&
+  Number(raw) >= 0 &&
+  Number(raw) <= 10000;
+const NAV_MODES = new Set(["free", "sequential"]);
+const SCORE_MODES = new Set(["exact", "partial", "penalized"]);
 const REVEAL = new Set(["NEVER", "AFTER_SUBMISSION", "AFTER_DEADLINE", "MANUAL"]);
 const integer = (v) => (Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : null);
 const fail = (res, code, message) => res.status(code).json({ message });
@@ -48,6 +60,16 @@ const stableShuffle = (rows, attemptId, namespace) =>
     return digest(left.id).localeCompare(digest(right.id));
   });
 
+async function attemptQuestionList(client, attempt, includeCorrect = false) {
+  const all = await questionList(client, attempt.version_id, includeCorrect);
+  if (attempt.selected_question_ids == null) return all;
+  const ids = new Set(attempt.selected_question_ids.map(String));
+  const selected = all.filter((q) => ids.has(String(q.id)));
+  if (selected.length !== ids.size || !selected.length)
+    throw new Error("Selecția întrebărilor este inconsistentă.");
+  return selected;
+}
+
 async function orderedAttemptQuestions(client, attempt) {
   const version = await client.query(
     `SELECT shuffle_questions,shuffle_options FROM professional_test_versions WHERE id=$1`,
@@ -55,7 +77,7 @@ async function orderedAttemptQuestions(client, attempt) {
   );
   if (!version.rowCount) throw new Error("Versiunea testului nu există.");
   const flags = version.rows[0];
-  let questions = await questionList(client, attempt.version_id, false);
+  let questions = await attemptQuestionList(client, attempt);
   if (flags.shuffle_questions) questions = stableShuffle(questions, attempt.id, "question");
   if (flags.shuffle_options) {
     questions = questions.map((q) => ({
@@ -86,6 +108,22 @@ const createTest = asyncRoute(async (req, res) => {
   const passing = Number(b.passing_percentage ?? b.passThreshold ?? 50);
   const maxGrade = Number(b.max_grade ?? b.maxGrade ?? 10);
 
+  const navigationMode = b.navigation_mode ?? "free";
+  const scoringMode = b.scoring_mode ?? "exact";
+  const idleWarningMinutes = b.idle_warning_minutes ?? 0;
+  const notifyResult = b.notify_result ?? false;
+  if (![0, 2, 5, 10, 15, 30].includes(idleWarningMinutes) || typeof notifyResult !== "boolean")
+    return fail(res, 400, "Reguli suplimentare invalide.");
+  const monitorTabs = b.monitor_tabs ?? false;
+  const tabWarningLimit = b.tab_warning_limit ?? 3;
+  if (typeof monitorTabs !== "boolean" || ![1, 2, 3, 5, 10].includes(tabWarningLimit))
+    return fail(res, 400, "Reguli de integritate invalide.");
+  if (!NAV_MODES.has(navigationMode) || !SCORE_MODES.has(scoringMode))
+    return fail(res, 400, "Regulă de navigare sau punctaj invalidă.");
+  const questionLimit = b.question_limit ?? 0;
+  if (!validQuestionLimit(questionLimit)) return fail(res, 400, "Număr de întrebări invalid.");
+  const retry = retryHours(b.retry_interval_hours ?? 0);
+  if (retry === null) return fail(res, 400, "Interval de reîncercare invalid.");
   const grading = b.grading_mode ?? b.grading ?? "grade-percent";
   const rounding = b.rounding_mode ?? b.rounding ?? "one-decimal";
 
@@ -111,7 +149,7 @@ const createTest = asyncRoute(async (req, res) => {
     passing > 100 ||
     !Number.isFinite(maxGrade) ||
     maxGrade < 1 ||
-    maxGrade > 100 ||
+    maxGrade > 10 ||
     !["grade-percent", "grade", "percent"].includes(grading) ||
     !["one-decimal", "integer", "two-decimals"].includes(rounding) ||
     !REVEAL.has(reveal) ||
@@ -180,11 +218,11 @@ const createTest = asyncRoute(async (req, res) => {
         rounding_mode,
         allow_retake,
         show_grade,
-        show_explanations
+        show_explanations, retry_interval_hours, question_limit, navigation_mode, scoring_mode, monitor_tabs, tab_warning_limit, idle_warning_minutes, notify_result
       )
       VALUES (
         $1, 1, $2, $3, $4, $5, $6, $7,
-        $8, $9, $10, $11, $12, $13, $14, $15
+        $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
       )
       RETURNING *`,
       [
@@ -203,6 +241,14 @@ const createTest = asyncRoute(async (req, res) => {
         allowRetake,
         showGrade,
         showExplanations,
+        retry,
+        Number(questionLimit),
+        navigationMode,
+        scoringMode,
+        monitorTabs,
+        tabWarningLimit,
+        idleWarningMinutes,
+        notifyResult,
       ],
     );
 
@@ -522,6 +568,34 @@ const updateDraft = asyncRoute(async (req, res) => {
 
     const maxGrade = Number(value("max_grade", "maxGrade", v.max_grade));
 
+    const navigationMode = b.navigation_mode ?? v.navigation_mode;
+    const scoringMode = b.scoring_mode ?? v.scoring_mode;
+    const idleWarningMinutes = b.idle_warning_minutes ?? v.idle_warning_minutes;
+    const notifyResult = b.notify_result ?? v.notify_result;
+    if (![0, 2, 5, 10, 15, 30].includes(idleWarningMinutes) || typeof notifyResult !== "boolean") {
+      await client.query("ROLLBACK");
+      return fail(res, 400, "Reguli suplimentare invalide.");
+    }
+    const monitorTabs = b.monitor_tabs ?? v.monitor_tabs;
+    const tabWarningLimit = b.tab_warning_limit ?? v.tab_warning_limit;
+    if (typeof monitorTabs !== "boolean" || ![1, 2, 3, 5, 10].includes(tabWarningLimit)) {
+      await client.query("ROLLBACK");
+      return fail(res, 400, "Reguli de integritate invalide.");
+    }
+    if (!NAV_MODES.has(navigationMode) || !SCORE_MODES.has(scoringMode)) {
+      await client.query("ROLLBACK");
+      return fail(res, 400, "Regulă de navigare sau punctaj invalidă.");
+    }
+    const questionLimit = b.question_limit ?? v.question_limit;
+    if (!validQuestionLimit(questionLimit)) {
+      await client.query("ROLLBACK");
+      return fail(res, 400, "Număr de întrebări invalid.");
+    }
+    const retry = retryHours(b.retry_interval_hours ?? v.retry_interval_hours);
+    if (retry === null) {
+      await client.query("ROLLBACK");
+      return fail(res, 400, "Interval de reîncercare invalid.");
+    }
     const grading = value("grading_mode", "grading", v.grading_mode);
 
     const rounding = value("rounding_mode", "rounding", v.rounding_mode);
@@ -551,7 +625,7 @@ const updateDraft = asyncRoute(async (req, res) => {
       passing > 100 ||
       !Number.isFinite(maxGrade) ||
       maxGrade < 1 ||
-      maxGrade > 100 ||
+      maxGrade > 10 ||
       !["grade-percent", "grade", "percent"].includes(grading) ||
       !["one-decimal", "integer", "two-decimals"].includes(rounding) ||
       !REVEAL.has(reveal) ||
@@ -604,6 +678,11 @@ const updateDraft = asyncRoute(async (req, res) => {
            allow_retake = $13,
            show_grade = $14,
            show_explanations = $15,
+           retry_interval_hours = $16,
+           question_limit = $17,
+           navigation_mode = $18,
+           scoring_mode = $19,
+           monitor_tabs = $20, tab_warning_limit = $21, idle_warning_minutes = $22, notify_result = $23,
            updated_at = NOW()
        WHERE id = $1 AND status = 'DRAFT'
        RETURNING *`,
@@ -623,6 +702,14 @@ const updateDraft = asyncRoute(async (req, res) => {
         allowRetake,
         showGrade,
         showExplanations,
+        retry,
+        Number(questionLimit),
+        navigationMode,
+        scoringMode,
+        monitorTabs,
+        tabWarningLimit,
+        idleWarningMinutes,
+        notifyResult,
       ],
     );
 
@@ -939,6 +1026,10 @@ const publish = asyncRoute(async (req, res) => {
       "SELECT COUNT(*)::int AS n FROM professional_test_questions WHERE version_id=$1",
       [id],
     );
+    if (Number(v.question_limit) > cnt.rows[0].n) {
+      await c.query("ROLLBACK");
+      return fail(res, 400, "Numărul de întrebări selectate depășește banca disponibilă.");
+    }
     if (invalid.rowCount || !cnt.rows[0].n) {
       await c.query("ROLLBACK");
       return fail(res, 400, "Testul trebuie să conțină întrebări valide.");
@@ -984,8 +1075,8 @@ const newVersion = asyncRoute(async (req, res) => {
       `INSERT INTO professional_test_versions(
          test_id,version_number,duration_minutes,max_attempts,passing_percentage,
          reveal_answers,shuffle_questions,shuffle_options,available_from,available_until,
-         max_grade,grading_mode,rounding_mode,allow_retake,show_grade,show_explanations
-       ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+         max_grade,grading_mode,rounding_mode,allow_retake,show_grade,show_explanations,retry_interval_hours,question_limit,navigation_mode,scoring_mode,monitor_tabs,tab_warning_limit,idle_warning_minutes,notify_result
+       ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING *`,
       [
         testId,
         v.version_number + 1,
@@ -1003,6 +1094,14 @@ const newVersion = asyncRoute(async (req, res) => {
         v.allow_retake,
         v.show_grade,
         v.show_explanations,
+        v.retry_interval_hours,
+        v.question_limit,
+        v.navigation_mode,
+        v.scoring_mode,
+        v.monitor_tabs,
+        v.tab_warning_limit,
+        v.idle_warning_minutes,
+        v.notify_result,
       ],
     );
     const qs = await questionList(c, v.id, true);
@@ -1229,11 +1328,44 @@ const startAttempt = asyncRoute(async (req, res) => {
       await c.query("COMMIT");
       return fail(res, 409, "Numărul maxim de încercări pentru această atribuire a fost atins.");
     }
+    if (count.rows[0].n > 0 && v.retry_interval_hours > 0) {
+      const wait = await c.query(
+        `SELECT MAX(CASE WHEN status='EXPIRED' THEN LEAST(submitted_at, expires_at) ELSE submitted_at END)
+          + ($3::int * interval '1 hour') AS next_attempt_at,
+          MAX(CASE WHEN status='EXPIRED' THEN LEAST(submitted_at, expires_at) ELSE submitted_at END)
+          + ($3::int * interval '1 hour') > clock_timestamp() AS blocked
+         FROM professional_test_attempts WHERE assignment_id=$1 AND user_id_snapshot=$2
+           AND status IN ('SUBMITTED','EXPIRED')`,
+        [assignment.id, req.user.id, v.retry_interval_hours],
+      );
+      if (wait.rows[0].blocked) {
+        await c.query("COMMIT");
+        const next = wait.rows[0].next_attempt_at;
+        return res
+          .status(409)
+          .json({
+            message: `Poți relua testul după ${new Date(next).toLocaleString("ro-RO", { timeZone: "Europe/Chisinau" })}.`,
+            next_attempt_at: next,
+          });
+      }
+    }
+    let selectedIds = null;
+    if (Number(v.question_limit) > 0) {
+      const sample = await c.query(
+        "SELECT id FROM professional_test_questions WHERE version_id=$1 ORDER BY random() LIMIT $2",
+        [id, v.question_limit],
+      );
+      if (sample.rowCount !== Number(v.question_limit)) {
+        await c.query("ROLLBACK");
+        return fail(res, 409, "Banca de întrebări este insuficientă.");
+      }
+      selectedIds = sample.rows.map((q) => q.id);
+    }
     const r = await c.query(
       `INSERT INTO professional_test_attempts
-       (version_id,assignment_id,user_id,user_id_snapshot,user_name_snapshot,attempt_number,expires_at)
+       (version_id,assignment_id,user_id,user_id_snapshot,user_name_snapshot,attempt_number,expires_at,selected_question_ids)
        VALUES($1,$2,$3,$3,$4,$5,LEAST(now()+($6::int * interval '1 minute'),
-        COALESCE($7::timestamptz,'infinity'::timestamptz))) RETURNING *`,
+        COALESCE($7::timestamptz,'infinity'::timestamptz)), $8::bigint[]) RETURNING *`,
       [
         id,
         assignment.id,
@@ -1242,6 +1374,7 @@ const startAttempt = asyncRoute(async (req, res) => {
         count.rows[0].last + 1,
         v.duration_minutes,
         assignment.block_after_expiry ? assignment.deadline_at : null,
+        selectedIds,
       ],
     );
     await c.query("COMMIT");
@@ -1254,11 +1387,54 @@ const startAttempt = asyncRoute(async (req, res) => {
   }
 });
 
-async function finalize(c, a, status) {
-  const qs = await c.query(
-    "SELECT id,points FROM professional_test_questions WHERE version_id=$1",
+function scoreQuestion(q, correct, selected, mode) {
+  const points = Number(q.points);
+  const good = correct.length === selected.length && correct.every((x) => selected.includes(x));
+  if (good) return points;
+  if (
+    q.question_type !== "MULTIPLE_CHOICE" ||
+    !["partial", "penalized"].includes(mode) ||
+    !correct.length
+  )
+    return 0;
+  const hits = selected.filter((x) => correct.includes(x)).length;
+  const misses = selected.length - hits;
+  const fraction =
+    mode === "partial"
+      ? misses
+        ? 0
+        : hits / correct.length
+      : Math.max(0, (hits - misses) / correct.length);
+  return Math.min(points, Math.round(points * fraction * 100) / 100);
+}
+async function navigationModeFor(client, a) {
+  const r = await client.query(
+    "SELECT navigation_mode FROM professional_test_versions WHERE id=$1",
     [a.version_id],
   );
+  if (!r.rowCount) throw new Error("Versiunea testului nu există.");
+  return r.rows[0].navigation_mode;
+}
+function visibleQuestions(questions, index, mode) {
+  return mode === "sequential"
+    ? questions.map((q, i) => (i <= index ? q : { id: q.id }))
+    : questions;
+}
+async function finalize(c, a, status) {
+  const v = await c.query(
+    `SELECT passing_percentage, max_grade, grading_mode, rounding_mode, scoring_mode, notify_result FROM professional_test_versions WHERE id=$1`,
+    [a.version_id],
+  );
+  if (!v.rowCount) throw new Error("Versiunea testului nu există.");
+  const qs = await c.query(
+    "SELECT id,points,question_type FROM professional_test_questions WHERE version_id=$1 AND ($2::bigint[] IS NULL OR id=ANY($2::bigint[]))",
+    [a.version_id, a.selected_question_ids ?? null],
+  );
+  if (
+    a.selected_question_ids != null &&
+    (!qs.rowCount || qs.rowCount !== a.selected_question_ids.length)
+  )
+    throw new Error("Selecția întrebărilor este inconsistentă.");
   const total = qs.rows.reduce((s, q) => s + Number(q.points), 0);
   let earned = 0;
   for (const q of qs.rows) {
@@ -1276,7 +1452,7 @@ async function finalize(c, a, status) {
     );
     const selected = (ans.rows[0]?.selected_option_ids || []).map(String).sort();
     const good = correct.length === selected.length && correct.every((x, i) => x === selected[i]);
-    const pts = good ? Number(q.points) : 0;
+    const pts = scoreQuestion(q, correct, selected, v.rows[0].scoring_mode);
     earned += pts;
     if (ans.rowCount)
       await c.query(
@@ -1287,12 +1463,6 @@ async function finalize(c, a, status) {
   const pct = total ? Math.round((earned / total) * 10000) / 100 : 0;
   // Procentul rămâne independent de modul de afișare a notei.
   // Scara de notare pornește de la 1 și ajunge la max_grade la 100%.
-  const v = await c.query(
-    `SELECT passing_percentage, max_grade, grading_mode, rounding_mode
-     FROM professional_test_versions WHERE id=$1`,
-    [a.version_id],
-  );
-  if (!v.rowCount) throw new Error("Versiunea testului nu există.");
   const settings = v.rows[0];
   const maxGrade = Number(settings.max_grade);
   if (!Number.isFinite(maxGrade) || maxGrade < 1 || maxGrade > 100) {
@@ -1313,6 +1483,27 @@ async function finalize(c, a, status) {
     `UPDATE professional_test_attempts SET status=$2,submitted_at=now(),earned_points=$3,total_points=$4,percentage=$5,grade=$6,passed=$7 WHERE id=$1 RETURNING *`,
     [a.id, status, earned, total, pct, grade, pct >= Number(v.rows[0].passing_percentage)],
   );
+  // Finalizarea este serializată prin blocarea încercării. Notificarea nu dezvăluie nota.
+  if (settings.notify_result && a.user_id != null) {
+    const link = `/testare?versiune=${encodeURIComponent(a.version_id)}&atribuire=${encodeURIComponent(a.assignment_id ?? "")}`;
+    await c.query("SAVEPOINT result_notification");
+    try {
+      await c.query(
+        `INSERT INTO notifications(user_id,title,message,type,link) VALUES($1,$2,$3,'test',$4)`,
+        [
+          a.user_id,
+          "Test profesional finalizat",
+          "Încercarea a fost finalizată. Consultă secțiunea Rezultatele mele, conform regulilor testului.",
+          link,
+        ],
+      );
+      await c.query("RELEASE SAVEPOINT result_notification");
+    } catch (error) {
+      await c.query("ROLLBACK TO SAVEPOINT result_notification");
+      await c.query("RELEASE SAVEPOINT result_notification");
+      console.error("RESULT NOTIFICATION ERROR:", error.code);
+    }
+  }
   return r.rows[0];
 }
 // Finalizează atomic o încercare expirată, inclusiv dacă browserul a fost închis.
@@ -1362,19 +1553,42 @@ const attemptData = asyncRoute(async (req, res) => {
     "SELECT question_id,selected_option_ids FROM professional_test_attempt_answers WHERE attempt_id=$1",
     [id],
   );
-  res.json({ attempt: a, questions, answers: saved.rows });
+  const navigation_mode = await navigationModeFor(pool, a);
+  a.tab_event_count = (
+    await pool.query(
+      "SELECT COUNT(*)::int AS count FROM professional_test_integrity_events WHERE attempt_id=$1",
+      [id],
+    )
+  ).rows[0].count;
+  const security = (
+    await pool.query(
+      "SELECT monitor_tabs, tab_warning_limit, idle_warning_minutes FROM professional_test_versions WHERE id=$1",
+      [a.version_id],
+    )
+  ).rows[0];
+  res.json({
+    attempt: { ...a, ...security, navigation_mode },
+    questions: visibleQuestions(questions, a.current_question_index, navigation_mode),
+    answers: saved.rows,
+  });
 });
 const saveAnswer = asyncRoute(async (req, res) => {
   const id = integer(req.params.attemptId),
     qid = integer(req.body.question_id),
     ids = req.body.selected_option_ids;
+  const advancing = req.body.action === "advance";
+  const tabEvent = req.body.action === "tab_hidden";
+  if (tabEvent && !/^[a-zA-Z0-9-]{16,80}$/.test(String(req.body.event_id || "")))
+    return fail(res, 400, "Eveniment invalid.");
   if (
     !id ||
-    !qid ||
-    !Array.isArray(ids) ||
-    ids.length > 12 ||
-    ids.some((x) => !integer(x)) ||
-    new Set(ids.map(String)).size !== ids.length
+    (!tabEvent && !qid) ||
+    (!tabEvent &&
+      !advancing &&
+      (!Array.isArray(ids) ||
+        ids.length > 12 ||
+        ids.some((x) => !integer(x)) ||
+        new Set(ids.map(String)).size !== ids.length))
   )
     return fail(res, 400, "Răspuns invalid.");
   const c = await pool.connect();
@@ -1398,9 +1612,61 @@ const saveAnswer = asyncRoute(async (req, res) => {
       await c.query("COMMIT");
       return fail(res, 409, "Timpul a expirat. Încercarea a fost finalizată automat.");
     }
+    if (tabEvent) {
+      const security = (
+        await c.query(
+          "SELECT monitor_tabs,tab_warning_limit FROM professional_test_versions WHERE id=$1",
+          [a.version_id],
+        )
+      ).rows[0];
+      if (!security?.monitor_tabs) {
+        await c.query("COMMIT");
+        return res.json({ monitored: false });
+      }
+      await c.query(
+        `INSERT INTO professional_test_integrity_events(attempt_id,event_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
+        [id, req.body.event_id],
+      );
+      const count = (
+        await c.query(
+          "SELECT COUNT(*)::int AS count FROM professional_test_integrity_events WHERE attempt_id=$1",
+          [id],
+        )
+      ).rows[0].count;
+      await c.query("COMMIT");
+      return res.json({
+        monitored: true,
+        tab_event_count: count,
+        tab_warning_limit: security.tab_warning_limit,
+      });
+    }
+    const mode = await navigationModeFor(c, a);
+    if (mode === "sequential" || advancing) {
+      const ordered = await orderedAttemptQuestions(c, a);
+      const index = a.current_question_index;
+      if (mode !== "sequential" || String(ordered[index]?.id) !== String(qid)) {
+        await c.query("ROLLBACK");
+        return fail(res, 409, "Poziția întrebării nu mai este disponibilă. Reîncarcă testul.");
+      }
+      if (advancing) {
+        if (index >= ordered.length - 1) {
+          await c.query("ROLLBACK");
+          return fail(res, 400, "Ai ajuns la ultima întrebare.");
+        }
+        await c.query(
+          "UPDATE professional_test_attempts SET current_question_index=$2 WHERE id=$1",
+          [id, index + 1],
+        );
+        await c.query("COMMIT");
+        return res.json({
+          current_question_index: index + 1,
+          questions: visibleQuestions(ordered, index + 1, mode),
+        });
+      }
+    }
     const q = await c.query(
-      "SELECT id,question_type FROM professional_test_questions WHERE id=$1 AND version_id=$2",
-      [qid, a.version_id],
+      "SELECT id,question_type FROM professional_test_questions WHERE id=$1 AND version_id=$2 AND ($3::bigint[] IS NULL OR id=ANY($3::bigint[]))",
+      [qid, a.version_id, a.selected_question_ids ?? null],
     );
     if (!q.rowCount) {
       await c.query("ROLLBACK");
@@ -1450,6 +1716,13 @@ const submit = asyncRoute(async (req, res) => {
       await c.query("COMMIT");
       return res.json({ attempt: a });
     }
+    if (new Date(a.expires_at) > new Date() && (await navigationModeFor(c, a)) === "sequential") {
+      const ordered = await orderedAttemptQuestions(c, a);
+      if (a.current_question_index !== ordered.length - 1) {
+        await c.query("ROLLBACK");
+        return fail(res, 400, "Parcurge toate întrebările înainte de finalizare.");
+      }
+    }
     const finished = await finalize(
       c,
       a,
@@ -1489,7 +1762,7 @@ const attemptReview = asyncRoute(async (req, res) => {
       a.available_until &&
       new Date(a.available_until).getTime() <= Date.now());
   // NEVER și MANUAL rămân închise; MANUAL necesită un mecanism separat de autorizare.
-  const questions = await questionList(pool, a.version_id, reveal);
+  const questions = await attemptQuestionList(pool, a, reveal);
   // Explicațiile nu sunt afișate dacă setarea este dezactivată, chiar după dezvăluire.
   if (!a.show_explanations || !reveal) {
     for (const question of questions) {
@@ -1642,7 +1915,7 @@ const managerAttemptReview = asyncRoute(async (req, res) => {
   const authorized = await finalizeExpiredForManager(id, req);
   if (!authorized) return fail(res, 404, "Lucrarea nu există sau accesul este interzis.");
   const result = await pool.query(
-    `SELECT a.*, t.title, t.created_by, t.archived_at
+    `SELECT a.*, t.title, t.created_by, t.archived_at, v.monitor_tabs, v.tab_warning_limit
      FROM professional_test_attempts a
      JOIN professional_test_versions v ON v.id=a.version_id
      JOIN professional_tests t ON t.id=v.test_id
@@ -1653,7 +1926,7 @@ const managerAttemptReview = asyncRoute(async (req, res) => {
   if (!a || a.archived_at) return fail(res, 404, "Lucrarea nu există.");
   if (!canManage(req, a)) return fail(res, 403, "Nu ai permisiunea de a consulta această lucrare.");
   if (a.status === "IN_PROGRESS") return fail(res, 409, "Lucrarea este încă în desfășurare.");
-  const questions = await questionList(pool, a.version_id, true);
+  const questions = await attemptQuestionList(pool, a, true);
   const saved = await pool.query(
     `SELECT question_id, selected_option_ids, is_correct, awarded_points
      FROM professional_test_attempt_answers WHERE attempt_id=$1`,
@@ -1666,6 +1939,20 @@ const managerAttemptReview = asyncRoute(async (req, res) => {
       version_id: a.version_id,
       attempt_number: a.attempt_number,
       user_name_snapshot: a.user_name_snapshot,
+      monitor_tabs: a.monitor_tabs,
+      tab_warning_limit: a.tab_warning_limit,
+      tab_event_times: (
+        await pool.query(
+          "SELECT created_at FROM professional_test_integrity_events WHERE attempt_id=$1 ORDER BY created_at DESC LIMIT 100",
+          [id],
+        )
+      ).rows.map((e) => e.created_at),
+      tab_event_count: (
+        await pool.query(
+          "SELECT COUNT(*)::int AS count FROM professional_test_integrity_events WHERE attempt_id=$1",
+          [id],
+        )
+      ).rows[0].count,
       status: a.status,
       started_at: a.started_at,
       submitted_at: a.submitted_at,
@@ -1702,7 +1989,13 @@ const managerResults = asyncRoute(async (req, res) => {
               THEN GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (a.submitted_at-a.started_at))))::int
               ELSE NULL END AS duration_seconds,
             a.percentage, a.grade, a.passed, t.title AS test_title,
-            t.category AS category_name
+            t.category AS category_name,
+            v.monitor_tabs, v.tab_warning_limit,
+            (SELECT COUNT(*)::int FROM professional_test_integrity_events e WHERE e.attempt_id=a.id) AS tab_event_count,
+            COALESCE((SELECT jsonb_agg(recent.created_at ORDER BY recent.created_at DESC) FROM (
+              SELECT e.created_at FROM professional_test_integrity_events e
+              WHERE e.attempt_id=a.id ORDER BY e.created_at DESC LIMIT 100
+            ) recent), '[]'::jsonb) AS tab_event_times
      FROM professional_test_attempts a
      JOIN professional_test_versions v ON v.id = a.version_id
      JOIN professional_tests t ON t.id = v.test_id
@@ -1996,10 +2289,13 @@ const getPreferences = asyncRoute(async (req, res) => {
   if (!userId) return fail(res, 401, "Autentificare necesară.");
 
   const result = await pool.query(
-    "SELECT preferences FROM professional_test_user_preferences WHERE user_id = $1",
+    "SELECT preferences, updated_at FROM professional_test_user_preferences WHERE user_id = $1",
     [userId],
   );
-  return res.json({ preferences: result.rows[0]?.preferences ?? {} });
+  return res.json({
+    preferences: result.rows[0]?.preferences ?? {},
+    updated_at: result.rows[0]?.updated_at ?? null,
+  });
 });
 
 const savePreferences = asyncRoute(async (req, res) => {
@@ -2022,18 +2318,160 @@ const savePreferences = asyncRoute(async (req, res) => {
     return fail(res, 413, "Preferințele depășesc limita de 16 KB.");
   }
 
+  // Validăm câmpurile cunoscute, păstrând compatibilitatea cu preferințe suplimentare.
+  const enums = {
+    grading: ["both", "grade", "percent"],
+    rounding: ["one", "integer", "two"],
+    navigationMode: ["free", "sequential"],
+    scoringMode: ["exact", "partial", "penalized"],
+    retryIntervalHours: ["0", "1", "24", "48"],
+    tabWarningLimit: ["1", "2", "3", "5", "10"],
+    idleWarningMinutes: ["0", "2", "5", "10", "15", "30"],
+    expiryHours: ["24", "48", "72"],
+    duration: ["15", "30", "45", "60", "90"],
+    validity: ["1", "7", "14", "30"],
+  };
+  const normalized = { ...preferences, authenticated: true };
+  if (Object.hasOwn(preferences, "questionLimit")) {
+    if (!validQuestionLimit(preferences.questionLimit))
+      return fail(res, 400, "Număr de întrebări invalid.");
+    normalized.questionLimit = Number(preferences.questionLimit);
+  }
+  for (const [key, allowed] of Object.entries(enums)) {
+    if (!Object.hasOwn(preferences, key)) continue;
+    const value = preferences[key];
+    if (
+      !(typeof value === "string" || typeof value === "number") ||
+      !allowed.includes(String(value))
+    ) {
+      return fail(res, 400, `Preferință invalidă: ${key}.`);
+    }
+    normalized[key] = String(value);
+  }
+  for (const [key, min, max] of [
+    ["threshold", 0, 100],
+    ["maxGrade", 1, 10],
+    ["attempts", 1, 99],
+  ]) {
+    if (!Object.hasOwn(preferences, key)) continue;
+    const raw = preferences[key];
+    const value = Number(raw);
+    if (
+      !(typeof raw === "number" || (typeof raw === "string" && raw.trim())) ||
+      !Number.isFinite(value) ||
+      value < min ||
+      value > max ||
+      (key === "attempts" && !Number.isInteger(value))
+    ) {
+      return fail(res, 400, `Preferință numerică invalidă: ${key}.`);
+    }
+    normalized[key] = value;
+  }
+  for (const key of [
+    "allowRetake",
+    "showGrade",
+    "showAnswers",
+    "showExplanations",
+    "notifyAssignment",
+    "notifyExpiry",
+    "shuffleQuestions",
+    "shuffleAnswers",
+    "monitorTabs",
+    "notifyResult",
+  ]) {
+    if (Object.hasOwn(preferences, key) && typeof preferences[key] !== "boolean")
+      return fail(res, 400, `Preferință invalidă: ${key}.`);
+  }
+  const configKeys = new Set([
+    "grading",
+    "threshold",
+    "maxGrade",
+    "rounding",
+    "attempts",
+    "allowRetake",
+    "retryIntervalHours",
+    "questionLimit",
+    "navigationMode",
+    "scoringMode",
+    "monitorTabs",
+    "tabWarningLimit",
+    "showGrade",
+    "showAnswers",
+    "showExplanations",
+    "notifyAssignment",
+    "notifyExpiry",
+    "expiryHours",
+    "duration",
+    "validity",
+    "shuffleQuestions",
+    "shuffleAnswers",
+    "idleWarningMinutes",
+    "notifyResult",
+  ]);
+  const validConfig = (obj) => {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
+    return Object.entries(obj).every(([k, v]) => {
+      if (!configKeys.has(k)) return false;
+      if (enums[k]) return ["string", "number"].includes(typeof v) && enums[k].includes(String(v));
+      if (k === "questionLimit") return validQuestionLimit(v);
+      const bounds = { threshold: [0, 100], maxGrade: [1, 10], attempts: [1, 99] }[k];
+      if (bounds)
+        return (
+          (typeof v === "number" || (typeof v === "string" && v.trim())) &&
+          Number.isFinite(Number(v)) &&
+          Number(v) >= bounds[0] &&
+          Number(v) <= bounds[1] &&
+          (k !== "attempts" || Number.isInteger(Number(v)))
+        );
+      return typeof v === "boolean";
+    });
+  };
+  if (Object.hasOwn(preferences, "personalCategories")) {
+    const a = preferences.personalCategories;
+    if (
+      !Array.isArray(a) ||
+      a.length > 30 ||
+      a.some((x) => typeof x !== "string" || !x.trim() || x.length > 100) ||
+      new Set(a.map((x) => x.trim().toLocaleLowerCase("ro"))).size !== a.length
+    )
+      return fail(res, 400, "Categorii personale invalide.");
+    normalized.personalCategories = a.map((x) => x.trim());
+  }
+  if (Object.hasOwn(preferences, "personalTemplates")) {
+    const a = preferences.personalTemplates;
+    if (
+      !Array.isArray(a) ||
+      a.length > 10 ||
+      a.some(
+        (t) =>
+          !t ||
+          typeof t.name !== "string" ||
+          !t.name.trim() ||
+          t.name.length > 60 ||
+          !validConfig(t.config),
+      ) ||
+      new Set(a.map((t) => t.name.trim().toLocaleLowerCase("ro"))).size !== a.length
+    )
+      return fail(res, 400, "Șabloane personale invalide.");
+    normalized.personalTemplates = a.map((t) => ({ name: t.name.trim(), config: t.config }));
+  }
+  // Opțiunile fără implementare nu trebuie să sugereze protecții active.
+  normalized.notifyPublish = false;
+  normalized.blockNavigation = false;
+
   const result = await pool.query(
     `INSERT INTO professional_test_user_preferences (user_id, preferences)
      VALUES ($1, $2::jsonb)
      ON CONFLICT (user_id)
      DO UPDATE SET preferences = EXCLUDED.preferences, updated_at = NOW()
-     RETURNING preferences`,
-    [userId, json],
+     RETURNING preferences, updated_at`,
+    [userId, JSON.stringify(normalized)],
   );
 
   return res.json({
     message: "Preferințele au fost salvate.",
     preferences: result.rows[0].preferences,
+    updated_at: result.rows[0].updated_at,
   });
 });
 

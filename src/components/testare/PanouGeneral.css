@@ -1472,3 +1472,115 @@
     padding-inline: 9px;
   }
 }
+
+/* Panou general V2 — controls and viewport-safe actions */
+.pt-pg-menu {
+  position: fixed;
+  z-index: 10050;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #dce4ff;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 14px 36px #182c6030;
+  max-height: min(250px, 45dvh);
+  overflow-y: auto;
+}
+.pt-pg-menu button {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
+  color: #17295b;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.pt-pg-menu button:hover:not(:disabled),
+.pt-pg-menu button:focus-visible {
+  background: #edf2ff;
+  color: #2452d5;
+  outline: 2px solid #8da8ff;
+  outline-offset: -2px;
+}
+.pt-pg-menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pt-pg-menu button:has(svg.lucide-trash-2) {
+  color: #b42336;
+}
+.pt-dashboard.pt-mobile-refresh .pt-pg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+  color: #52658b;
+  font-size: 12px;
+}
+.pt-dashboard .pt-pg-reset,
+.pt-dashboard .pt-pg-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #dce4ff;
+  border-radius: 9px;
+  padding: 7px 10px;
+  background: #f5f7ff;
+  color: #2452d5;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pt-dashboard .pt-pg-reset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pt-dashboard .pt-pg-clear {
+  flex-shrink: 0;
+  border: 0;
+  padding: 5px;
+}
+.pt-dashboard .pt-pg-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.pt-dashboard .pt-pg-size select {
+  border: 1px solid #dce4ff;
+  background: #fff;
+  color: #172c61;
+  border-radius: 8px;
+  padding: 7px;
+}
+.pt-dashboard.pt-mobile-refresh .pt-dashboard-footer {
+  flex-wrap: wrap;
+}
+.pt-dashboard.pt-mobile-refresh .pt-dashboard-create > .pt-create-action:hover:not(:disabled) {
+  background: linear-gradient(110deg, #7430e6, #303be0);
+  color: #fff;
+}
+.pt-dashboard.pt-mobile-refresh .pt-dashboard-view:hover:not(:disabled) {
+  background: #e5edff;
+  color: #1647c5;
+}
+.pt-dashboard.pt-mobile-refresh .pt-dashboard-table td strong {
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-pg-menu,
+  .pt-pg-menu button {
+    transition: none;
+  }
+}

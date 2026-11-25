@@ -40,7 +40,7 @@ const newTestDefaults = (p = {}, now = new Date()) => {
     ["duration", p.duration, 1, 480, true],
     ["maxAttempts", p.attempts, 1, 100, true],
     ["passThreshold", p.threshold, 0, 100, false],
-    ["maxGrade", p.maxGrade, 1, 100, false],
+    ["maxGrade", p.maxGrade, 1, 10, false],
   ];
   for (const [key, raw, min, max, int] of numbers) {
     const value = bounded(raw, min, max, int);
@@ -57,9 +57,27 @@ const newTestDefaults = (p = {}, now = new Date()) => {
     ["showExplanations", "showExplanations"],
     ["notifyOnAssignment", "notifyAssignment"],
     ["sendReminder", "notifyExpiry"],
+    ["shuffleQuestions", "shuffleQuestions"],
+    ["shuffleAnswers", "shuffleAnswers"],
+    ["monitorTabs", "monitorTabs"],
   ]) {
     if (typeof p[source] === "boolean") out[target] = p[source];
   }
+  if (["free", "sequential"].includes(p.navigationMode)) out.navigationMode = p.navigationMode;
+  if (["exact", "partial", "penalized"].includes(p.scoringMode)) out.scoringMode = p.scoringMode;
+  if ([1, 2, 3, 5, 10].includes(Number(p.tabWarningLimit)))
+    out.tabWarningLimit = Number(p.tabWarningLimit);
+  out.personalCategories = Array.isArray(p.personalCategories)
+    ? p.personalCategories.filter((x) => typeof x === "string" && x.length <= 100).slice(0, 30)
+    : [];
+  out.idleWarningMinutes = [0, 2, 5, 10, 15, 30].includes(Number(p.idleWarningMinutes))
+    ? Number(p.idleWarningMinutes)
+    : 0;
+  out.notifyResult = p.notifyResult === true;
+  const limit = bounded(p.questionLimit, 0, 10000, true);
+  if (limit !== undefined) out.questionLimit = limit;
+  const retry = bounded(p.retryIntervalHours, 0, 48, true);
+  if ([0, 1, 24, 48].includes(retry)) out.retryIntervalHours = retry;
   const hours = Number(p.expiryHours);
   if ([24, 48, 72].includes(hours)) out.reminderHours = hours;
   else if (p.expiryHours != null) out.reminderHours = 24;
@@ -93,6 +111,14 @@ const mapForm = (v, questions) => ({
   description: v.description || "",
   duration: v.duration_minutes,
   maxAttempts: v.max_attempts,
+  questionLimit: Number(v.question_limit ?? 0),
+  navigationMode: v.navigation_mode ?? "free",
+  scoringMode: v.scoring_mode ?? "exact",
+  idleWarningMinutes: Number(v.idle_warning_minutes ?? 0),
+  notifyResult: v.notify_result === true,
+  monitorTabs: v.monitor_tabs ?? false,
+  tabWarningLimit: v.tab_warning_limit ?? 3,
+  retryIntervalHours: Number(v.retry_interval_hours ?? 0),
   passThreshold: Number(v.passing_percentage),
   maxGrade: Number(v.max_grade),
   grading: v.grading_mode,
@@ -123,6 +149,14 @@ const questionPayload = (q) => ({
 const settings = (form) => ({
   duration_minutes: Number(form.duration),
   max_attempts: Number(form.maxAttempts),
+  question_limit: Number(form.questionLimit ?? 0),
+  navigation_mode: form.navigationMode ?? "free",
+  scoring_mode: form.scoringMode ?? "exact",
+  idle_warning_minutes: Number(form.idleWarningMinutes ?? 0),
+  notify_result: !!form.notifyResult,
+  monitor_tabs: !!form.monitorTabs,
+  tab_warning_limit: Number(form.tabWarningLimit ?? 3),
+  retry_interval_hours: Number(form.retryIntervalHours ?? 0),
   passing_percentage: Number(form.passThreshold),
   max_grade: Number(form.maxGrade),
   grading_mode: form.grading,

@@ -906,3 +906,95 @@
     transition-duration: 0.01ms;
   }
 }
+
+/* BORDER — Notificări și status: card izolat */
+.pt-a4 .pt-a4-notification-list {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0;
+}
+.pt-a4 .pt-a4-notification-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid #e0e7f6;
+  border-radius: 12px;
+  background: #f9fbff;
+}
+.pt-a4 .pt-a4-notification-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #e8efff;
+  color: #2458d8;
+}
+.pt-a4 .pt-a4-notification-icon.is-warning {
+  color: #a45a08;
+  background: #fff1d9;
+}
+.pt-a4 .pt-a4-notification-icon.is-expired {
+  color: #bd3446;
+  background: #ffe9ed;
+}
+.pt-a4 .pt-a4-notification-row > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.pt-a4 .pt-a4-notification-row strong {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #172a52;
+}
+.pt-a4 .pt-a4-notification-row small {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #52658c;
+}
+.pt-a4 .pt-a4-notification-row b {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: #172a52;
+}
+.pt-a4 .pt-a4-notification-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #52658c;
+}
+.pt-a4 .pt-a4-notification-actions {
+  display: grid;
+  gap: 8px;
+}
+.pt-a4 .pt-a4-notification-actions .pt-a4-secondary {
+  min-height: 44px;
+  border: 1px solid #dce5ff;
+  background: #edf2ff;
+  color: #194bc9;
+  font-size: 13px;
+  transition:
+    background 160ms,
+    border-color 160ms;
+}
+.pt-a4 .pt-a4-notification-actions .pt-a4-secondary:hover:not(:disabled) {
+  background: #dce7ff;
+  border-color: #9db6ff;
+  color: #123ba5;
+}
+.pt-a4 .pt-a4-notification-actions .pt-a4-notification-refresh {
+  background: #fff;
+}
+.pt-a4 .pt-a4-notification-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-a4 .pt-a4-notification-actions button {
+    transition: none;
+  }
+}

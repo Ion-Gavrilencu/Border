@@ -872,7 +872,7 @@
   .pt-reports-table tbody td:nth-child(9)::before {
     content: "Rezultat";
   }
-  .pt-reports-table tbody td:nth-child(10)::before {
+  .pt-reports-table tbody td:nth-child(11)::before {
     content: "Acțiuni";
   }
   /* Antetul cardului: utilizator, titlu si rezultatul cu prioritate vizuala. */
@@ -898,10 +898,10 @@
     font-weight: 750;
   }
   .pt-reports-table tbody td:nth-child(9),
-  .pt-reports-table tbody td:nth-child(10) {
+  .pt-reports-table tbody td:nth-child(11) {
     border-bottom: 0;
   }
-  .pt-reports-table tbody td:nth-child(10) {
+  .pt-reports-table tbody td:nth-child(11) {
     align-items: flex-end;
   }
   .pt-reports-table tbody td > *,
@@ -1445,5 +1445,19 @@
   }
   .pt-reports-table-scroll {
     display: block !important;
+  }
+}
+
+@container (max-width: 740px) {
+  .pt-reports-table tbody td.pt-integrity-cell {
+    grid-column: 1 / -1;
+  }
+  .pt-reports-table tbody td.pt-integrity-cell::before {
+    content: "Integritate";
+  }
+}
+@media (max-width: 767px) {
+  .pt-reports-table tbody td.pt-integrity-cell::before {
+    content: "Integritate";
   }
 }

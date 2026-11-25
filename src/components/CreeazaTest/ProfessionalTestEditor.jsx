@@ -2,7 +2,7 @@ import DetaliiTest from "./DetaliiTest";
 import Intrebari from "./Intrebari";
 import Atribuire from "./Atribuire";
 import Rezumat from "./Rezumat";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Clock3,
@@ -24,6 +24,8 @@ import {
   X,
 } from "lucide-react";
 import "./ProfessionalTestEditor.css";
+import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 const Card = ({ icon: Icon, title, subtitle, children }) => (
   <section className="pte-card">
@@ -46,6 +48,14 @@ const DEFAULT = {
   description: "",
   duration: 30,
   maxAttempts: 1,
+  retryIntervalHours: 0,
+  questionLimit: 0,
+  navigationMode: "free",
+  scoringMode: "exact",
+  idleWarningMinutes: 0,
+  notifyResult: false,
+  monitorTabs: false,
+  tabWarningLimit: 3,
   passThreshold: 50,
   maxGrade: 10,
   grading: "grade-percent",
@@ -127,6 +137,51 @@ export default function ProfessionalTestEditor({
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
+  const operationLock = useRef(false);
+  const [baseline, setBaseline] = useState(() => JSON.stringify(form));
+  const dirty = !readOnly && JSON.stringify(form) !== baseline;
+  useEffect(() => {
+    setBaseline(
+      JSON.stringify({
+        ...DEFAULT,
+        ...JSON.parse(initialDataSignature),
+        questions: Array.isArray(initialData.questions) ? initialData.questions : [],
+        assignments: assignmentOnly
+          ? []
+          : Array.isArray(initialData.assignments)
+            ? initialData.assignments
+            : [],
+        ...(assignmentOnly ? { assignmentType: "individual", assignmentGroupId: "" } : {}),
+      }),
+    );
+  }, [initialDataSignature, assignmentOnly]);
+  useEffect(() => {
+    if (!dirty && !busy) return;
+    const warn = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, busy]);
+  const safeLeave = async (callback) => {
+    if (operationLock.current || busy || !callback) return;
+    if (
+      dirty &&
+      !(
+        await Swal.fire({
+          title: "Modificări nesalvate",
+          text: "Dacă continui, modificările locale se pot pierde.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Continuă",
+          cancelButtonText: "Rămâi în editor",
+        })
+      ).isConfirmed
+    )
+      return;
+    if (!operationLock.current) callback();
+  };
   const [recipientSearch, setRecipientSearch] = useState("");
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [showExplanation, setShowExplanation] = useState(true);
@@ -136,10 +191,41 @@ export default function ProfessionalTestEditor({
   const valid = () => {
     if (!form.title.trim()) return "Completează titlul testului.";
     if (!form.category) return "Selectează categoria.";
-    if (!(Number(form.duration) > 0)) return "Durata trebuie să fie mai mare decât zero.";
-    if (!(Number(form.maxAttempts) >= 1)) return "Numărul de încercări trebuie să fie cel puțin 1.";
-    if (Number(form.passThreshold) < 0 || Number(form.passThreshold) > 100)
+    const numeric = (v, min, max, integer = false) =>
+      v !== "" &&
+      v != null &&
+      typeof v !== "boolean" &&
+      Number.isFinite(Number(v)) &&
+      Number(v) >= min &&
+      Number(v) <= max &&
+      (!integer || Number.isInteger(Number(v)));
+    if (form.title.trim().length > 250) return "Titlul poate avea maximum 250 de caractere.";
+    if (!numeric(form.duration, 1, 480, true))
+      return "Durata trebuie să fie un număr întreg între 1 și 480 de minute.";
+    if (!numeric(form.maxAttempts, 1, 100, true))
+      return "Numărul de încercări trebuie să fie între 1 și 100.";
+    if (![0, 2, 5, 10, 15, 30].includes(Number(form.idleWarningMinutes)))
+      return "Intervalul de avertizare este invalid.";
+    if (![1, 2, 3, 5, 10].includes(Number(form.tabWarningLimit)))
+      return "Limita avertizărilor este invalidă.";
+    if (
+      !["free", "sequential"].includes(form.navigationMode) ||
+      !["exact", "partial", "penalized"].includes(form.scoringMode)
+    )
+      return "Regulă de navigare sau punctaj invalidă.";
+    if (!numeric(form.questionLimit, 0, 10000, true))
+      return "Numărul de întrebări trebuie să fie un întreg între 0 și 10000.";
+    if (![0, 1, 24, 48].includes(Number(form.retryIntervalHours)))
+      return "Interval de reîncercare invalid.";
+    if (!numeric(form.passThreshold, 0, 100))
       return "Pragul de promovare trebuie să fie între 0 și 100.";
+    if (!numeric(form.maxGrade, 1, 10)) return "Nota maximă trebuie să fie între 1 și 10.";
+    if (!["grade-percent", "grade", "percent"].includes(form.grading))
+      return "Metoda de notare este invalidă.";
+    if (!["one-decimal", "two-decimals", "integer"].includes(form.rounding))
+      return "Regula de rotunjire este invalidă.";
+    if ([form.availableFrom, form.availableUntil].some((v) => v && !Number.isFinite(Date.parse(v))))
+      return "Data de disponibilitate este invalidă.";
     if (
       form.availableFrom &&
       form.availableUntil &&
@@ -149,6 +235,7 @@ export default function ProfessionalTestEditor({
     return "";
   };
   const move = (next) => {
+    if (busy || operationLock.current) return;
     if (
       assignmentOnly &&
       next === 3 &&
@@ -170,6 +257,7 @@ export default function ProfessionalTestEditor({
     setStep(next);
   };
   const execute = async (kind) => {
+    if (busy || operationLock.current || readOnly) return;
     if (assignmentOnly && kind === "draft") {
       setError("Testul publicat nu poate fi salvat ca ciornă.");
       return;
@@ -177,6 +265,15 @@ export default function ProfessionalTestEditor({
     const issue = assignmentOnly ? "" : valid();
     if (issue) {
       setError(issue);
+      setStep(0);
+      return;
+    }
+    if (
+      !assignmentOnly &&
+      kind === "publish" &&
+      Number(form.questionLimit) > form.questions.length
+    ) {
+      setError("Numărul de întrebări selectate depășește banca disponibilă.");
       setStep(0);
       return;
     }
@@ -217,7 +314,8 @@ export default function ProfessionalTestEditor({
       (!form.availableFrom ||
         !form.availableUntil ||
         Number.isNaN(new Date(form.availableFrom).getTime()) ||
-        Number.isNaN(new Date(form.availableUntil).getTime()))
+        Number.isNaN(new Date(form.availableUntil).getTime()) ||
+        Date.parse(form.availableUntil) <= Date.parse(form.availableFrom))
     ) {
       setError("Completează o perioadă de participare validă înainte de publicare.");
       setStep(2);
@@ -232,20 +330,33 @@ export default function ProfessionalTestEditor({
       );
       return;
     }
+    operationLock.current = true;
     setBusy(true);
     setError("");
     setNotice("");
     try {
       const saved = await callback({ ...form });
-      if (saved?.questions) setForm((current) => ({ ...current, questions: saved.questions }));
+      const next = { ...form, ...(saved?.questions ? { questions: saved.questions } : {}) };
+      setForm(next);
+      setBaseline(JSON.stringify(next));
+      toast.success(
+        kind === "publish"
+          ? assignmentOnly
+            ? "Atribuirea a fost salvată."
+            : "Testul a fost publicat și atribuit."
+          : "Ciorna a fost salvată.",
+      );
       setNotice(
         kind === "publish"
           ? "Publicarea a fost confirmată de funcția conectată."
           : "Salvarea a fost confirmată de funcția conectată.",
       );
     } catch (e) {
-      setError(e?.message || "Operația a eșuat.");
+      const message = e?.response?.data?.message || e?.message || "Operația a eșuat.";
+      setError(message);
+      toast.error(message);
     } finally {
+      operationLock.current = false;
       setBusy(false);
     }
   };
@@ -439,6 +550,16 @@ export default function ProfessionalTestEditor({
     const detailRows = [
       ["Categorie", form.category || "—"],
       ["Încercări permise", form.maxAttempts ?? "—"],
+      ["Întrebări per încercare", Number(form.questionLimit) || "Toate"],
+      ["Navigare", form.navigationMode === "sequential" ? "Secvențială" : "Liberă"],
+      [
+        "Punctaj multiplu",
+        { exact: "Integral", partial: "Parțial", penalized: "Cu penalizare" }[form.scoringMode],
+      ],
+      [
+        "Interval între încercări",
+        Number(form.retryIntervalHours) ? `${form.retryIntervalHours} ore` : "Fără interval",
+      ],
       ["Nota maximă", form.maxGrade ?? "—"],
       ["Mod evaluare", grading[form.grading] ?? form.grading ?? "—"],
       ["Rotunjire", rounding[form.rounding] ?? form.rounding ?? "—"],
@@ -456,13 +577,13 @@ export default function ProfessionalTestEditor({
     return (
       <main className="pte-page pte-readonly">
         <div className="pte-ro-top">
-          <button type="button" className="pte-link" onClick={() => onCancel?.()}>
+          <button type="button" className="pte-link" onClick={() => safeLeave(onCancel)}>
             <ArrowLeft size={18} /> Înapoi la Teste
           </button>
           <button
             type="button"
             className="pte-btn pte-btn-light"
-            onClick={() => onRefresh?.()}
+            onClick={() => safeLeave(onRefresh)}
             disabled={!onRefresh}
           >
             <RefreshCw size={16} /> Actualizează
@@ -585,7 +706,7 @@ export default function ProfessionalTestEditor({
           </section>
         </div>
         <footer className="pte-ro-footer">
-          <button type="button" className="pte-btn" onClick={() => onCancel?.()}>
+          <button type="button" className="pte-btn" onClick={() => safeLeave(onCancel)}>
             <ArrowLeft size={18} /> Înapoi la Teste
           </button>
         </footer>
@@ -596,7 +717,7 @@ export default function ProfessionalTestEditor({
   return (
     <main className="pte-page">
       <div className="pte-topline">
-        <button className="pte-link" onClick={() => onCancel?.()}>
+        <button className="pte-link" onClick={() => safeLeave(onCancel)}>
           <ArrowLeft size={17} /> Înapoi la Teste
         </button>
         <span>BORDER / TESTARE PROFESIONALĂ</span>
@@ -621,7 +742,7 @@ export default function ProfessionalTestEditor({
             </p>
           </div>
         </div>
-        <button className="pte-btn pte-btn-light" onClick={() => onRefresh?.()}>
+        <button className="pte-btn pte-btn-light" onClick={() => safeLeave(onRefresh)}>
           <RefreshCw size={17} /> Actualizează
         </button>
       </header>
@@ -630,7 +751,7 @@ export default function ProfessionalTestEditor({
           <React.Fragment key={title}>
             <button
               className={"pte-step " + (step === i ? "active " : "") + (i < step ? "done" : "")}
-              disabled={assignmentOnly && i < 2}
+              disabled={busy || (assignmentOnly && i < 2)}
               onClick={() => move(i)}
             >
               <span className="pte-step-number">{i < step ? <Check size={18} /> : i + 1}</span>
@@ -729,7 +850,7 @@ export default function ProfessionalTestEditor({
                     <button
                       key={title}
                       className={i === step ? "selected" : ""}
-                      disabled={assignmentOnly && i < 2}
+                      disabled={busy || (assignmentOnly && i < 2)}
                       onClick={() => move(i)}
                     >
                       <span className={i < step ? "completed" : ""}>
@@ -749,7 +870,15 @@ export default function ProfessionalTestEditor({
                   ["Încercări", form.maxAttempts],
                   ["Prag promovare", form.passThreshold + "%"],
                   ["Nota maximă", form.maxGrade],
-                  ["Întrebări", form.questions.length],
+                  ["Întrebări în bancă", form.questions.length],
+                  ["Întrebări per încercare", Number(form.questionLimit) || "Toate"],
+                  ["Navigare", form.navigationMode === "sequential" ? "Secvențială" : "Liberă"],
+                  [
+                    "Punctaj multiplu",
+                    { exact: "Integral", partial: "Parțial", penalized: "Cu penalizare" }[
+                      form.scoringMode
+                    ],
+                  ],
                 ].map(([label, value]) => (
                   <div key={label}>
                     <span>{label}:</span>
@@ -777,13 +906,13 @@ export default function ProfessionalTestEditor({
         )}
       </div>
       <footer className="pte-footer">
-        {(step === 1 || (step === 3 && !assignmentOnly)) && (
+        {(step === 1 || step === 3) && (
           <button type="button" className="pte-btn pte-btn-light" onClick={() => move(step - 1)}>
             <ArrowLeft size={18} /> Pasul anterior
           </button>
         )}
         {step !== 1 && step !== 3 && (
-          <button className="pte-btn pte-btn-light" onClick={() => onCancel?.()}>
+          <button className="pte-btn pte-btn-light" onClick={() => safeLeave(onCancel)}>
             <X size={18} /> Anulează
           </button>
         )}
@@ -815,7 +944,11 @@ export default function ProfessionalTestEditor({
             </button>
           )}
           {step < 3 ? (
-            <button className="pte-btn pte-btn-primary" onClick={() => move(step + 1)}>
+            <button
+              className="pte-btn pte-btn-primary"
+              disabled={busy}
+              onClick={() => move(step + 1)}
+            >
               Următorul pas <ArrowRight size={18} />
             </button>
           ) : (

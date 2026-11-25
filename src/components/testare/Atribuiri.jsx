@@ -139,6 +139,22 @@ export default function Atribuiri({ ctx }) {
       }),
     [rows, assignmentSearch, assignmentStatus, testFilter, typeFilter, period],
   );
+  const deadlineSummary = (() => {
+    const now = Date.now();
+    let soon = 0;
+    let expired = 0;
+    for (const item of rows) {
+      const state = statusOf(item);
+      if (!isPending(state) && !isActive(state) && !isScheduled(state)) continue;
+      const raw = item.deadline_at ?? item.available_until ?? item.expires_at ?? item.ends_at;
+      if (!raw) continue;
+      const end = Date.parse(raw);
+      if (!Number.isFinite(end)) continue;
+      if (end <= now) expired += 1;
+      else if (end - now <= 86400000) soon += 1;
+    }
+    return { soon, expired };
+  })();
   const pageSize = 5;
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(Math.max(Number(assignmentPage) || 1, 1), pages);
@@ -153,7 +169,8 @@ export default function Atribuiri({ ctx }) {
   };
   const goToEditor = (item) => {
     const versionId = item.version_id ?? item.current_version_id;
-    if (versionId) window.location.assign(`/testare/${encodeURIComponent(versionId)}/editare?mod=atribuire`);
+    if (versionId)
+      window.location.assign(`/testare/${encodeURIComponent(versionId)}/editare?mod=atribuire`);
     else setQuickNotice("Nu este disponibil ID-ul versiunii pentru atribuire.");
   };
   const focusQuickAssignment = () => {
@@ -386,9 +403,7 @@ export default function Atribuiri({ ctx }) {
                               ? attemptDate(dateOf(item))
                               : fmt(dateOf(item))}
                           </td>
-                          <td>
-                            {validityOf(item)}
-                          </td>
+                          <td>{validityOf(item)}</td>
                           <td>
                             <span
                               className={`pt-a4-pill ${done ? "is-done" : isActive(s) ? "is-active" : isScheduled(s) ? "is-scheduled" : "is-pending"}`}
@@ -581,21 +596,66 @@ export default function Atribuiri({ ctx }) {
             </div>
             <p className="pt-a4-footnote">Distribuția folosește stările existente în datele API.</p>
           </section>
-          <section className="pt-a4-side-card">
+          <section className="pt-a4-side-card pt-a4-notification-card">
             <h3>
               <Bell size={22} /> Notificări și status
             </h3>
-            <p>
-              Notificările la atribuire și expirare sunt gestionate de setările platformei. Starea
-              lor nu este disponibilă în datele acestei componente.
+            <p>Urmărește termenele atribuirilor și configurează notificările.</p>
+            <div className="pt-a4-notification-list" aria-live="polite">
+              <div className="pt-a4-notification-row">
+                <span className="pt-a4-notification-icon is-warning">
+                  <Clock3 size={19} />
+                </span>
+                <span>
+                  <strong>Expiră în următoarele 24 h</strong>
+                  <small>Destinatari cu teste nefinalizate</small>
+                </span>
+                <b>{assignmentLoading || assignmentError ? "—" : deadlineSummary.soon}</b>
+              </div>
+              <div className="pt-a4-notification-row">
+                <span className="pt-a4-notification-icon is-expired">
+                  <CalendarDays size={19} />
+                </span>
+                <span>
+                  <strong>Termen depășit</strong>
+                  <small>Teste nefinalizate cu termen trecut</small>
+                </span>
+                <b>{assignmentLoading || assignmentError ? "—" : deadlineSummary.expired}</b>
+              </div>
+              <div className="pt-a4-notification-row">
+                <span className="pt-a4-notification-icon is-neutral">
+                  <Bell size={19} />
+                </span>
+                <span>
+                  <strong>Livrarea notificărilor</strong>
+                  <small>Starea trimiterii nu este furnizată de API.</small>
+                </span>
+              </div>
+            </div>
+            <p className="pt-a4-notification-note">
+              {assignmentError
+                ? "Datele sunt incomplete. Actualizează lista pentru a reîncerca."
+                : "Contoarele se bazează pe destinatarii încărcați, nu pe numărul notificărilor trimise."}
             </p>
-            <button
-              type="button"
-              className="pt-a4-secondary"
-              onClick={() => typeof setTab === "function" && setTab("setari")}
-            >
-              Deschide setările <ArrowRight size={16} />
-            </button>
+            <div className="pt-a4-notification-actions">
+              <button
+                type="button"
+                className="pt-a4-secondary"
+                disabled={!canManage || typeof setTab !== "function"}
+                onClick={() => setTab("settings")}
+              >
+                Deschide setările <ArrowRight size={16} />
+              </button>
+              <button
+                type="button"
+                className="pt-a4-secondary pt-a4-notification-refresh"
+                disabled={assignmentLoading || typeof loadAssignments !== "function"}
+                onClick={() => loadAssignments()}
+              >
+                <RefreshCw size={16} />{" "}
+                {assignmentLoading ? "Se actualizează..." : "Actualizează statusul"}
+              </button>
+            </div>
           </section>
         </aside>
       </div>
